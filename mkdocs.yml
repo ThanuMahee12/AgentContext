@@ -4,23 +4,34 @@ site_url: https://thanumahee12.github.io/AgentContext
 
 theme:
   name: material
+  icon:
+    logo: material/robot-outline
+    repo: fontawesome/brands/github
   palette:
     - scheme: default
-      primary: indigo
+      primary: deep purple
+      accent: amber
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - scheme: slate
-      primary: indigo
+      primary: deep purple
+      accent: amber
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
   features:
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
     - navigation.expand
+    - navigation.top
+    - navigation.footer
     - search.highlight
+    - search.suggest
     - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
 
 plugins:
   - search
@@ -35,10 +46,43 @@ nav:
       - Notes: Gemini/notes/index.md
 
 markdown_extensions:
+  # Code blocks
   - pymdownx.highlight:
       anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
   - pymdownx.superfences
+  - pymdownx.snippets
+
+  # Tabs
   - pymdownx.tabbed:
       alternate_style: true
+
+  # Icons & Emojis
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+
+  # Callouts/Admonitions
   - admonition
+  - pymdownx.details
+
+  # Lists & Tables
   - tables
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+  # Text formatting
+  - pymdownx.mark
+  - pymdownx.caret
+  - pymdownx.tilde
+  - pymdownx.keys
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ThanuMahee12
