@@ -1,0 +1,44 @@
+site_name: Agent Context
+site_description: AI Agent Sessions & Project Notes
+site_url: https://thanumahee12.github.io/AgentContext
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Claude:
+      - Sessions: Claude/sessions/
+      - Notes: Claude/notes/
+  - Gemini:
+      - Sessions: Gemini/sessions/
+      - Notes: Gemini/notes/
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - tables
