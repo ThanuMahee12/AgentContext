@@ -8,18 +8,9 @@ theme:
     logo: material/robot-outline
     repo: fontawesome/brands/github
   palette:
-    - scheme: default
-      primary: deep purple
-      accent: amber
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      primary: deep purple
-      accent: amber
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
+    scheme: slate
+    primary: black
+    accent: cyan
   features:
     - navigation.tabs
     - navigation.tabs.sticky
