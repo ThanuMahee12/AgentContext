@@ -77,3 +77,6 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/ThanuMahee12
+
+extra_css:
+  - stylesheets/extra.css
