@@ -28,11 +28,11 @@ plugins:
 nav:
   - Home: index.md
   - Claude:
-      - Sessions: Claude/sessions/
-      - Notes: Claude/notes/
+      - Sessions: Claude/sessions/index.md
+      - Notes: Claude/notes/index.md
   - Gemini:
-      - Sessions: Gemini/sessions/
-      - Notes: Gemini/notes/
+      - Sessions: Gemini/sessions/index.md
+      - Notes: Gemini/notes/index.md
 
 markdown_extensions:
   - pymdownx.highlight:
