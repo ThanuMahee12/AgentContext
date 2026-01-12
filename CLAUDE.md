@@ -35,6 +35,35 @@ Read latest session from `docs/Claude/sessions/`
 cd ~/AgentContext && git add -A && git commit -m "docs: update session" && git push
 ```
 
+## Cross-Machine Continuity
+
+When continuing work started on another machine:
+```markdown
+**Continued from:** w-2026-01-11 (section name)
+```
+
+Same-day sessions on different machines are separate files (`w-` and `l-` can coexist).
+
+## Session Content
+
+**Include:**
+- Branch name and project context
+- What was done (bullet points)
+- Key decisions/findings
+- Next steps
+
+**Keep in notes/ instead:**
+- Long-lived reference info (schemas, mappings)
+- Project-specific guidelines
+
+## Quick Reference
+
+| Action | Command |
+|--------|---------|
+| Sync | `cd ~/dev/AgentContext && git pull` |
+| Save | `cd ~/dev/AgentContext && git add -A && git commit -m "docs: update session" && git push` |
+| View sessions | `ls ~/dev/AgentContext/docs/Claude/sessions/` |
+
 ## Repo
 
 https://github.com/ThanuMahee12/AgentContext
