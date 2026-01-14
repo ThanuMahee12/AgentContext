@@ -31,14 +31,11 @@ plugins:
 nav:
   - Home: index.md
   - Claude:
-      - Sessions:
-          - Claude/sessions/index.md
-          - Linux: Claude/sessions/linux
-          - Windows: Claude/sessions/windows
-      - Notes: Claude/notes/index.md
+      - Sessions: Claude/sessions
+      - Notes: Claude/notes
   - Gemini:
-      - Sessions: Gemini/sessions/index.md
-      - Notes: Gemini/notes/index.md
+      - Sessions: Gemini/sessions
+      - Notes: Gemini/notes
 
 markdown_extensions:
   # Code blocks
