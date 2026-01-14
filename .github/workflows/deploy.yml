@@ -1,8 +1,6 @@
 name: Deploy MkDocs to GitHub Pages
 
 on:
-  push:
-    branches: [main]      # Temporary for testing
   schedule:
     - cron: '0 0 * * 0'  # Every Sunday at midnight UTC
   workflow_dispatch:      # Manual trigger anytime
