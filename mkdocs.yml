@@ -25,6 +25,7 @@ theme:
     - content.tabs.link
 
 plugins:
+  - awesome-pages
   - search
 
 nav:

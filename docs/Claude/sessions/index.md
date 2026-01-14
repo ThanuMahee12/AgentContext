@@ -2,6 +2,9 @@
 
 Daily work logs and session notes.
 
-## Recent Sessions
+## Structure
 
-- [2026-01-11](2026-01-11.md) - AgentContext setup
+- **Windows/** - Sessions from Windows machine
+- **Linux/** - Sessions from Linux machine
+
+Files are automatically listed in the navigation sidebar (newest first).
