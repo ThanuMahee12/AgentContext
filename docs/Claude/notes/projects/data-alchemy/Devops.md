@@ -1,5 +1,33 @@
 # DevOps - data-alchemy
 
+## Quick Reference - ACL Example
+
+### Bloomberg bbocax
+
+```bash
+# Source dataset: /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/
+
+# Check ACLs
+uv run acl -p /sf/data/bloomberg/bbocax_cwiq_pipe/1.0
+getfacl /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/raw
+
+# Setup source (raw needs both regular + default)
+setfacl -m u:svc_dat_alchemy:rwx /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/raw
+setfacl -d -m u:svc_dat_alchemy:rwx /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/raw
+setfacl -m u:svc_dat_alchemy:rwx /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/raw/env*
+setfacl -d -m u:svc_dat_alchemy:rwx /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/raw/env*
+
+# Setup bronze/silver/gold (regular only - we own)
+setfacl -m u:svc_dat_alchemy:rwx /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/bronze
+setfacl -m u:svc_dat_alchemy:rwx /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/silver
+setfacl -m u:svc_dat_alchemy:rwx /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/gold
+
+# Platinum target (regular only - different dataset)
+setfacl -m u:svc_dat_alchemy:rwx /sf/data/bloomberg/bbocax/1.0/raw
+```
+
+---
+
 ## ACL Permission
 
 ### Overview
