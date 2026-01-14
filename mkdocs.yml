@@ -31,7 +31,10 @@ plugins:
 nav:
   - Home: index.md
   - Claude:
-      - Sessions: Claude/sessions/index.md
+      - Sessions:
+          - Claude/sessions/index.md
+          - Linux: Claude/sessions/linux
+          - Windows: Claude/sessions/windows
       - Notes: Claude/notes/index.md
   - Gemini:
       - Sessions: Gemini/sessions/index.md
