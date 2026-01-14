@@ -6,4 +6,8 @@ Topic-based discussions and deep dives.
 
 ## Topics
 
-Topics are automatically listed in the navigation (newest first).
+| Topic | Description |
+|-------|-------------|
+| [GICS Discussion](GicsDiscussion.md) | S&P GICS data - shovel approach, products |
+
+---
