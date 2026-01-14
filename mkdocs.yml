@@ -37,6 +37,7 @@ nav:
   - Claude:
       - Sessions: Claude/sessions
       - Notes: Claude/notes
+      - Discussions: Claude/discussions
   - Gemini:
       - Sessions: Gemini/sessions
       - Notes: Gemini/notes
