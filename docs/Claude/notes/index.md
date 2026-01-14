@@ -1,7 +1,13 @@
-# Claude Notes
+# Notes
 
-Project-specific knowledge and important commands.
+Project-specific knowledge, approaches, and important references.
+
+---
 
 ## Projects
 
-- [data-alchemy](data-alchemy.md) - Core data processing engine
+| Project | Description |
+|---------|-------------|
+| [data-alchemy](projects/data-alchemy/index.md) | Core data processing engine (Bronze → Platinum) |
+
+---
