@@ -8,16 +8,101 @@ The pipeline requires `rwx` permissions for `svc_dat_alchemy` on specific direct
 
 ### Layer Requirements
 
-| Layer | Regular ACL | Default ACL | Reason |
-|-------|-------------|-------------|--------|
-| raw/ | Required | Required | Pipeline reads; env* dirs inherit |
-| raw/env* | Required | Not needed | Pipeline reads files inside |
-| bronze/ | Required | Not needed | Pipeline creates dirs/files |
-| silver/ | Required | Not needed | Pipeline creates dirs/files |
-| gold/ | Required | Not needed | Pipeline creates dirs/files |
-| platinum/ | Required | Not needed | Final output (different path) |
+| Layer | Regular ACL | Default ACL | Owner | Reason |
+|-------|:-----------:|:-----------:|-------|--------|
+| raw/ | ✅ | ✅ | Upstream | New env* dirs inherit permission |
+| raw/env* | ✅ | ✅ | Upstream | New subdirs inside inherit permission |
+| bronze/ | ✅ | ❌ | svc_dat_alchemy | We create, we own |
+| silver/ | ✅ | ❌ | svc_dat_alchemy | We create, we own |
+| gold/ | ✅ | ❌ | svc_dat_alchemy | We create, we own |
+| platinum/ | ✅ | ❌ | Other dataset | Different target path, not our owner |
 
-### ACL Checker CLI
+### Platinum Output Structure
+
+```
+Source dataset:
+/sf/data/vendor/dataset_cwiq_pipe/1.0/
+├── raw/      <-- upstream owns
+├── bronze/   <-- svc_dat_alchemy owns
+├── silver/   <-- svc_dat_alchemy owns
+└── gold/     <-- svc_dat_alchemy owns
+
+Target dataset (platinum writes here):
+/sf/data/target_vendor/target_dataset/1.0/raw/
+└── subfolder/           <-- created at deployment
+    └── 2026/            <-- we create from deployment date
+        └── 20260114/    <-- date folders onward (we own)
+```
+
+---
+
+## getfacl - Investigate Permissions
+
+### Basic Commands
+
+```bash
+# View ACL for single path
+getfacl /sf/data/vendor/dataset/1.0/raw
+
+# Recursive - all files and subdirs
+getfacl -R /sf/data/vendor/dataset/1.0/raw
+
+# Numeric IDs instead of names
+getfacl -n /path
+
+# Skip header (cleaner output)
+getfacl -c /path
+```
+
+### Advanced Options
+
+| Option | Description |
+|--------|-------------|
+| `-R` | Recursive (all files/subdirs) |
+| `-a` | Access ACL only |
+| `-d` | Default ACL only |
+| `-c` | Omit header (cleaner) |
+| `-t` | Tabular format (side-by-side) |
+| `-n` | Numeric user/group IDs |
+| `-s` | Skip base entries (show only extended ACLs) |
+| `-e` | Show all effective rights |
+| `-p` | Absolute paths (keep leading /) |
+
+### Useful Combinations
+
+```bash
+# Check only default ACLs recursively
+getfacl -Rd /sf/data/vendor/dataset/1.0/raw
+
+# Tabular format (easy to read)
+getfacl -t /sf/data/vendor/dataset/1.0/raw
+
+# Skip files with only base ACL (find extended ACLs)
+getfacl -Rs /sf/data/vendor/dataset/1.0/
+
+# Audit to file
+getfacl -R /sf/data/vendor/dataset/1.0/ > acl_audit.txt
+
+# Check specific user's access
+getfacl -R /path | grep svc_dat_alchemy
+```
+
+### Backup & Restore ACLs
+
+```bash
+# Backup ACLs
+getfacl -R /sf/data/vendor/dataset/1.0/ > acl_backup.txt
+
+# Restore ACLs
+setfacl --restore=acl_backup.txt
+
+# Copy ACL from one file to another
+getfacl file1 | setfacl --set-file=- file2
+```
+
+---
+
+## ACL Checker CLI
 
 Added in `feature/acl-handler-refactor` branch (2026-01-13).
 
@@ -55,20 +140,37 @@ uv run acl -p /sf/data/vendor/dataset/1.0 -i
 - OK envs grouped as pattern (e.g., `env[1-4]`)
 - `format_env_range()` helper for compact display
 
-### Setup Commands
+---
+
+## Setup Commands
+
+### Source Dataset
 
 ```bash
 # Raw layer (both regular + default)
 setfacl -m u:svc_dat_alchemy:rwx /sf/data/{vendor}/{dataset}/1.0/raw
 setfacl -d -m u:svc_dat_alchemy:rwx /sf/data/{vendor}/{dataset}/1.0/raw
 
-# Other layers (regular only)
+# Raw env* (both regular + default)
+setfacl -m u:svc_dat_alchemy:rwx /sf/data/{vendor}/{dataset}/1.0/raw/env*
+setfacl -d -m u:svc_dat_alchemy:rwx /sf/data/{vendor}/{dataset}/1.0/raw/env*
+
+# Bronze/Silver/Gold (regular only - we own these)
 setfacl -m u:svc_dat_alchemy:rwx /sf/data/{vendor}/{dataset}/1.0/bronze
 setfacl -m u:svc_dat_alchemy:rwx /sf/data/{vendor}/{dataset}/1.0/silver
 setfacl -m u:svc_dat_alchemy:rwx /sf/data/{vendor}/{dataset}/1.0/gold
 ```
 
-### Common Issues
+### Platinum Target Dataset
+
+```bash
+# Target raw folder (regular only - we create subdirs from deployment)
+setfacl -m u:svc_dat_alchemy:rwx /sf/data/{target_vendor}/{target_dataset}/1.0/raw
+```
+
+---
+
+## Common Issues
 
 | Issue | Solution |
 |-------|----------|
@@ -76,6 +178,10 @@ setfacl -m u:svc_dat_alchemy:rwx /sf/data/{vendor}/{dataset}/1.0/gold
 | NO_DEFAULT_ACL | `setfacl -d -m u:svc_dat_alchemy:rwx /path` |
 | NOT_FOUND | Create dir first, then set ACL |
 
-### Reference
+---
 
-Full docs: [`docs/data-alchemy/deployment/ACLPermission.md`](../../../../../../../Downloads/alchmy/docs/data-alchemy/deployment/ACLPermission.md)
+## Reference
+
+- Full docs: `alchmy/docs/data-alchemy/deployment/ACLPermission.md`
+- [getfacl manual](https://man7.org/linux/man-pages/man1/getfacl.1.html)
+- [setfacl/getfacl examples](https://www.golinuxcloud.com/setfacl-getfacl-command-in-linux/)
