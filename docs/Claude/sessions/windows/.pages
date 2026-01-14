@@ -1,4 +1,2 @@
 title: Windows
-nav:
-  - index.md
-  - ...
+order: desc

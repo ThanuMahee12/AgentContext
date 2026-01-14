@@ -1,4 +1,2 @@
 title: Linux
-nav:
-  - index.md
-  - ...
+order: desc

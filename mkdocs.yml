@@ -18,15 +18,19 @@ theme:
     - navigation.expand
     - navigation.top
     - navigation.footer
+    - navigation.indexes
     - search.highlight
     - search.suggest
     - content.code.copy
     - content.code.annotate
     - content.tabs.link
+    - toc.follow
 
 plugins:
-  - awesome-pages
   - search
+  - awesome-pages:
+      collapse_single_pages: false
+      strict: false
 
 nav:
   - Home: index.md
@@ -38,18 +42,25 @@ nav:
       - Notes: Gemini/notes
 
 markdown_extensions:
-  # Code blocks
+  # Code blocks with Mermaid support
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.snippets
 
   # Tabs
   - pymdownx.tabbed:
       alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
 
   # Icons & Emojis
   - pymdownx.emoji:
@@ -73,6 +84,16 @@ markdown_extensions:
   - pymdownx.caret
   - pymdownx.tilde
   - pymdownx.keys
+  - pymdownx.smartsymbols
+
+  # Table of contents
+  - toc:
+      permalink: true
+      toc_depth: 3
+
+  # Abbreviations & footnotes
+  - abbr
+  - footnotes
 
 extra:
   social:
@@ -81,3 +102,6 @@ extra:
 
 extra_css:
   - stylesheets/extra.css
+
+extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
