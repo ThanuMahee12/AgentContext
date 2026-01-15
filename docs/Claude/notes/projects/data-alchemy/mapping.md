@@ -89,6 +89,7 @@ git -C data-alchemy push -u origin feature/bbocax-{name}
 
 **Source:** `bloomberg/bbocax_cwiq_pipe/1.0/silver/`
 **Target:** `bloomberg/back_office_futures/2.0/raw/`
+**Compression:** `gzip_no_ext` (gzip content, no `.gz` extension)
 
 ### Files to Map
 
@@ -138,6 +139,26 @@ git -C data-alchemy push -u origin feature/bbocax-{name}
 ---
 
 ## Key Concepts
+
+### Gold Layer Compression
+
+Compression is controlled by `metadata.compression` in grabber map JSON files.
+
+| Compression Value | Behavior |
+|-------------------|----------|
+| `none` | No compression (plain text output) |
+| `gzip` | Gzip compress + add `.gz` extension |
+| `gzip_no_ext` | Gzip compress + keep original filename |
+| `lz4` | LZ4 compress + add `.lz4` extension |
+
+**bbocax compression pattern:**
+
+| Grabber Map | Compression | Reason |
+|-------------|-------------|--------|
+| `*_cax_*.json` | `gzip_no_ext` | `.cax` files match legacy gzip |
+| `*_parquet_*.json` | `none` | Parquet already compressed |
+| `*_futures_2_0.json` | `gzip_no_ext` | FuturesBulk match legacy gzip |
+| `*_1_0.json` (others) | `none` | Plain text output |
 
 ### Decrypt Inclusion Logic
 
