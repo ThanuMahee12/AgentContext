@@ -85,6 +85,58 @@ git -C data-alchemy push -u origin feature/bbocax-{name}
 
 ---
 
+## bbocax-currency (Detail)
+
+**Source:** `bloomberg/bbocax_cwiq_pipe/1.0/silver/`
+**Target:** `bloomberg/back_office_currency/1.0/raw/`
+**Compression:** None (plain text output)
+**Branch:** `feature/bbocax-currency`
+
+### Files to Map
+
+| File Pattern | Legacy Output Type |
+|--------------|-------------------|
+| `curncy*.csv` | ASCII text |
+| `curncy*.parquet` | Apache Parquet |
+| `curncy_*.out` | ASCII text |
+
+### Regions
+
+- curncyAsia1, curncyAsia2, curncyEuro, curncyLamr, curncyNamr
+
+### Decryption
+
+Only `.out` files need decryption:
+```json
+// silver_decrypt_inclusions/bloomberg.json
+"curncy_.*\\.out\\.gz\\.enc"
+```
+
+CSV and Parquet files are unencrypted in cwiq_pipe.
+
+### Output Structure
+
+```
+back_office_currency/1.0/raw/{YYYY}/{YYYYMMDD}/
+├── curncyAsia1.csv
+├── curncyAsia1.parquet
+├── curncy_asia1.out
+├── curncyAsia2.csv
+├── curncyAsia2.parquet
+├── curncy_asia2.out
+├── curncyEuro.csv
+├── curncyEuro.parquet
+├── curncy_euro.out
+├── curncyLamr.csv
+├── curncyLamr.parquet
+├── curncy_lamr.out
+├── curncyNamr.csv
+├── curncyNamr.parquet
+└── curncy_namr.out
+```
+
+---
+
 ## bbocax-futures (Detail)
 
 **Source:** `bloomberg/bbocax_cwiq_pipe/1.0/silver/`
@@ -166,6 +218,55 @@ Compression is controlled by `metadata.compression` in grabber map JSON files.
 | `*_parquet_*.json` | `none` | Parquet already compressed |
 | `*_futures_2_0.json` | `gzip_no_ext` | FuturesBulk match legacy gzip |
 | `*_1_0.json` (others) | `none` | Plain text output |
+
+### target_datasets Field
+
+`target_datasets` in grabber map metadata defines which output datasets this grabber map produces.
+
+**Purpose:**
+- Used by DQ validation to know which datasets to validate
+- Lists all datasets this grabber map outputs to
+
+**Pattern:**
+```json
+"metadata": {
+  "source_dataset": "bloomberg/bbocax_cwiq_pipe/1.0",
+  "target_datasets": ["bloomberg/back_office_currency/1.0"]
+}
+```
+
+**Examples from bbocax:**
+
+| Grabber Map | target_datasets |
+|-------------|-----------------|
+| `currency_1_0.json` | `["bloomberg/back_office_currency/1.0"]` |
+| `backoffice_cax_1_0.json` | `["bloomberg/back_office_preferred_exch_corporate_actions/1.0"]` |
+| `corporate_actions_2_0.json` | `["bloomberg/corporate_actions/2.0"]` |
+| `best_cwiq_pipe_1_0.json` | `["bloomberg/estimates_americas/1.0", "bloomberg/estimates_asia/1.0", "bloomberg/estimates_europe/1.0"]` |
+
+**Rules:**
+- Set to actual output datasets when ready for DQ validation
+- Set to `[]` to skip DQ validation (e.g., during development before files are produced)
+- DQ validates files exist in these paths when not empty
+
+### validation Field (per pattern)
+
+`validation` defines expected output path for each pattern. Can be:
+- **String**: `"/bloomberg/.../raw/{YYYY}/{YYYYMMDD}/file.csv"`
+- **Array**: `["/sp_global_mi/.../raw/{YYYY}/{YYYYMMDD}/file.zip"]`
+- **Empty array**: `[]` - skip validation for this pattern
+
+### Grabber Map Structure Variations
+
+| Field | bloomberg_best | sp_gics | bbocax |
+|-------|----------------|---------|--------|
+| `target_datasets` | array | - | array |
+| `target_dataset` | - | string | - |
+| `validation` | string | array | string or `[]` |
+| `compression` | - | `"lz4"` | `"gzip_no_ext"` or none |
+| `validation_path` | - | string | - |
+
+---
 
 ### Decrypt Inclusion Logic
 
