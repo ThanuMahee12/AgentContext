@@ -142,6 +142,13 @@ git -C data-alchemy push -u origin feature/bbocax-{name}
 
 ### Gold Layer Compression
 
+!!! important "DQ Validation requires MIME type match"
+    For 100% shovel output compatibility, file MIME types must match legacy:
+
+    - Legacy shovel: `application/gzip`
+    - data-alchemy (no compression): `text/plain` ❌ Type mismatch
+    - data-alchemy (with `gzip_no_ext`): `application/gzip` ✅ Type match
+
 Compression is controlled by `metadata.compression` in grabber map JSON files.
 
 | Compression Value | Behavior |
