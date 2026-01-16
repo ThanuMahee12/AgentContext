@@ -1,17 +1,17 @@
 # Investigation DB
 
-> :mag: Pattern-based reverse lookup for data pipelines
+> 🔍 Pattern-based reverse lookup for data pipelines
 
 ## The Problem
 
-:question: When a file is missing in Gold/Platinum, how do we trace it back?
+❓ When a file is missing in Gold/Platinum, how do we trace it back?
 
 ```mermaid
 flowchart LR
-    Q[/"Missing Gold File"/]
-    Q --> |"?"| B[Bronze Source]
-    Q --> |"?"| S[Service]
-    Q --> |"?"| SRV[Server]
+    Q[/"❌ Missing Gold File"/]
+    Q --> |"?"| B["📦 Bronze Source"]
+    Q --> |"?"| S["⚙️ Service"]
+    Q --> |"?"| SRV["🖥️ Server"]
 ```
 
 ## Sample Query
@@ -22,22 +22,22 @@ flowchart LR
 
 ## Core Idea
 
-:bulb: **Don't track files - track patterns!**
+💡 **Don't track files - track patterns!**
 
 ```mermaid
 flowchart LR
     subgraph Input
-        G["Gold Pattern"]
+        G["📁 Gold Pattern"]
     end
 
     subgraph Lookup
-        DB[("Investigation DB")]
+        DB[("🗄️ Investigation DB")]
     end
 
     subgraph Output
-        B["Bronze Pattern"]
-        SVC["Service"]
-        SRV["Server"]
+        B["📦 Bronze Pattern"]
+        SVC["⚙️ Service"]
+        SRV["🖥️ Server"]
     end
 
     G --> DB
@@ -50,20 +50,20 @@ flowchart LR
 
 ```mermaid
 mindmap
-  root((Investigation DB))
-    Infrastructure
+  root((🗄️ Investigation DB))
+    🖥️ Infrastructure
       Servers
       Services
       Credentials
-    Data Sources
+    📥 Data Sources
       Vendors
       Datasets
       Raw Landing
-    Patterns
+    🧩 Patterns
       File Patterns
       Path Patterns
       Pattern Combos
-    Pipeline
+    🏭 Pipeline
       Projects
       Layers
       Full Paths
@@ -73,25 +73,25 @@ mindmap
 
 ```mermaid
 flowchart TB
-    subgraph Sources["Data Sources"]
-        V["Vendors"]
-        S["Services"]
+    subgraph Sources["📥 Data Sources"]
+        V["🏢 Vendors"]
+        S["📡 Services"]
     end
 
-    subgraph Pipeline["Pipeline Layers"]
-        RAW["Raw"]
-        BRONZE["Bronze"]
-        SILVER["Silver"]
-        GOLD["Gold"]
-        DELTA["Delta"]
+    subgraph Pipeline["🏭 Pipeline Layers"]
+        RAW["📁 Raw"]
+        BRONZE["📦 Bronze"]
+        SILVER["💎 Silver"]
+        GOLD["⭐ Gold"]
+        DELTA["📐 Delta"]
 
         RAW --> BRONZE --> SILVER --> GOLD --> DELTA
     end
 
-    subgraph Patterns["Pattern Registry"]
-        FP["File Patterns"]
-        PP["Path Patterns"]
-        PC["Pattern Combos"]
+    subgraph Patterns["🧩 Pattern Registry"]
+        FP["📄 File Patterns"]
+        PP["📂 Path Patterns"]
+        PC["🔗 Pattern Combos"]
     end
 
     V --> RAW
@@ -107,24 +107,24 @@ flowchart TB
 
 ```mermaid
 flowchart TD
-    INPUT[/"Gold: sp_global_mi/gics_direct/1.0/raw/*/*.zip"/]
+    INPUT[/"⭐ Gold: sp_global_mi/gics_direct/1.0/raw/*/*.zip"/]
 
-    subgraph Step1["1. Match Pattern"]
+    subgraph Step1["1️⃣ Match Pattern"]
         MATCH["Find matching gold pattern"]
     end
 
-    subgraph Step2["2. Walk Chain"]
+    subgraph Step2["2️⃣ Walk Chain"]
         CHAIN["Trace back through layers"]
     end
 
-    subgraph Step3["3. Get Details"]
+    subgraph Step3["3️⃣ Get Details"]
         DETAILS["Fetch service & server info"]
     end
 
-    subgraph Result["Result"]
-        R1["Bronze Pattern"]
-        R2["Service Name"]
-        R3["Server"]
+    subgraph Result["✅ Result"]
+        R1["📦 Bronze Pattern"]
+        R2["⚙️ Service Name"]
+        R3["🖥️ Server"]
     end
 
     INPUT --> Step1
@@ -149,7 +149,7 @@ erDiagram
 
 ## Table Details
 
-### :desktop_computer: Infrastructure Tables
+### 🖥️ Infrastructure Tables
 
 #### alchemy_server
 > Production servers running Alchemy pipelines
@@ -169,7 +169,7 @@ erDiagram
 
 ```mermaid
 flowchart LR
-    S["alchemy_server"] -->|hosts| SVC["alchemy_service"]
+    S["🖥️ alchemy_server"] -->|hosts| SVC["⚙️ alchemy_service"]
 ```
 
 ---
@@ -197,9 +197,9 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    SVC["alchemy_service"] -->|on| S["server"]
-    SVC -->|processes| R["raw"]
-    SVC -->|for| V["vendor"]
+    SVC["⚙️ alchemy_service"] -->|on| S["🖥️ server"]
+    SVC -->|processes| R["📁 raw"]
+    SVC -->|for| V["🏢 vendor"]
 ```
 
 ---
@@ -216,8 +216,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    V["vendor"] -->|owns| C["credential"]
-    V -->|provides| D["dataset"]
+    V["🏢 vendor"] -->|owns| C["🔑 credential"]
+    V -->|provides| D["📡 dataset"]
 ```
 
 ---
@@ -234,7 +234,7 @@ flowchart LR
 
 ---
 
-### :inbox_tray: Data Source Tables
+### 📥 Data Source Tables
 
 #### cwiq_pipe_source_dataset
 > CWIQ pipe source datasets configuration
@@ -256,8 +256,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    V["vendor"] -->|has| DS["cwiq_pipe_source"]
-    DS -->|lands in| R["alchemy_raw"]
+    V["🏢 vendor"] -->|has| DS["📡 cwiq_pipe_source"]
+    DS -->|lands in| R["📁 alchemy_raw"]
 ```
 
 ---
@@ -274,8 +274,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    R["alchemy_raw"] -->|has| RFT["raw_filetype"]
-    R -->|uses| PC["pattern_combo"]
+    R["📁 alchemy_raw"] -->|has| RFT["🔗 raw_filetype"]
+    R -->|uses| PC["🧩 pattern_combo"]
 ```
 
 ---
@@ -304,7 +304,7 @@ flowchart LR
 
 ---
 
-### :jigsaw: Pattern Tables
+### 🧩 Pattern Tables
 
 #### date_format
 > Normalized date format patterns
@@ -329,8 +329,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    DF["date_format"] -->|used by| FP["file_pattern"]
-    FP -->|combines into| PC["pattern_combo"]
+    DF["📅 date_format"] -->|used by| FP["📄 file_pattern"]
+    FP -->|combines into| PC["🔗 pattern_combo"]
 ```
 
 ---
@@ -346,8 +346,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    DF["date_format"] -->|used by| PP["path_pattern"]
-    PP -->|combines into| PC["pattern_combo"]
+    DF["📅 date_format"] -->|used by| PP["📂 path_pattern"]
+    PP -->|combines into| PC["🔗 pattern_combo"]
 ```
 
 ---
@@ -364,10 +364,10 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    FP["file_pattern"] --> PC["pattern_combo"]
-    PP["path_pattern"] --> PC
-    PC --> EX["path_example"]
-    PC --> FPP["full_path_pattern"]
+    FP["📄 file_pattern"] --> PC["🔗 pattern_combo"]
+    PP["📂 path_pattern"] --> PC
+    PC --> EX["👁️ path_example"]
+    PC --> FPP["🗺️ full_path_pattern"]
 ```
 
 ---
@@ -397,7 +397,7 @@ flowchart TB
 
 ---
 
-### :factory: Pipeline Tables
+### 🏭 Pipeline Tables
 
 #### project
 > Systems that generate/manage data layers
@@ -422,8 +422,8 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    P["project"] -->|has| L["layer"]
-    L -->|defines| FPP["full_path_pattern"]
+    P["💼 project"] -->|has| L["🗂️ layer"]
+    L -->|defines| FPP["🗺️ full_path_pattern"]
 ```
 
 ---
@@ -443,7 +443,7 @@ flowchart LR
 
 ---
 
-### :triangular_ruler: CDP Retirement Tables
+### 📐 CDP Retirement Tables
 
 #### delta_dataset_repo
 > Unique dataset repository names
@@ -466,8 +466,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    R["delta_dataset_repo"] -->|contains| T["delta_table"]
-    T -->|mapped in| D["raw_enriched_data"]
+    R["📦 delta_dataset_repo"] -->|contains| T["📐 delta_table"]
+    T -->|mapped in| D["⭐ raw_enriched_data"]
 ```
 
 ---
@@ -506,9 +506,9 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    T["delta_table"] --> D["raw_enriched_data"]
-    DIR["directory"] --> D
-    P["file_pattern"] --> D
+    T["📐 delta_table"] --> D["⭐ raw_enriched_data"]
+    DIR["📂 directory"] --> D
+    P["📄 file_pattern"] --> D
 ```
 
 ## Layers
@@ -517,12 +517,12 @@ flowchart TB
 flowchart LR
     subgraph Layers
         direction TB
-        L1["1. raw"]
-        L2["2. bronze"]
-        L3["3. silver"]
-        L4["4. gold"]
-        L5["5. raw_enriched"]
-        L6["6. delta"]
+        L1["1️⃣ raw"]
+        L2["2️⃣ bronze"]
+        L3["3️⃣ silver"]
+        L4["4️⃣ gold"]
+        L5["5️⃣ raw_enriched"]
+        L6["6️⃣ delta"]
     end
 
     L1 --> L2 --> L3 --> L4 --> L5 --> L6
@@ -530,22 +530,22 @@ flowchart LR
 
 | Layer | Description |
 |-------|-------------|
-| :inbox_tray: raw | Landing zone (cwiq-pipe) |
-| :package: bronze | Timestamped archives |
-| :gem: silver | Extracted files |
-| :star: gold | Restructured/renamed |
-| :file_cabinet: raw_enriched | CDP legacy format |
-| :triangular_ruler: delta | Delta Lake tables |
+| 📥 raw | Landing zone (cwiq-pipe) |
+| 📦 bronze | Timestamped archives |
+| 💎 silver | Extracted files |
+| ⭐ gold | Restructured/renamed |
+| 🗄️ raw_enriched | CDP legacy format |
+| 📐 delta | Delta Lake tables |
 
 ## Use Cases
 
 ```mermaid
 flowchart TB
     subgraph UC["Use Cases"]
-        UC1["Reverse Lookup"]
-        UC2["Impact Analysis"]
-        UC3["Service Discovery"]
-        UC4["Pattern Tracing"]
+        UC1["🔍 Reverse Lookup"]
+        UC2["⚠️ Impact Analysis"]
+        UC3["⚙️ Service Discovery"]
+        UC4["👣 Pattern Tracing"]
     end
 
     UC1 --> |"Gold → Bronze"| R1["Find source pattern"]
@@ -558,19 +558,19 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    subgraph FilePatterns["File Patterns"]
+    subgraph FilePatterns["📄 File Patterns"]
         FP1["HHMMSS--*.tar.gz"]
         FP2["*.parquet"]
         FP3["*.csv"]
     end
 
-    subgraph PathPatterns["Path Patterns"]
+    subgraph PathPatterns["📂 Path Patterns"]
         PP1["YYYY/MM/DD/"]
         PP2["YYYY/YYYYMMDD/"]
         PP3["YYYY/"]
     end
 
-    subgraph Combo["Pattern Combo"]
+    subgraph Combo["🔗 Pattern Combo"]
         C["File + Path = Full Pattern"]
     end
 
@@ -590,8 +590,8 @@ flowchart LR
         C5["invdb impact"]
     end
 
-    C1 --> |"--gold pattern"| O1["Bronze + Service"]
-    C2 --> |"--vendor --dataset"| O2["Server info"]
+    C1 --> |"--gold pattern"| O1["📦 Bronze + Service"]
+    C2 --> |"--vendor --dataset"| O2["🖥️ Server info"]
     C3 --> |"--list"| O3["All servers"]
     C4 --> |"--combo-id"| O4["Full path chain"]
     C5 --> |"--layer --pattern"| O5["Affected datasets"]
@@ -602,9 +602,9 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph Tools
-        PS["PathSeeker"]
-        DB["Investigation DB"]
-        DS["Datasette"]
+        PS["🔍 PathSeeker"]
+        DB["🗄️ Investigation DB"]
+        DS["📊 Datasette"]
     end
 
     PS --> |"extract patterns"| DB
@@ -613,5 +613,5 @@ flowchart LR
 
 ## References
 
-- :link: **Repo:** [alchmydb](https://git.codewilling.com/alchmy/database/alchmydb)
-- :link: **Related:** [PathSeeker](pathseeker.md)
+- 🔗 **Repo:** [alchmydb](https://git.codewilling.com/alchmy/database/alchmydb)
+- 🔗 **Related:** [PathSeeker](pathseeker.md)
