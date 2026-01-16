@@ -46,7 +46,22 @@ plugins:
 
 nav:
   - Home: index.md
-  - Sessions: sessions/
+  - Sessions:
+    - sessions/index.md
+    - Claude:
+      - sessions/claude/index.md
+      - sessions/claude/w-2026-01-16.md
+      - sessions/claude/w-2026-01-15.md
+      - sessions/claude/w-2026-01-14.md
+      - sessions/claude/w-2026-01-13.md
+      - sessions/claude/w-2026-01-12.md
+      - sessions/claude/w-2026-01-11.md
+      - sessions/claude/l-2026-01-15.md
+      - sessions/claude/l-2026-01-14.md
+      - sessions/claude/l-2026-01-13.md
+      - sessions/claude/l-2026-01-12.md
+    - Gemini:
+      - sessions/gemini/index.md
   - Discussions: discussions/
   - Notes: notes/
   - Brainstorms: brainstorms/
