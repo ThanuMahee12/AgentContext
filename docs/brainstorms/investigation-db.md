@@ -27,7 +27,7 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph Input
-        G[":file_folder: Gold Pattern"]
+        G["Gold Pattern"]
     end
 
     subgraph Lookup
@@ -35,9 +35,9 @@ flowchart LR
     end
 
     subgraph Output
-        B[":package: Bronze Pattern"]
-        SVC[":gear: Service"]
-        SRV[":desktop_computer: Server"]
+        B["Bronze Pattern"]
+        SVC["Service"]
+        SRV["Server"]
     end
 
     G --> DB
@@ -73,25 +73,25 @@ mindmap
 
 ```mermaid
 flowchart TB
-    subgraph Sources[":inbox_tray: Data Sources"]
-        V[":office: Vendors"]
-        S[":satellite: Services"]
+    subgraph Sources["Data Sources"]
+        V["Vendors"]
+        S["Services"]
     end
 
-    subgraph Pipeline[":factory: Pipeline Layers"]
-        RAW[":file_folder: Raw"]
-        BRONZE[":package: Bronze"]
-        SILVER[":gem: Silver"]
-        GOLD[":star: Gold"]
-        DELTA[":triangular_ruler: Delta"]
+    subgraph Pipeline["Pipeline Layers"]
+        RAW["Raw"]
+        BRONZE["Bronze"]
+        SILVER["Silver"]
+        GOLD["Gold"]
+        DELTA["Delta"]
 
         RAW --> BRONZE --> SILVER --> GOLD --> DELTA
     end
 
-    subgraph Patterns[":jigsaw: Pattern Registry"]
-        FP[":page_facing_up: File Patterns"]
-        PP[":open_file_folder: Path Patterns"]
-        PC[":link: Pattern Combos"]
+    subgraph Patterns["Pattern Registry"]
+        FP["File Patterns"]
+        PP["Path Patterns"]
+        PC["Pattern Combos"]
     end
 
     V --> RAW
@@ -109,22 +109,22 @@ flowchart TB
 flowchart TD
     INPUT[/"Gold: sp_global_mi/gics_direct/1.0/raw/*/*.zip"/]
 
-    subgraph Step1[":one: Match Pattern"]
+    subgraph Step1["1. Match Pattern"]
         MATCH["Find matching gold pattern"]
     end
 
-    subgraph Step2[":two: Walk Chain"]
+    subgraph Step2["2. Walk Chain"]
         CHAIN["Trace back through layers"]
     end
 
-    subgraph Step3[":three: Get Details"]
+    subgraph Step3["3. Get Details"]
         DETAILS["Fetch service & server info"]
     end
 
-    subgraph Result[":white_check_mark: Result"]
-        R1[":package: Bronze Pattern"]
-        R2[":gear: Service Name"]
-        R3[":desktop_computer: Server"]
+    subgraph Result["Result"]
+        R1["Bronze Pattern"]
+        R2["Service Name"]
+        R3["Server"]
     end
 
     INPUT --> Step1
@@ -169,7 +169,7 @@ erDiagram
 
 ```mermaid
 flowchart LR
-    S[":desktop_computer: alchemy_server"] -->|hosts| SVC[":gear: alchemy_service"]
+    S["alchemy_server"] -->|hosts| SVC["alchemy_service"]
 ```
 
 ---
@@ -197,9 +197,9 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    SVC[":gear: alchemy_service"] -->|on| S[":desktop_computer: server"]
-    SVC -->|processes| R[":file_folder: raw"]
-    SVC -->|for| V[":office: vendor"]
+    SVC["alchemy_service"] -->|on| S["server"]
+    SVC -->|processes| R["raw"]
+    SVC -->|for| V["vendor"]
 ```
 
 ---
@@ -216,8 +216,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    V[":office: vendor"] -->|owns| C[":key: credential"]
-    V -->|provides| D[":satellite: dataset"]
+    V["vendor"] -->|owns| C["credential"]
+    V -->|provides| D["dataset"]
 ```
 
 ---
@@ -256,8 +256,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    V[":office: vendor"] -->|has| DS[":satellite: cwiq_pipe_source"]
-    DS -->|lands in| R[":file_folder: alchemy_raw"]
+    V["vendor"] -->|has| DS["cwiq_pipe_source"]
+    DS -->|lands in| R["alchemy_raw"]
 ```
 
 ---
@@ -274,8 +274,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    R[":file_folder: alchemy_raw"] -->|has| RFT[":link: raw_filetype"]
-    R -->|uses| PC[":jigsaw: pattern_combo"]
+    R["alchemy_raw"] -->|has| RFT["raw_filetype"]
+    R -->|uses| PC["pattern_combo"]
 ```
 
 ---
@@ -329,8 +329,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    DF[":calendar: date_format"] -->|used by| FP[":page_facing_up: file_pattern"]
-    FP -->|combines into| PC[":link: pattern_combo"]
+    DF["date_format"] -->|used by| FP["file_pattern"]
+    FP -->|combines into| PC["pattern_combo"]
 ```
 
 ---
@@ -346,8 +346,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    DF[":calendar: date_format"] -->|used by| PP[":open_file_folder: path_pattern"]
-    PP -->|combines into| PC[":link: pattern_combo"]
+    DF["date_format"] -->|used by| PP["path_pattern"]
+    PP -->|combines into| PC["pattern_combo"]
 ```
 
 ---
@@ -364,10 +364,10 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    FP[":page_facing_up: file_pattern"] --> PC[":link: pattern_combo"]
-    PP[":open_file_folder: path_pattern"] --> PC
-    PC --> EX[":eyes: path_example"]
-    PC --> FPP[":world_map: full_path_pattern"]
+    FP["file_pattern"] --> PC["pattern_combo"]
+    PP["path_pattern"] --> PC
+    PC --> EX["path_example"]
+    PC --> FPP["full_path_pattern"]
 ```
 
 ---
@@ -422,8 +422,8 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    P[":briefcase: project"] -->|has| L[":layers: layer"]
-    L -->|defines| FPP[":world_map: full_path_pattern"]
+    P["project"] -->|has| L["layer"]
+    L -->|defines| FPP["full_path_pattern"]
 ```
 
 ---
@@ -466,8 +466,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    R[":package: delta_dataset_repo"] -->|contains| T[":triangular_ruler: delta_table"]
-    T -->|mapped in| D[":star: raw_enriched_data"]
+    R["delta_dataset_repo"] -->|contains| T["delta_table"]
+    T -->|mapped in| D["raw_enriched_data"]
 ```
 
 ---
@@ -506,9 +506,9 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    T[":triangular_ruler: delta_table"] --> D[":star: raw_enriched_data"]
-    DIR[":open_file_folder: directory"] --> D
-    P[":page_facing_up: file_pattern"] --> D
+    T["delta_table"] --> D["raw_enriched_data"]
+    DIR["directory"] --> D
+    P["file_pattern"] --> D
 ```
 
 ## Layers
@@ -517,12 +517,12 @@ flowchart TB
 flowchart LR
     subgraph Layers
         direction TB
-        L1[":one: raw"]
-        L2[":two: bronze"]
-        L3[":three: silver"]
-        L4[":four: gold"]
-        L5[":five: raw_enriched"]
-        L6[":six: delta"]
+        L1["1. raw"]
+        L2["2. bronze"]
+        L3["3. silver"]
+        L4["4. gold"]
+        L5["5. raw_enriched"]
+        L6["6. delta"]
     end
 
     L1 --> L2 --> L3 --> L4 --> L5 --> L6
@@ -542,10 +542,10 @@ flowchart LR
 ```mermaid
 flowchart TB
     subgraph UC["Use Cases"]
-        UC1[":mag: Reverse Lookup"]
-        UC2[":warning: Impact Analysis"]
-        UC3[":gear: Service Discovery"]
-        UC4[":footprints: Pattern Tracing"]
+        UC1["Reverse Lookup"]
+        UC2["Impact Analysis"]
+        UC3["Service Discovery"]
+        UC4["Pattern Tracing"]
     end
 
     UC1 --> |"Gold → Bronze"| R1["Find source pattern"]
@@ -558,19 +558,19 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    subgraph FilePatterns[":page_facing_up: File Patterns"]
+    subgraph FilePatterns["File Patterns"]
         FP1["HHMMSS--*.tar.gz"]
         FP2["*.parquet"]
         FP3["*.csv"]
     end
 
-    subgraph PathPatterns[":open_file_folder: Path Patterns"]
+    subgraph PathPatterns["Path Patterns"]
         PP1["YYYY/MM/DD/"]
         PP2["YYYY/YYYYMMDD/"]
         PP3["YYYY/"]
     end
 
-    subgraph Combo[":link: Pattern Combo"]
+    subgraph Combo["Pattern Combo"]
         C["File + Path = Full Pattern"]
     end
 
@@ -602,9 +602,9 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph Tools
-        PS[":mag: PathSeeker"]
-        DB[":floppy_disk: Investigation DB"]
-        DS[":bar_chart: Datasette"]
+        PS["PathSeeker"]
+        DB["Investigation DB"]
+        DS["Datasette"]
     end
 
     PS --> |"extract patterns"| DB
