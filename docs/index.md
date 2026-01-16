@@ -1,57 +1,53 @@
-# Dashboard
-
-Central hub for AI agent sessions and project knowledge.
+# AgentPortals
 
 ---
 
-## Current Session
+## Recent Sessions
 
-**Date:** 2026-01-16 | **Agent:** Claude | **Machine:** Windows
-
-### Today's Focus
-- AgentContext site restructure
-- New navigation: Home, Sessions, Discussion, Notes, Brainstorms, RunBooks
-
-[:octicons-arrow-right-24: View Full Session](Sessions/2026-01-16/claude-windows.md)
-
----
-
-## Active Projects
-
-<div class="grid cards" markdown>
-
-- :material-database: **data-alchemy**
-
-    ---
-
-    Data pipeline: Bronze -> Silver -> Gold -> Platinum
-
-    **Branch:** `feature/bbocax-futures`
-
-    [:octicons-arrow-right-24: Notes](Notes/projects/data-alchemy/index.md)
-
-</div>
-
----
-
-## Recent Activity
-
-| Date | Agent | Summary |
-|------|-------|---------|
-| 2026-01-16 | Claude | AgentContext restructure |
-| 2026-01-15 | Claude | bbocax-futures pipeline testing |
-| 2026-01-14 | Claude | Bloomberg mapping work |
+| Date | Agent | Machine | Focus |
+|------|-------|---------|-------|
+| 2026-01-16 | Claude | Windows | AgentContext restructure |
+| 2026-01-15 | Claude | Windows, Linux | bbocax-futures pipeline |
+| 2026-01-14 | Claude | Windows, Linux | Bloomberg mapping |
 
 [:octicons-arrow-right-24: All Sessions](Sessions/index.md)
 
 ---
 
-## Quick Links
+## Recent Discussions
 
-| Section | Description |
-|---------|-------------|
-| [:material-calendar: Sessions](Sessions/index.md) | Daily work logs |
-| [:material-forum: Discussion](Discussion/index.md) | Topic discussions |
-| [:material-notebook: Notes](Notes/index.md) | Persistent knowledge |
-| [:material-lightbulb: Brainstorms](Brainstorms/index.md) | Ideas & experiments |
-| [:material-book-open: RunBooks](RunBooks/index.md) | Operational guides |
+| Topic | Description |
+|-------|-------------|
+| [GICS Discussion](Discussion/GicsDiscussion.md) | S&P GICS data pipeline |
+
+[:octicons-arrow-right-24: All Discussions](Discussion/index.md)
+
+---
+
+## Overview
+
+```mermaid
+graph LR
+    A[Sessions] --> B[Daily Logs]
+    C[Discussion] --> D[Topic Threads]
+    E[Notes] --> F[Knowledge Base]
+    G[Brainstorms] --> H[Ideas & Tools]
+    I[RunBooks] --> J[Guides]
+```
+
+---
+
+## Active Projects
+
+```mermaid
+graph TD
+    subgraph data-alchemy
+        B[Bronze] --> S[Silver]
+        S --> G[Gold]
+        G --> P[Platinum]
+    end
+```
+
+**Branch:** `feature/bbocax-futures`
+
+[:octicons-arrow-right-24: Project Notes](Notes/projects/data-alchemy/index.md)
