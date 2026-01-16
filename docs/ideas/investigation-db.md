@@ -1,644 +1,500 @@
 # Investigation DB
 
-Standalone lineage tracking database for investigating file mappings across any medallion-architecture pipeline.
+Pattern-based reverse lookup database for medallion-architecture pipelines.
 
-> **Note:** This is an independent tool/schema - not tied to any specific project. Can be used with any Bronze → Silver → Gold → Platinum pipeline.
+> **Purpose:** Given a Platinum/Gold pattern, find the Bronze source pattern, service, and grabber map.
+> No individual file tracking - only pattern relationships.
 
 ## Problem
 
-When a file is missing in Platinum/Gold, how do we find its source in Bronze/Silver?
-
 ```
-Missing: /sp_global_mi/gics_direct/1.0/raw/2025/20251128/f_gic_comp-20251128.01.xffmt.zip
-Question: Where is the Bronze source?
+Input:  sp_global_mi/gics_direct/1.0/raw/2025/20251128/*.zip
+Output:
+  Bronze Pattern: sp/gics_cwiq_pipe/1.0/bronze/*/*--*.tar.gz
+  Service:        Xpressfeed
+  Grabber Map:    sp_gics_cwiq_pipe_1.0.json
 ```
 
-## Full Schema
+## Core Concept
 
-### ER Diagram (Full)
+```mermaid
+flowchart LR
+    subgraph Query["Reverse Lookup Query"]
+        Q[/"Platinum Pattern"/]
+    end
+
+    subgraph DB["Investigation DB"]
+        PC[(pattern_chains)]
+        LP[(layer_patterns)]
+        GM[(grabber_maps)]
+        SV[(services)]
+    end
+
+    subgraph Result["Result"]
+        R1[Bronze Pattern]
+        R2[Service Name]
+        R3[Grabber Map Path]
+    end
+
+    Q --> PC
+    PC --> LP
+    LP --> GM
+    LP --> SV
+    GM --> R3
+    SV --> R2
+    LP --> R1
+```
+
+## Schema
+
+### ER Diagram
 
 ```mermaid
 erDiagram
-    vendors ||--o{ datasets : "has many"
-    datasets ||--o{ file_lineage : "contains"
-    datasets ||--o{ pattern_registry : "uses"
-    datasets ||--o{ pipeline_runs : "runs"
-    file_lineage }o--|| pattern_registry : "matched by"
-    file_lineage ||--o{ layer_snapshots : "tracked in"
-    pipeline_runs ||--o{ layer_snapshots : "produces"
-    pipeline_runs ||--o{ delta_tracking : "generates"
-    pattern_registry ||--o{ transformations : "defines"
+    services ||--o{ datasets : "provides"
+    datasets ||--o{ layer_patterns : "has"
+    datasets ||--o{ grabber_maps : "configured by"
+    layer_patterns ||--o{ pattern_chains : "source"
+    layer_patterns ||--o{ pattern_chains : "target"
 
-    vendors {
+    services {
         int id PK
         string name UK
         string description
-        string timezone
-        datetime created_at
+        string delivery_method
+        string schedule
     }
 
     datasets {
         int id PK
-        int vendor_id FK
-        string name
-        string version
+        int service_id FK
+        string source_vendor
+        string source_dataset
+        string source_version
         string target_vendor
         string target_dataset
         string target_version
-        string compression
         boolean active
-        datetime created_at
     }
 
-    file_lineage {
+    grabber_maps {
         int id PK
         int dataset_id FK
-        int pattern_id FK
-        string file_hash
-        string original_filename
-        string bronze_path
-        string silver_path
-        string gold_path
-        string platinum_path
-        int bronze_size
-        int silver_size
-        int gold_size
-        int platinum_size
-        datetime delivery_time
-        datetime bronze_time
-        datetime silver_time
-        datetime gold_time
-        datetime platinum_time
-        string status
-        string error_message
-    }
-
-    pattern_registry {
-        int id PK
-        int dataset_id FK
-        string layer_from
-        string layer_to
-        string pattern_regex
-        string pattern_glob
-        string description
-        string example_input
-        string example_output
-        boolean active
-        datetime created_at
-    }
-
-    transformations {
-        int id PK
-        int pattern_id FK
-        int sequence
-        string tag
-        string identifying_regex
-        string replace_pattern
-        string format
-    }
-
-    pipeline_runs {
-        int id PK
-        int dataset_id FK
-        datetime start_time
-        datetime end_time
-        string status
-        int files_processed
-        int files_failed
-        string error_log
-    }
-
-    layer_snapshots {
-        int id PK
-        int run_id FK
-        int lineage_id FK
-        string layer
+        string filename
         string filepath
-        int filesize
-        string file_hash
-        datetime snapshot_time
+        string checksum
+        datetime updated_at
     }
 
-    delta_tracking {
+    layer_patterns {
         int id PK
-        int run_id FK
+        int dataset_id FK
         string layer
-        int files_added
-        int files_removed
-        int files_changed
-        int files_unchanged
-        datetime tracked_at
+        string pattern_glob
+        string pattern_regex
+        string example_path
+        string description
     }
-```
 
-### Data Flow Diagram
-
-```mermaid
-flowchart TB
-    subgraph Sources["Data Sources"]
-        RAW[(Raw Files)]
-    end
-
-    subgraph Pipeline["Processing Pipeline"]
-        direction TB
-        B[Bronze Layer]
-        S[Silver Layer]
-        G[Gold Layer]
-        P[Platinum Layer]
-        RAW --> B --> S --> G --> P
-    end
-
-    subgraph InvestigationDB["Investigation DB"]
-        direction TB
-        V[(vendors)]
-        D[(datasets)]
-        FL[(file_lineage)]
-        PR[(pattern_registry)]
-        TR[(transformations)]
-        RN[(pipeline_runs)]
-        LS[(layer_snapshots)]
-        DT[(delta_tracking)]
-
-        V --> D
-        D --> FL
-        D --> PR
-        D --> RN
-        PR --> TR
-        FL --> LS
-        RN --> LS
-        RN --> DT
-    end
-
-    subgraph Queries["Query Tools"]
-        Q1[find-source]
-        Q2[lineage]
-        Q3[stuck]
-        Q4[delta]
-    end
-
-    B -->|"log"| FL
-    S -->|"log"| FL
-    G -->|"log"| FL
-    P -->|"log"| FL
-
-    FL --> Q1
-    FL --> Q2
-    FL --> Q3
-    DT --> Q4
-```
-
-### Lineage Flow
-
-```mermaid
-flowchart LR
-    subgraph Bronze["Bronze Layer"]
-        B1[bronze/2025/11/28/070847--file.tar.gz]
-    end
-
-    subgraph Silver["Silver Layer"]
-        S1[silver/2025/11/28/work/pkg/070847--file.zip]
-    end
-
-    subgraph Gold["Gold Layer"]
-        G1[vendor/dataset/1.0/raw/2025/20251128/file.zip]
-    end
-
-    subgraph Platinum["Platinum Layer"]
-        P1[vendor/dataset/1.0/curated/file.parquet]
-    end
-
-    B1 -->|"decompress"| S1
-    S1 -->|"transform"| G1
-    G1 -->|"curate"| P1
-
-    subgraph DB["file_lineage record"]
-        L[bronze_path ➜ silver_path ➜ gold_path ➜ platinum_path]
-    end
-
-    B1 -.->|"track"| DB
-    S1 -.->|"track"| DB
-    G1 -.->|"track"| DB
-    P1 -.->|"track"| DB
-```
-
-### Pattern Matching Flow
-
-```mermaid
-flowchart TD
-    INPUT[/"silver/2025/11/28/work/Xpressfeed/pkgGIC01/070847--f_gic_comp-20251128.01.xffmt.zip"/]
-
-    subgraph PatternRegistry["pattern_registry"]
-        P1["pattern_regex: silver/(?P<year>\d{4})/..."]
-    end
-
-    subgraph Transformations["transformations (sequence)"]
-        T1["1: dataset_mapping"]
-        T2["2: directory_structure"]
-        T3["3: filename"]
-        T1 --> T2 --> T3
-    end
-
-    OUTPUT[/"sp_global_mi/gics_direct/1.0/raw/2025/20251128/f_gic_comp-20251128.01.xffmt.zip"/]
-
-    INPUT --> PatternRegistry
-    PatternRegistry --> Transformations
-    Transformations --> OUTPUT
+    pattern_chains {
+        int id PK
+        int source_pattern_id FK
+        int target_pattern_id FK
+        string transformation_type
+        string notes
+    }
 ```
 
 ### SQL Schema
 
 ```sql
 -- ============================================
--- INVESTIGATION DB - Full Schema
+-- INVESTIGATION DB - Pattern Registry
 -- ============================================
 
--- Vendors table
-CREATE TABLE vendors (
+-- Services (data delivery sources)
+CREATE TABLE services (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(100) UNIQUE NOT NULL,
     description TEXT,
-    timezone VARCHAR(50) DEFAULT 'UTC',
+    delivery_method VARCHAR(50),  -- 'sftp', 'api', 'feed'
+    schedule VARCHAR(100),         -- 'daily 07:00 UTC', 'hourly'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Datasets table
+-- Datasets (source → target mapping)
 CREATE TABLE datasets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    vendor_id INTEGER NOT NULL,
-    name VARCHAR(200) NOT NULL,
-    version VARCHAR(20) NOT NULL,
+    service_id INTEGER NOT NULL,
+
+    -- Source (Bronze/Silver naming)
+    source_vendor VARCHAR(100) NOT NULL,
+    source_dataset VARCHAR(200) NOT NULL,
+    source_version VARCHAR(20) NOT NULL,
+
+    -- Target (Gold/Platinum naming)
     target_vendor VARCHAR(100),
     target_dataset VARCHAR(200),
     target_version VARCHAR(20),
-    compression VARCHAR(20) DEFAULT 'none',
+
     active BOOLEAN DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (vendor_id) REFERENCES vendors(id),
-    UNIQUE (vendor_id, name, version)
+
+    FOREIGN KEY (service_id) REFERENCES services(id),
+    UNIQUE (source_vendor, source_dataset, source_version)
 );
 
--- File lineage table (core tracking)
-CREATE TABLE file_lineage (
+-- Grabber Maps (JSON config files)
+CREATE TABLE grabber_maps (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     dataset_id INTEGER NOT NULL,
-    file_hash VARCHAR(32),
-    original_filename VARCHAR(500),
+    filename VARCHAR(200) NOT NULL,
+    filepath VARCHAR(500),
+    checksum VARCHAR(64),
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    -- Layer paths
-    bronze_path VARCHAR(1000),
-    silver_path VARCHAR(1000),
-    gold_path VARCHAR(1000),
-    platinum_path VARCHAR(1000),
+    FOREIGN KEY (dataset_id) REFERENCES datasets(id)
+);
 
-    -- Layer sizes (bytes)
-    bronze_size INTEGER,
-    silver_size INTEGER,
-    gold_size INTEGER,
-    platinum_size INTEGER,
-
-    -- Timestamps
-    delivery_time DATETIME,
-    bronze_time DATETIME,
-    silver_time DATETIME,
-    gold_time DATETIME,
-    platinum_time DATETIME,
-
-    -- Status tracking
-    status VARCHAR(20) DEFAULT 'pending',
-    error_message TEXT,
-    pattern_id INTEGER,
+-- Layer Patterns (glob/regex per layer)
+CREATE TABLE layer_patterns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dataset_id INTEGER NOT NULL,
+    layer VARCHAR(20) NOT NULL,  -- 'bronze', 'silver', 'gold', 'platinum'
+    pattern_glob TEXT NOT NULL,
+    pattern_regex TEXT,
+    example_path TEXT,
+    description TEXT,
 
     FOREIGN KEY (dataset_id) REFERENCES datasets(id),
-    FOREIGN KEY (pattern_id) REFERENCES pattern_registry(id)
+    UNIQUE (dataset_id, layer, pattern_glob)
 );
 
--- Pattern registry table
-CREATE TABLE pattern_registry (
+-- Pattern Chains (how patterns connect across layers)
+CREATE TABLE pattern_chains (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dataset_id INTEGER NOT NULL,
-    layer_from VARCHAR(20) NOT NULL,
-    layer_to VARCHAR(20) NOT NULL,
-    pattern_regex TEXT NOT NULL,
-    pattern_glob TEXT,
-    description TEXT,
-    example_input TEXT,
-    example_output TEXT,
-    active BOOLEAN DEFAULT TRUE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (dataset_id) REFERENCES datasets(id)
-);
+    source_pattern_id INTEGER NOT NULL,
+    target_pattern_id INTEGER NOT NULL,
+    transformation_type VARCHAR(50),  -- 'decompress', 'rename', 'restructure'
+    notes TEXT,
 
--- Transformations table (pattern steps)
-CREATE TABLE transformations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    pattern_id INTEGER NOT NULL,
-    sequence INTEGER NOT NULL,
-    tag VARCHAR(50),
-    identifying_regex TEXT NOT NULL,
-    replace_pattern TEXT NOT NULL,
-    format VARCHAR(50),
-    FOREIGN KEY (pattern_id) REFERENCES pattern_registry(id)
-);
-
--- Pipeline runs table
-CREATE TABLE pipeline_runs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dataset_id INTEGER NOT NULL,
-    start_time DATETIME NOT NULL,
-    end_time DATETIME,
-    status VARCHAR(20) DEFAULT 'running',
-    files_processed INTEGER DEFAULT 0,
-    files_failed INTEGER DEFAULT 0,
-    error_log TEXT,
-    FOREIGN KEY (dataset_id) REFERENCES datasets(id)
-);
-
--- Layer snapshots table
-CREATE TABLE layer_snapshots (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    run_id INTEGER NOT NULL,
-    lineage_id INTEGER NOT NULL,
-    layer VARCHAR(20) NOT NULL,
-    filepath VARCHAR(1000) NOT NULL,
-    filesize INTEGER,
-    file_hash VARCHAR(32),
-    snapshot_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (run_id) REFERENCES pipeline_runs(id),
-    FOREIGN KEY (lineage_id) REFERENCES file_lineage(id)
-);
-
--- Delta tracking table
-CREATE TABLE delta_tracking (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    run_id INTEGER NOT NULL,
-    layer VARCHAR(20) NOT NULL,
-    files_added INTEGER DEFAULT 0,
-    files_removed INTEGER DEFAULT 0,
-    files_changed INTEGER DEFAULT 0,
-    files_unchanged INTEGER DEFAULT 0,
-    tracked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (run_id) REFERENCES pipeline_runs(id)
+    FOREIGN KEY (source_pattern_id) REFERENCES layer_patterns(id),
+    FOREIGN KEY (target_pattern_id) REFERENCES layer_patterns(id)
 );
 
 -- ============================================
 -- INDEXES
 -- ============================================
 
-CREATE INDEX idx_lineage_dataset ON file_lineage(dataset_id);
-CREATE INDEX idx_lineage_hash ON file_lineage(file_hash);
-CREATE INDEX idx_lineage_bronze ON file_lineage(bronze_path);
-CREATE INDEX idx_lineage_silver ON file_lineage(silver_path);
-CREATE INDEX idx_lineage_gold ON file_lineage(gold_path);
-CREATE INDEX idx_lineage_platinum ON file_lineage(platinum_path);
-CREATE INDEX idx_lineage_status ON file_lineage(status);
-CREATE INDEX idx_lineage_delivery ON file_lineage(delivery_time);
+CREATE INDEX idx_datasets_source ON datasets(source_vendor, source_dataset);
+CREATE INDEX idx_datasets_target ON datasets(target_vendor, target_dataset);
+CREATE INDEX idx_patterns_layer ON layer_patterns(layer);
+CREATE INDEX idx_patterns_dataset ON layer_patterns(dataset_id);
+CREATE INDEX idx_grabber_dataset ON grabber_maps(dataset_id);
+```
 
-CREATE INDEX idx_pattern_dataset ON pattern_registry(dataset_id);
-CREATE INDEX idx_pattern_layers ON pattern_registry(layer_from, layer_to);
+## Data Flow
 
-CREATE INDEX idx_runs_dataset ON pipeline_runs(dataset_id);
-CREATE INDEX idx_runs_status ON pipeline_runs(status);
+```mermaid
+flowchart TB
+    subgraph Layers["Pipeline Layers"]
+        B["Bronze<br/>sp/gics_cwiq_pipe/1.0/bronze/*/*--*.tar.gz"]
+        S["Silver<br/>sp/gics_cwiq_pipe/1.0/silver/*/work/*/*--*.zip"]
+        G["Gold<br/>sp_global_mi/gics_direct/1.0/raw/*/*.zip"]
+        P["Platinum<br/>sp_global_mi/gics_direct/1.0/curated/*.parquet"]
 
-CREATE INDEX idx_snapshots_run ON layer_snapshots(run_id);
-CREATE INDEX idx_snapshots_lineage ON layer_snapshots(lineage_id);
-CREATE INDEX idx_snapshots_layer ON layer_snapshots(layer);
+        B -->|decompress| S
+        S -->|restructure| G
+        G -->|curate| P
+    end
+
+    subgraph Registry["Pattern Registry"]
+        LP1[layer_patterns: bronze]
+        LP2[layer_patterns: silver]
+        LP3[layer_patterns: gold]
+        LP4[layer_patterns: platinum]
+
+        PC1[pattern_chain: B→S]
+        PC2[pattern_chain: S→G]
+        PC3[pattern_chain: G→P]
+    end
+
+    B -.-> LP1
+    S -.-> LP2
+    G -.-> LP3
+    P -.-> LP4
+
+    LP1 --> PC1 --> LP2
+    LP2 --> PC2 --> LP3
+    LP3 --> PC3 --> LP4
+```
+
+## Reverse Lookup Flow
+
+```mermaid
+flowchart TD
+    INPUT[/"Gold: sp_global_mi/gics_direct/1.0/raw/2025/20251128/*.zip"/]
+
+    subgraph Step1["1. Match Gold Pattern"]
+        LP_GOLD["layer_patterns WHERE layer='gold'<br/>AND pattern matches input"]
+    end
+
+    subgraph Step2["2. Walk Chain Backwards"]
+        PC["pattern_chains<br/>target_pattern_id → source_pattern_id"]
+    end
+
+    subgraph Step3["3. Get Bronze Pattern"]
+        LP_BRONZE["layer_patterns WHERE layer='bronze'"]
+    end
+
+    subgraph Step4["4. Get Service & Grabber Map"]
+        DS["datasets"]
+        SV["services"]
+        GM["grabber_maps"]
+    end
+
+    subgraph Output["Result"]
+        R1["Bronze: sp/gics_cwiq_pipe/1.0/bronze/*/*--*.tar.gz"]
+        R2["Service: Xpressfeed"]
+        R3["Grabber: sp_gics_cwiq_pipe_1.0.json"]
+    end
+
+    INPUT --> Step1
+    Step1 --> Step2
+    Step2 --> Step3
+    Step3 --> DS
+    DS --> SV --> R2
+    DS --> GM --> R3
+    Step3 --> R1
 ```
 
 ## Sample Data
 
-### Insert Vendor & Dataset
-
 ```sql
--- Add vendor
-INSERT INTO vendors (name, description, timezone) VALUES
-('sp', 'S&P Global', 'UTC'),
-('bloomberg', 'Bloomberg LP', 'EST');
+-- Service
+INSERT INTO services (name, description, delivery_method, schedule) VALUES
+('Xpressfeed', 'S&P Global Market Intelligence Feed', 'sftp', 'daily 07:00 UTC'),
+('Bloomberg_SFTP', 'Bloomberg Data License SFTP', 'sftp', 'daily 06:00 EST');
 
--- Add dataset
-INSERT INTO datasets (vendor_id, name, version, target_vendor, target_dataset, target_version, compression) VALUES
-(1, 'gics_cwiq_pipe', '1.0', 'sp_global_mi', 'gics_direct', '1.0', 'lz4');
-```
+-- Dataset
+INSERT INTO datasets (service_id, source_vendor, source_dataset, source_version, target_vendor, target_dataset, target_version) VALUES
+(1, 'sp', 'gics_cwiq_pipe', '1.0', 'sp_global_mi', 'gics_direct', '1.0');
 
-### Insert Pattern & Transformations
+-- Grabber Map
+INSERT INTO grabber_maps (dataset_id, filename, filepath) VALUES
+(1, 'sp_gics_cwiq_pipe_1.0.json', 'resc/grabber_maps/sp_gics_cwiq_pipe_1.0.json');
 
-```sql
--- Add pattern
-INSERT INTO pattern_registry (dataset_id, layer_from, layer_to, pattern_regex, pattern_glob, description, example_input, example_output) VALUES
-(1, 'silver', 'gold',
- 'silver/(?P<year>\d{4})/(?P<month>\d{2})/(?P<day>\d{2})/work/Xpressfeed/pkgGIC01/\d{6}--(?P<filename>f_gic_comp-(?P<file_year>\d{4})(?P<file_month>\d{2})(?P<file_day>\d{2})\.01\.xffmt\.zip)$',
- 'silver/*/work/Xpressfeed/pkgGIC01/*--f_gic_comp-*.xffmt.zip',
- 'pkgGIC01 f_gic_comp xffmt.zip files',
- 'silver/2025/11/28/work/Xpressfeed/pkgGIC01/070847--f_gic_comp-20251128.01.xffmt.zip',
- 'sp_global_mi/gics_direct/1.0/raw/2025/20251128/f_gic_comp-20251128.01.xffmt.zip');
+-- Layer Patterns
+INSERT INTO layer_patterns (dataset_id, layer, pattern_glob, pattern_regex, example_path, description) VALUES
+(1, 'bronze', 'sp/gics_cwiq_pipe/1.0/bronze/*/*/*/*--*.tar.gz',
+   'sp/gics_cwiq_pipe/1\.0/bronze/\d{4}/\d{2}/\d{2}/\d{6}--.*\.tar\.gz',
+   'sp/gics_cwiq_pipe/1.0/bronze/2025/11/28/070847--Xpressfeed_pkgGIC01.tar.gz',
+   'Bronze compressed archives'),
 
--- Add transformations for the pattern
-INSERT INTO transformations (pattern_id, sequence, tag, identifying_regex, replace_pattern, format) VALUES
-(1, 1, 'dataset_mapping', 'sp/gics_cwiq_pipe/1\.0', 'sp_global_mi/gics_direct/1.0/raw/', ''),
-(1, 2, 'directory_structure', '\d{4}/\d{2}/\d{2}/work/Xpressfeed/pkgGIC01/\d{6}--(?P<filename>f_gic_comp-(?P<file_year>\d{4})(?P<file_month>\d{2})(?P<file_day>\d{2})\.01\.xffmt\.zip)', '\g<file_year>/\g<file_year>\g<file_month>\g<file_day>/', 'YYYYMMDD'),
-(1, 3, 'filename', '\d{6}--(?P<filename>f_gic_comp-\d{8}\.01\.xffmt\.zip)$', '\g<filename>', '');
-```
+(1, 'silver', 'sp/gics_cwiq_pipe/1.0/silver/*/work/*/*/*/*--*.zip',
+   'sp/gics_cwiq_pipe/1\.0/silver/\d{4}/\d{2}/\d{2}/work/[^/]+/[^/]+/\d{6}--.*\.zip',
+   'sp/gics_cwiq_pipe/1.0/silver/2025/11/28/work/Xpressfeed/pkgGIC01/070847--f_gic_comp-20251128.01.xffmt.zip',
+   'Silver extracted files'),
 
-### Insert File Lineage
+(1, 'gold', 'sp_global_mi/gics_direct/1.0/raw/*/*/*.zip',
+   'sp_global_mi/gics_direct/1\.0/raw/\d{4}/\d{8}/.*\.zip',
+   'sp_global_mi/gics_direct/1.0/raw/2025/20251128/f_gic_comp-20251128.01.xffmt.zip',
+   'Gold renamed/restructured files'),
 
-```sql
-INSERT INTO file_lineage (dataset_id, file_hash, original_filename, bronze_path, silver_path, gold_path, bronze_size, silver_size, gold_size, delivery_time, bronze_time, silver_time, gold_time, status, pattern_id) VALUES
-(1, 'a1b2c3d4e5f6', 'f_gic_comp-20251128.01.xffmt.zip',
- 'sp/gics_cwiq_pipe/1.0/bronze/2025/11/28/070847--Xpressfeed_pkgGIC01.tar.gz',
- 'sp/gics_cwiq_pipe/1.0/silver/2025/11/28/work/Xpressfeed/pkgGIC01/070847--f_gic_comp-20251128.01.xffmt.zip',
- 'sp_global_mi/gics_direct/1.0/raw/2025/20251128/f_gic_comp-20251128.01.xffmt.zip',
- 1024000, 2048000, 2048000,
- '2025-11-28 07:08:47', '2025-11-28 07:10:00', '2025-11-28 07:15:00', '2025-11-28 07:20:00',
- 'complete', 1);
+(1, 'platinum', 'sp_global_mi/gics_direct/1.0/curated/*.parquet',
+   'sp_global_mi/gics_direct/1\.0/curated/.*\.parquet',
+   'sp_global_mi/gics_direct/1.0/curated/gics_data.parquet',
+   'Platinum curated parquet');
+
+-- Pattern Chains
+INSERT INTO pattern_chains (source_pattern_id, target_pattern_id, transformation_type, notes) VALUES
+(1, 2, 'decompress', 'tar.gz → extracted files'),
+(2, 3, 'restructure', 'YYYY/MM/DD → YYYY/YYYYMMDD, vendor rename'),
+(3, 4, 'curate', 'zip → parquet conversion');
 ```
 
 ## Query Examples
 
-### 1. Find Bronze Source for Missing Gold File
+### 1. Reverse Lookup: Gold → Bronze
 
 ```sql
+-- Given a gold path, find bronze pattern and service
+WITH RECURSIVE chain AS (
+    -- Start from gold pattern that matches
+    SELECT
+        lp.id,
+        lp.layer,
+        lp.pattern_glob,
+        lp.dataset_id,
+        1 as depth
+    FROM layer_patterns lp
+    WHERE lp.layer = 'gold'
+      AND 'sp_global_mi/gics_direct/1.0/raw/2025/20251128/f_gic_comp.zip' GLOB lp.pattern_glob
+
+    UNION ALL
+
+    -- Walk backwards through chain
+    SELECT
+        lp.id,
+        lp.layer,
+        lp.pattern_glob,
+        lp.dataset_id,
+        c.depth + 1
+    FROM chain c
+    JOIN pattern_chains pc ON pc.target_pattern_id = c.id
+    JOIN layer_patterns lp ON lp.id = pc.source_pattern_id
+    WHERE c.depth < 10
+)
 SELECT
-    v.name as vendor,
-    d.name as dataset,
-    fl.bronze_path,
-    fl.silver_path,
-    fl.delivery_time,
-    fl.status
-FROM file_lineage fl
-JOIN datasets d ON fl.dataset_id = d.id
-JOIN vendors v ON d.vendor_id = v.id
-WHERE fl.gold_path LIKE '%f_gic_comp-20251128%'
-   OR fl.original_filename LIKE '%f_gic_comp-20251128%';
+    c.layer,
+    c.pattern_glob,
+    s.name as service,
+    gm.filename as grabber_map
+FROM chain c
+JOIN datasets d ON c.dataset_id = d.id
+JOIN services s ON d.service_id = s.id
+LEFT JOIN grabber_maps gm ON gm.dataset_id = d.id
+ORDER BY c.depth DESC;
 ```
 
-### 2. Find All Stuck Files
+### 2. Find All Patterns for a Service
 
 ```sql
 SELECT
-    fl.original_filename,
-    fl.bronze_path,
-    fl.status,
-    CASE
-        WHEN fl.silver_path IS NULL THEN 'stuck at bronze'
-        WHEN fl.gold_path IS NULL THEN 'stuck at silver'
-        WHEN fl.platinum_path IS NULL THEN 'stuck at gold'
-        ELSE 'unknown'
-    END as stuck_at,
-    fl.error_message
-FROM file_lineage fl
-WHERE fl.status IN ('pending', 'processing', 'failed')
-   OR (fl.bronze_path IS NOT NULL AND fl.gold_path IS NULL);
+    s.name as service,
+    d.source_vendor || '/' || d.source_dataset as source,
+    d.target_vendor || '/' || d.target_dataset as target,
+    lp.layer,
+    lp.pattern_glob,
+    lp.example_path
+FROM services s
+JOIN datasets d ON d.service_id = s.id
+JOIN layer_patterns lp ON lp.dataset_id = d.id
+WHERE s.name = 'Xpressfeed'
+ORDER BY d.id,
+    CASE lp.layer
+        WHEN 'bronze' THEN 1
+        WHEN 'silver' THEN 2
+        WHEN 'gold' THEN 3
+        WHEN 'platinum' THEN 4
+    END;
 ```
 
-### 3. Reverse Pattern Lookup
+### 3. Find Grabber Map for Pattern
 
 ```sql
--- Given a gold path pattern, find the bronze pattern
 SELECT
-    pr.layer_from,
-    pr.layer_to,
-    pr.pattern_glob,
-    pr.example_input,
-    pr.example_output
-FROM pattern_registry pr
-JOIN datasets d ON pr.dataset_id = d.id
-WHERE pr.example_output LIKE '%gics_direct%'
-ORDER BY pr.layer_from;
+    gm.filename,
+    gm.filepath,
+    d.source_vendor,
+    d.source_dataset,
+    d.source_version
+FROM grabber_maps gm
+JOIN datasets d ON gm.dataset_id = d.id
+JOIN layer_patterns lp ON lp.dataset_id = d.id
+WHERE lp.layer = 'gold'
+  AND 'sp_global_mi/gics_direct/1.0/raw/2025/20251128/test.zip' GLOB lp.pattern_glob;
 ```
 
-### 4. Full Lineage Chain
-
-```sql
--- Get complete file journey
-SELECT
-    fl.original_filename,
-    fl.bronze_path,
-    fl.bronze_time,
-    fl.silver_path,
-    fl.silver_time,
-    fl.gold_path,
-    fl.gold_time,
-    fl.platinum_path,
-    fl.platinum_time,
-    ROUND((julianday(fl.gold_time) - julianday(fl.bronze_time)) * 24 * 60, 2) as processing_minutes
-FROM file_lineage fl
-WHERE fl.original_filename = 'f_gic_comp-20251128.01.xffmt.zip';
-```
-
-### 5. Delta Between Runs
+### 4. List All Dataset Mappings
 
 ```sql
 SELECT
-    pr.id as run_id,
-    pr.start_time,
-    dt.layer,
-    dt.files_added,
-    dt.files_removed,
-    dt.files_changed
-FROM pipeline_runs pr
-JOIN delta_tracking dt ON pr.id = dt.run_id
-WHERE pr.dataset_id = 1
-ORDER BY pr.start_time DESC
-LIMIT 10;
-```
-
-### 6. Pattern Match Test
-
-```sql
--- Test if a path matches any pattern
-SELECT
-    pr.id,
-    pr.description,
-    pr.pattern_regex,
-    pr.example_output
-FROM pattern_registry pr
-WHERE 'silver/2025/11/28/work/Xpressfeed/pkgGIC01/070847--f_gic_comp-20251128.01.xffmt.zip'
-      REGEXP pr.pattern_regex;
+    s.name as service,
+    d.source_vendor || '/' || d.source_dataset || '/' || d.source_version as bronze_naming,
+    d.target_vendor || '/' || d.target_dataset || '/' || d.target_version as gold_naming,
+    gm.filename as grabber_map,
+    d.active
+FROM datasets d
+JOIN services s ON d.service_id = s.id
+LEFT JOIN grabber_maps gm ON gm.dataset_id = d.id
+ORDER BY s.name, d.source_vendor;
 ```
 
 ## CLI Commands
 
 ```bash
-# Find source for missing file
-invdb find-source --gold "sp_global_mi/gics_direct/1.0/raw/2025/20251128/*.zip"
+# Reverse lookup: find bronze for gold pattern
+invdb reverse --gold "sp_global_mi/gics_direct/1.0/raw/*/*.zip"
 
-# Show full lineage
-invdb lineage --file "f_gic_comp-20251128.01.xffmt.zip"
+# Find service for a pattern
+invdb service --pattern "sp/gics_cwiq_pipe/1.0/bronze/*/*--*.tar.gz"
 
-# List stuck files
-invdb stuck --dataset gics_cwiq_pipe --hours 24
+# Get grabber map for dataset
+invdb grabber-map --dataset "sp/gics_cwiq_pipe/1.0"
 
-# Test pattern match
-invdb test-pattern --path "silver/2025/11/28/work/..." --verbose
+# List all patterns for a service
+invdb patterns --service Xpressfeed
 
-# Show delta between runs
-invdb delta --run-id 123 --compare-run 122
+# Validate pattern chain (bronze → platinum)
+invdb validate-chain --dataset "sp/gics_cwiq_pipe/1.0"
 
-# Export patterns to JSON
-invdb export-patterns --dataset gics_cwiq_pipe --output patterns.json
+# Export all mappings to JSON
+invdb export --output mappings.json
 ```
 
-## Architecture
-
-```mermaid
-graph TD
-    subgraph Data Pipeline
-        RAW[Raw Files] --> B[Bronze Handler]
-        B --> S[Silver Handler]
-        S --> G[Gold Handler]
-        G --> P[Platinum Handler]
-    end
-
-    subgraph Investigation DB
-        B -->|log| DB[(SQLite/PostgreSQL)]
-        S -->|log| DB
-        G -->|log| DB
-        P -->|log| DB
-    end
-
-    subgraph CLI Tools
-        DB --> Q1[find-source]
-        DB --> Q2[lineage]
-        DB --> Q3[stuck]
-        DB --> Q4[delta]
-        DB --> Q5[test-pattern]
-    end
-```
-
-## Views (Helpful Shortcuts)
+## Views
 
 ```sql
--- View: Complete lineage with vendor info
-CREATE VIEW v_file_lineage_full AS
+-- View: Full pattern chain with service info
+CREATE VIEW v_pattern_chain AS
 SELECT
-    v.name as vendor_name,
-    d.name as dataset_name,
-    d.version,
-    fl.*
-FROM file_lineage fl
-JOIN datasets d ON fl.dataset_id = d.id
-JOIN vendors v ON d.vendor_id = v.id;
+    s.name as service,
+    d.source_vendor || '/' || d.source_dataset as source_path,
+    d.target_vendor || '/' || d.target_dataset as target_path,
+    lp_b.pattern_glob as bronze_pattern,
+    lp_s.pattern_glob as silver_pattern,
+    lp_g.pattern_glob as gold_pattern,
+    lp_p.pattern_glob as platinum_pattern,
+    gm.filename as grabber_map
+FROM datasets d
+JOIN services s ON d.service_id = s.id
+LEFT JOIN layer_patterns lp_b ON lp_b.dataset_id = d.id AND lp_b.layer = 'bronze'
+LEFT JOIN layer_patterns lp_s ON lp_s.dataset_id = d.id AND lp_s.layer = 'silver'
+LEFT JOIN layer_patterns lp_g ON lp_g.dataset_id = d.id AND lp_g.layer = 'gold'
+LEFT JOIN layer_patterns lp_p ON lp_p.dataset_id = d.id AND lp_p.layer = 'platinum'
+LEFT JOIN grabber_maps gm ON gm.dataset_id = d.id;
 
--- View: Stuck files summary
-CREATE VIEW v_stuck_files AS
+-- View: Quick reverse lookup
+CREATE VIEW v_reverse_lookup AS
 SELECT
-    d.name as dataset,
-    COUNT(CASE WHEN fl.silver_path IS NULL THEN 1 END) as stuck_at_bronze,
-    COUNT(CASE WHEN fl.silver_path IS NOT NULL AND fl.gold_path IS NULL THEN 1 END) as stuck_at_silver,
-    COUNT(CASE WHEN fl.gold_path IS NOT NULL AND fl.platinum_path IS NULL THEN 1 END) as stuck_at_gold
-FROM file_lineage fl
-JOIN datasets d ON fl.dataset_id = d.id
-WHERE fl.status != 'complete'
-GROUP BY d.name;
+    lp_g.pattern_glob as gold_pattern,
+    lp_b.pattern_glob as bronze_pattern,
+    s.name as service,
+    gm.filename as grabber_map,
+    d.source_vendor,
+    d.source_dataset
+FROM layer_patterns lp_g
+JOIN datasets d ON lp_g.dataset_id = d.id
+JOIN services s ON d.service_id = s.id
+LEFT JOIN layer_patterns lp_b ON lp_b.dataset_id = d.id AND lp_b.layer = 'bronze'
+LEFT JOIN grabber_maps gm ON gm.dataset_id = d.id
+WHERE lp_g.layer = 'gold';
+```
 
--- View: Pattern coverage
-CREATE VIEW v_pattern_coverage AS
-SELECT
-    d.name as dataset,
-    pr.layer_from,
-    pr.layer_to,
-    COUNT(DISTINCT fl.id) as files_matched
-FROM pattern_registry pr
-JOIN datasets d ON pr.dataset_id = d.id
-LEFT JOIN file_lineage fl ON fl.pattern_id = pr.id
-GROUP BY d.name, pr.layer_from, pr.layer_to;
+## Integration with PathSeeker
+
+```mermaid
+flowchart LR
+    subgraph PathSeeker
+        PS[pathseek scan]
+        PAT[Extracted Patterns]
+    end
+
+    subgraph InvestigationDB
+        LP[(layer_patterns)]
+        PC[(pattern_chains)]
+    end
+
+    PS --> PAT
+    PAT -->|"import"| LP
+    LP --> PC
+```
+
+```bash
+# Extract patterns from directory and import to Investigation DB
+pathseek scan /sf/data/bloomberg --export-sql | invdb import
+
+# Validate extracted patterns against existing registry
+pathseek scan /sf/data/sp --compare invdb
 ```
