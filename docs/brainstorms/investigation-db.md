@@ -151,364 +151,148 @@ erDiagram
 
 ### 🖥️ Infrastructure Tables
 
-#### alchemy_server
-> Production servers running Alchemy pipelines
-
-| Column | Type | Description |
-|--------|------|-------------|
-| server_id | PK | Primary key |
-| server_name | VARCHAR | Server hostname |
-| ip_address | VARCHAR | IP address |
-| cpu_cores | INT | CPU cores |
-| ram_gb | INT | RAM in GB |
-| disk_gb | INT | Disk in GB |
-| os_version | VARCHAR | OS version |
-| environment | VARCHAR | PROD/DEV |
-| datacenter | VARCHAR | Datacenter location |
-| status | VARCHAR | ACTIVE/INACTIVE |
-
 ```mermaid
-flowchart LR
-    S["🖥️ alchemy_server"] -->|hosts| SVC["⚙️ alchemy_service"]
+flowchart TB
+    subgraph alchemy_server["🖥️ alchemy_server"]
+        AS_L["server_name\nip_address"] ~~~ AS_R["environment\ndatacenter"]
+    end
+    alchemy_server -->|hosts| alchemy_service
+
+    subgraph alchemy_service["⚙️ alchemy_service"]
+        SVC_L["service_name\nexec_script"] ~~~ SVC_R["fp_prefix\nplaybook_file"]
+    end
+    alchemy_service -->|for| vendor
+    alchemy_service -->|processes| alchemy_raw
+
+    subgraph vendor["🏢 vendor"]
+        V_L["vendor_code"] ~~~ V_R["vendor_name"]
+    end
+    vendor -->|owns| vendor_credential
+
+    subgraph vendor_credential["🔑 vendor_credential"]
+        VC["aws_secret_path\ncredential_type"]
+    end
 ```
-
----
-
-#### alchemy_service
-> Systemd services running data-alchemy pipelines
-
-| Column | Type | Description |
-|--------|------|-------------|
-| service_id | PK | Primary key |
-| server_id | FK | → alchemy_server |
-| raw_id | FK | → alchemy_raw |
-| vendor_id | FK | → vendor |
-| dataset_name | VARCHAR | Dataset name |
-| dataset_version | VARCHAR | Version |
-| service_name | VARCHAR | Systemd service name |
-| environment | VARCHAR | PROD/DEV |
-| exec_script | VARCHAR | Execution script |
-| watch_interval | INT | Watch interval (sec) |
-| fp_prefix | VARCHAR | File path prefix |
-| raw_fp_prefix | VARCHAR | Raw file path prefix |
-| log_path | VARCHAR | Log file path |
-| playbook_file | VARCHAR | Ansible playbook |
-| is_active | BOOL | Active flag |
-
-```mermaid
-flowchart LR
-    SVC["⚙️ alchemy_service"] -->|on| S["🖥️ server"]
-    SVC -->|processes| R["📁 raw"]
-    SVC -->|for| V["🏢 vendor"]
-```
-
----
-
-#### vendor
-> Data vendors (bloomberg, factset, sp, etc.)
-
-| Column | Type | Description |
-|--------|------|-------------|
-| vendor_id | PK | Primary key |
-| vendor_code | VARCHAR | Short code (sp, bb) |
-| vendor_name | VARCHAR | Full name |
-| website | VARCHAR | Vendor website |
-
-```mermaid
-flowchart LR
-    V["🏢 vendor"] -->|owns| C["🔑 credential"]
-    V -->|provides| D["📡 dataset"]
-```
-
----
-
-#### vendor_credential
-> Vendor credentials stored in AWS Secrets Manager
-
-| Column | Type | Description |
-|--------|------|-------------|
-| credential_id | PK | Primary key |
-| vendor_id | FK | → vendor |
-| aws_secret_path | VARCHAR | AWS secret path |
-| credential_type | VARCHAR | sftp/api/s3 |
 
 ---
 
 ### 📥 Data Source Tables
 
-#### cwiq_pipe_source_dataset
-> CWIQ pipe source datasets configuration
-
-| Column | Type | Description |
-|--------|------|-------------|
-| source_id | PK | Primary key |
-| vendor_id | FK | → vendor |
-| credential_id | FK | → vendor_credential |
-| dataset_name | VARCHAR | Dataset name |
-| dataset_version | VARCHAR | Version |
-| connector_type | VARCHAR | sftp/s3/api |
-| exporter_type | VARCHAR | file_system |
-| source_path | VARCHAR | Source path |
-| source_host | VARCHAR | Source host |
-| scan_time | INT | Scan interval |
-| env_enabled | BOOL | Environment enabled |
-| online | BOOL | Online flag |
-
 ```mermaid
-flowchart LR
-    V["🏢 vendor"] -->|has| DS["📡 cwiq_pipe_source"]
-    DS -->|lands in| R["📁 alchemy_raw"]
+flowchart TB
+    vendor["🏢 vendor"] -->|has| cwiq_pipe
+
+    subgraph cwiq_pipe["📡 cwiq_pipe_source_dataset"]
+        CP_L["dataset_name\nconnector_type"] ~~~ CP_R["source_path\nsource_host"]
+    end
+    cwiq_pipe -->|lands in| alchemy_raw
+
+    subgraph alchemy_raw["📁 alchemy_raw"]
+        AR["base_path\nis_live"]
+    end
+    alchemy_raw -->|has types| raw_filetype
+
+    subgraph raw_filetype["🔗 raw_filetype"]
+        RF["is_primary"]
+    end
+    raw_filetype -->|refs| filetype
+
+    subgraph filetype["📄 filetype"]
+        FT["extension\nmime_type\ncategory"]
+    end
 ```
-
----
-
-#### alchemy_raw
-> Dataset-level raw configuration
-
-| Column | Type | Description |
-|--------|------|-------------|
-| raw_id | PK | Primary key |
-| source_id | FK | → cwiq_pipe_source_dataset |
-| base_path | VARCHAR | Base landing path |
-| is_live | BOOL | Live data flag |
-
-```mermaid
-flowchart LR
-    R["📁 alchemy_raw"] -->|has| RFT["🔗 raw_filetype"]
-    R -->|uses| PC["🧩 pattern_combo"]
-```
-
----
-
-#### filetype
-> Reusable file extensions
-
-| Column | Type | Description |
-|--------|------|-------------|
-| filetype_id | PK | Primary key |
-| extension | VARCHAR | csv, parquet, gz |
-| mime_type | VARCHAR | MIME type |
-| category | VARCHAR | archive/data/text |
-
----
-
-#### raw_filetype
-> Links alchemy_raw to filetype (bridge)
-
-| Column | Type | Description |
-|--------|------|-------------|
-| raw_filetype_id | PK | Primary key |
-| raw_id | FK | → alchemy_raw |
-| filetype_id | FK | → filetype |
-| is_primary | BOOL | Primary type flag |
 
 ---
 
 ### 🧩 Pattern Tables
 
-#### date_format
-> Normalized date format patterns
-
-| Column | Type | Description |
-|--------|------|-------------|
-| format_id | PK | Primary key |
-| format_code | VARCHAR | YYYY, YYYYMMDD |
-| format_regex | VARCHAR | `\d{4}`, `\d{8}` |
-| example | VARCHAR | 2025, 20251210 |
-
----
-
-#### file_pattern
-> File name regex patterns (reusable)
-
-| Column | Type | Description |
-|--------|------|-------------|
-| file_pattern_id | PK | Primary key |
-| pattern_regex | VARCHAR | File regex |
-| format_id | FK | → date_format |
-
-```mermaid
-flowchart LR
-    DF["📅 date_format"] -->|used by| FP["📄 file_pattern"]
-    FP -->|combines into| PC["🔗 pattern_combo"]
-```
-
----
-
-#### path_pattern
-> Directory path structure patterns (reusable)
-
-| Column | Type | Description |
-|--------|------|-------------|
-| path_pattern_id | PK | Primary key |
-| pattern_structure | VARCHAR | YYYY/MM/DD/ |
-| format_id | FK | → date_format |
-
-```mermaid
-flowchart LR
-    DF["📅 date_format"] -->|used by| PP["📂 path_pattern"]
-    PP -->|combines into| PC["🔗 pattern_combo"]
-```
-
----
-
-#### pattern_combo
-> Combines file_pattern + path_pattern (reusable)
-
-| Column | Type | Description |
-|--------|------|-------------|
-| combo_id | PK | Primary key |
-| file_pattern_id | FK | → file_pattern |
-| path_pattern_id | FK | → path_pattern |
-| description | VARCHAR | Combo description |
-
 ```mermaid
 flowchart TB
-    FP["📄 file_pattern"] --> PC["🔗 pattern_combo"]
-    PP["📂 path_pattern"] --> PC
-    PC --> EX["👁️ path_example"]
-    PC --> FPP["🗺️ full_path_pattern"]
+    subgraph date_format["📅 date_format"]
+        DF["format_code: YYYY, YYYYMMDD\nformat_regex: \\d{4}, \\d{8}"]
+    end
+    date_format -->|used by| file_pattern
+    date_format -->|used by| path_pattern
+
+    subgraph file_pattern["📄 file_pattern"]
+        FP["pattern_regex\n*.tar.gz, *.parquet"]
+    end
+
+    subgraph path_pattern["📂 path_pattern"]
+        PP["pattern_structure\nYYYY/MM/DD/"]
+    end
+
+    file_pattern -->|+| pattern_combo
+    path_pattern -->|+| pattern_combo
+
+    subgraph pattern_combo["🔗 pattern_combo"]
+        PC["file + path combined"]
+    end
+    pattern_combo -->|has| path_example
+    pattern_combo -->|linked via| raw_pattern_rel
+
+    subgraph path_example["👁️ path_example"]
+        PE["example_filename\nfile_date"]
+    end
+
+    subgraph raw_pattern_rel["⛓️ raw_pattern_rel"]
+        RPR["raw_id → combo_id"]
+    end
+    raw_pattern_rel -->|links to| alchemy_raw["📁 alchemy_raw"]
 ```
-
----
-
-#### path_example
-> Full path examples linked to pattern_combo
-
-| Column | Type | Description |
-|--------|------|-------------|
-| example_id | PK | Primary key |
-| combo_id | FK | → pattern_combo |
-| example_filename | VARCHAR | Full filename |
-| example_rel_path | VARCHAR | Relative path |
-| file_date | DATE | File date |
-
----
-
-#### raw_pattern_rel
-> Links alchemy_raw to pattern_combo (bridge)
-
-| Column | Type | Description |
-|--------|------|-------------|
-| rel_id | PK | Primary key |
-| raw_id | FK | → alchemy_raw |
-| combo_id | FK | → pattern_combo |
-| is_active | BOOL | Active flag |
 
 ---
 
 ### 🏭 Pipeline Tables
 
-#### project
-> Systems that generate/manage data layers
-
-| Column | Type | Description |
-|--------|------|-------------|
-| project_id | PK | Primary key |
-| project_name | VARCHAR | cwiq_pipe, data_alchemy, cds_job |
-| repo_url | VARCHAR | Git repo URL |
-
----
-
-#### layer
-> Data pipeline layers
-
-| Column | Type | Description |
-|--------|------|-------------|
-| layer_id | PK | Primary key |
-| layer_name | VARCHAR | raw, bronze, silver, gold |
-| project_id | FK | → project |
-| layer_order | INT | Layer sequence |
-
 ```mermaid
-flowchart LR
-    P["💼 project"] -->|has| L["🗂️ layer"]
-    L -->|defines| FPP["🗺️ full_path_pattern"]
+flowchart TB
+    subgraph project["💼 project"]
+        PJ["cwiq_pipe\ndata_alchemy\ncds_job\ndelta_share"]
+    end
+    project -->|has| layer
+
+    subgraph layer["🗂️ layer"]
+        LY["raw → bronze → silver\ngold → raw_enriched → delta"]
+    end
+    layer -->|defines| full_path_pattern
+
+    subgraph full_path_pattern["🗺️ full_path_pattern"]
+        FPP_L["base_path"] ~~~ FPP_R["full_path_example"]
+    end
+    full_path_pattern -->|uses| pattern_combo["🔗 pattern_combo"]
 ```
-
----
-
-#### full_path_pattern
-> Complete paths for traceability and impact analysis
-
-| Column | Type | Description |
-|--------|------|-------------|
-| full_path_id | PK | Primary key |
-| combo_id | FK | → pattern_combo |
-| layer_id | FK | → layer |
-| base_path | VARCHAR | Base path |
-| full_path_pattern | VARCHAR | Full pattern |
-| full_path_example | VARCHAR | Example path |
-| is_active | BOOL | Active flag |
 
 ---
 
 ### 📐 CDP Retirement Tables
 
-#### delta_dataset_repo
-> Unique dataset repository names
-
-| Column | Type | Description |
-|--------|------|-------------|
-| repo_id | PK | Primary key |
-| repo_name | VARCHAR | Repository name |
-
----
-
-#### delta_table
-> SF table names with repo relationship
-
-| Column | Type | Description |
-|--------|------|-------------|
-| table_id | PK | Primary key |
-| sf_table_name | VARCHAR | Snowflake table name |
-| repo_id | FK | → delta_dataset_repo |
-
-```mermaid
-flowchart LR
-    R["📦 delta_dataset_repo"] -->|contains| T["📐 delta_table"]
-    T -->|mapped in| D["⭐ raw_enriched_data"]
-```
-
----
-
-#### raw_enriched_directory
-> Unique enriched directory paths
-
-| Column | Type | Description |
-|--------|------|-------------|
-| directory_id | PK | Primary key |
-| directory_path | VARCHAR | Directory path |
-
----
-
-#### raw_enriched_file_pattern
-> File patterns with regex and examples
-
-| Column | Type | Description |
-|--------|------|-------------|
-| pattern_id | PK | Primary key |
-| file_pattern | VARCHAR | File pattern |
-| file_regex | VARCHAR | Regex version |
-| file_example | VARCHAR | Example filename |
-
----
-
-#### raw_enriched_data
-> Maps tables to directories and patterns (fact)
-
-| Column | Type | Description |
-|--------|------|-------------|
-| enriched_id | PK | Primary key |
-| table_id | FK | → delta_table |
-| directory_id | FK | → raw_enriched_directory |
-| pattern_id | FK | → raw_enriched_file_pattern |
-
 ```mermaid
 flowchart TB
-    T["📐 delta_table"] --> D["⭐ raw_enriched_data"]
-    DIR["📂 directory"] --> D
-    P["📄 file_pattern"] --> D
+    subgraph delta_dataset_repo["📦 delta_dataset_repo"]
+        DR["repo_name"]
+    end
+    delta_dataset_repo -->|contains| delta_table
+
+    subgraph delta_table["📐 delta_table"]
+        DT["sf_table_name"]
+    end
+    delta_table -->|mapped in| raw_enriched_data
+
+    subgraph raw_enriched_directory["📂 raw_enriched_directory"]
+        RED["directory_path"]
+    end
+
+    subgraph raw_enriched_file_pattern["📄 raw_enriched_file_pattern"]
+        REP["file_pattern\nfile_regex\nfile_example"]
+    end
+
+    raw_enriched_directory -->|used by| raw_enriched_data
+    raw_enriched_file_pattern -->|used by| raw_enriched_data
+
+    subgraph raw_enriched_data["⭐ raw_enriched_data"]
+        RD["table → directory → pattern"]
+    end
 ```
 
 ## Layers
