@@ -20,6 +20,12 @@ Output:
   Server:         ny5-predpalch01
 ```
 
+## Sample Query (Datasette)
+
+![Investigation DB Query Sample](../assets/images/invdb-datasette-sample.png)
+
+*Datasette UI showing reverse lookup: sf_table → enriched_file → cdp_dataset → platinum_path → raw_path*
+
 ## Schema Diagram
 
 ```
