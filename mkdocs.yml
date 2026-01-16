@@ -1,6 +1,7 @@
 site_name: Agent Context
 site_description: AI Agent Sessions & Project Notes
 site_url: https://thanumahee12.github.io/AgentContext
+copyright: All rights reserved ThanuMahee
 
 theme:
   name: material
