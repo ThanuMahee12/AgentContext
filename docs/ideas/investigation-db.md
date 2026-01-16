@@ -1,4 +1,4 @@
-# Alchmy DB
+# Investigation DB
 
 Lineage tracking database for investigating file mappings across pipeline layers.
 

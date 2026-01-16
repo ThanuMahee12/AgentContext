@@ -4,5 +4,5 @@ Collection of ideas and concepts.
 
 ## Projects
 
-- [Alchmy DB](alchmy-db.md) - Database idea
-- [PathSeeker](pathseeker.md) - Path finding idea
+- [Investigation DB](investigation-db.md) - Lineage tracking database
+- [PathSeeker](pathseeker.md) - Path analysis tool
