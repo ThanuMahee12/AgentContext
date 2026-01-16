@@ -147,6 +147,168 @@ erDiagram
     FULL_PATH }o--|| PATTERN_COMBO : references
 ```
 
+## Table Maps
+
+### :desktop_computer: Infrastructure Tables
+
+```mermaid
+flowchart TB
+    subgraph Servers[":desktop_computer: alchemy_server"]
+        S1["server_name, ip_address"]
+        S2["cpu_cores, ram_gb, disk_gb"]
+        S3["environment, datacenter"]
+    end
+
+    subgraph Services[":gear: alchemy_service"]
+        SVC1["service_name, dataset_name"]
+        SVC2["exec_script, watch_interval"]
+        SVC3["fp_prefix, playbook_file"]
+    end
+
+    subgraph Vendor[":office: vendor"]
+        V1["vendor_code, vendor_name"]
+        V2["website"]
+    end
+
+    subgraph Cred[":key: vendor_credential"]
+        C1["aws_secret_path"]
+        C2["credential_type"]
+    end
+
+    Servers -->|hosts| Services
+    Vendor -->|owns| Cred
+    Services -->|uses| Vendor
+```
+
+### :inbox_tray: Data Source Tables
+
+```mermaid
+flowchart TB
+    subgraph Source[":satellite: cwiq_pipe_source_dataset"]
+        DS1["dataset_name, dataset_version"]
+        DS2["connector_type, exporter_type"]
+        DS3["source_path, source_host"]
+    end
+
+    subgraph Raw[":file_folder: alchemy_raw"]
+        R1["base_path"]
+        R2["is_live"]
+    end
+
+    subgraph FT[":page_facing_up: filetype"]
+        FT1["extension, mime_type"]
+        FT2["category"]
+    end
+
+    subgraph RFT[":link: raw_filetype"]
+        RFT1["is_primary"]
+    end
+
+    Source -->|lands in| Raw
+    Raw -->|has| RFT
+    RFT -->|references| FT
+```
+
+### :jigsaw: Pattern Tables
+
+```mermaid
+flowchart TB
+    subgraph DateFmt[":calendar: date_format"]
+        DF1["YYYY, YYYYMM, YYYYMMDD"]
+        DF2["format_regex, example"]
+    end
+
+    subgraph FilePat[":page_facing_up: file_pattern"]
+        FP1["pattern_regex"]
+        FP2["*.tar.gz, *.parquet"]
+    end
+
+    subgraph PathPat[":open_file_folder: path_pattern"]
+        PP1["pattern_structure"]
+        PP2["YYYY/MM/DD/"]
+    end
+
+    subgraph Combo[":link: pattern_combo"]
+        PC1["file + path combined"]
+        PC2["description"]
+    end
+
+    subgraph Example[":eyes: path_example"]
+        PE1["example_filename"]
+        PE2["example_rel_path"]
+        PE3["file_date"]
+    end
+
+    subgraph Rel[":chains: raw_pattern_rel"]
+        RPR1["links raw → combo"]
+        RPR2["is_active"]
+    end
+
+    DateFmt -->|used by| FilePat
+    DateFmt -->|used by| PathPat
+    FilePat -->|combines into| Combo
+    PathPat -->|combines into| Combo
+    Combo -->|has| Example
+    Combo -->|linked via| Rel
+```
+
+### :factory: Pipeline Tables
+
+```mermaid
+flowchart LR
+    subgraph Project[":briefcase: project"]
+        P1["cwiq_pipe"]
+        P2["data_alchemy"]
+        P3["cds_job"]
+        P4["delta_share"]
+    end
+
+    subgraph Layer[":layers: layer"]
+        L1["raw → bronze → silver"]
+        L2["gold → raw_enriched → delta"]
+    end
+
+    subgraph FullPath[":world_map: full_path_pattern"]
+        FPP1["base_path"]
+        FPP2["full_path_example"]
+    end
+
+    Project -->|has| Layer
+    Layer -->|defines| FullPath
+    FullPath -->|uses| Combo[":link: pattern_combo"]
+```
+
+### :triangular_ruler: CDP Retirement Tables
+
+```mermaid
+flowchart TB
+    subgraph Repo[":package: delta_dataset_repo"]
+        DR1["repo_name"]
+    end
+
+    subgraph Table[":triangular_ruler: delta_table"]
+        DT1["sf_table_name"]
+    end
+
+    subgraph Dir[":open_file_folder: raw_enriched_directory"]
+        RED1["directory_path"]
+    end
+
+    subgraph Pattern[":page_facing_up: raw_enriched_file_pattern"]
+        REP1["file_pattern, file_regex"]
+        REP2["file_example"]
+    end
+
+    subgraph Data[":star: raw_enriched_data"]
+        RD1["maps tables → dirs → patterns"]
+    end
+
+    Repo -->|contains| Table
+    Table -->|mapped in| Data
+    Dir -->|used by| Data
+    Pattern -->|used by| Data
+```
+
 ## Layers
 
 ```mermaid
