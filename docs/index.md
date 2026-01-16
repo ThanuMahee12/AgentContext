@@ -1,91 +1,57 @@
-# :material-robot-outline: Agent Context
+# Dashboard
 
-Central hub for AI agent sessions and project notes.
-
----
-
-## :material-folder-outline: Structure
-
-| Folder | Purpose |
-|--------|---------|
-| :material-calendar: **sessions/** | Daily work logs |
-| :material-notebook: **notes/** | Project knowledge & commands |
+Central hub for AI agent sessions and project knowledge.
 
 ---
 
-## :material-robot: Agents
+## Current Session
+
+**Date:** 2026-01-16 | **Agent:** Claude | **Machine:** Windows
+
+### Today's Focus
+- AgentContext site restructure
+- New navigation: Home, Sessions, Discussion, Notes, Brainstorms, RunBooks
+
+[:octicons-arrow-right-24: View Full Session](Sessions/2026-01-16/claude-windows.md)
+
+---
+
+## Active Projects
 
 <div class="grid cards" markdown>
 
-- :material-alpha-c-circle: **Claude**
+- :material-database: **data-alchemy**
 
     ---
 
-    Anthropic Claude sessions and notes
+    Data pipeline: Bronze -> Silver -> Gold -> Platinum
 
-    [:octicons-arrow-right-24: Sessions](Claude/sessions/index.md)
-    [:octicons-arrow-right-24: Notes](Claude/notes/index.md)
+    **Branch:** `feature/bbocax-futures`
 
-- :material-alpha-g-circle: **Gemini**
-
-    ---
-
-    Google Gemini sessions and notes
-
-    [:octicons-arrow-right-24: Sessions](Gemini/sessions/index.md)
-    [:octicons-arrow-right-24: Notes](Gemini/notes/index.md)
+    [:octicons-arrow-right-24: Notes](Notes/projects/data-alchemy/index.md)
 
 </div>
 
 ---
 
-## :material-pencil: Quick Syntax
+## Recent Activity
 
-### Icons
+| Date | Agent | Summary |
+|------|-------|---------|
+| 2026-01-16 | Claude | AgentContext restructure |
+| 2026-01-15 | Claude | bbocax-futures pipeline testing |
+| 2026-01-14 | Claude | Bloomberg mapping work |
 
-```markdown
-:material-check: :material-close: :material-alert:
-:fontawesome-brands-python: :fontawesome-brands-linux:
-```
+[:octicons-arrow-right-24: All Sessions](Sessions/index.md)
 
-:material-check: :material-close: :material-alert: :fontawesome-brands-python: :fontawesome-brands-linux:
+---
 
-### Callouts
+## Quick Links
 
-```markdown
-!!! note "Title"
-    Content here
-
-!!! tip "Tip"
-    Helpful tip
-
-!!! warning "Warning"
-    Be careful
-```
-
-!!! tip "Example"
-    This is how callouts look!
-
-### Code with copy button
-
-```python
-print("Hello World")
-```
-
-### Keyboard keys
-
-```markdown
-++ctrl+c++ ++ctrl+v++
-```
-
-++ctrl+c++ ++ctrl+v++
-
-### Task lists
-
-```markdown
-- [x] Done
-- [ ] Todo
-```
-
-- [x] Done
-- [ ] Todo
+| Section | Description |
+|---------|-------------|
+| [:material-calendar: Sessions](Sessions/index.md) | Daily work logs |
+| [:material-forum: Discussion](Discussion/index.md) | Topic discussions |
+| [:material-notebook: Notes](Notes/index.md) | Persistent knowledge |
+| [:material-lightbulb: Brainstorms](Brainstorms/index.md) | Ideas & experiments |
+| [:material-book-open: RunBooks](RunBooks/index.md) | Operational guides |

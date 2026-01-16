@@ -34,13 +34,33 @@ plugins:
 
 nav:
   - Home: index.md
-  - Claude:
-      - Sessions: Claude/sessions
-      - Notes: Claude/notes
-      - Discussions: Claude/discussions
-  - Gemini:
-      - Sessions: Gemini/sessions
-      - Notes: Gemini/notes
+  - Sessions:
+      - Sessions/index.md
+      - 2026-01-16:
+          - Claude Windows: Sessions/2026-01-16/claude-windows.md
+      - 2026-01-15:
+          - Claude Windows: Sessions/2026-01-15/claude-windows.md
+          - Claude Linux: Sessions/2026-01-15/claude-linux.md
+      - 2026-01-14:
+          - Claude Windows: Sessions/2026-01-14/claude-windows.md
+          - Claude Linux: Sessions/2026-01-14/claude-linux.md
+      - 2026-01-13:
+          - Claude Windows: Sessions/2026-01-13/claude-windows.md
+          - Claude Linux: Sessions/2026-01-13/claude-linux.md
+      - 2026-01-12:
+          - Claude Windows: Sessions/2026-01-12/claude-windows.md
+          - Claude Linux: Sessions/2026-01-12/claude-linux.md
+      - 2026-01-11:
+          - Claude Windows: Sessions/2026-01-11/claude-windows.md
+  - Discussion:
+      - Discussion/index.md
+      - GICS: Discussion/GicsDiscussion.md
+  - Notes:
+      - Notes/index.md
+      - Projects:
+          - data-alchemy: Notes/projects/data-alchemy/index.md
+  - Brainstorms: Brainstorms/index.md
+  - RunBooks: RunBooks/index.md
 
 markdown_extensions:
   # Code blocks with Mermaid support
