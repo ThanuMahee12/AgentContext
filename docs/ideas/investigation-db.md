@@ -1,6 +1,8 @@
 # Investigation DB
 
-Lineage tracking database for investigating file mappings across pipeline layers.
+Standalone lineage tracking database for investigating file mappings across any medallion-architecture pipeline.
+
+> **Note:** This is an independent tool/schema - not tied to any specific project. Can be used with any Bronze → Silver → Gold → Platinum pipeline.
 
 ## Problem
 
@@ -146,7 +148,7 @@ flowchart TB
         RAW --> B --> S --> G --> P
     end
 
-    subgraph AlchmyDB["Alchmy DB"]
+    subgraph InvestigationDB["Investigation DB"]
         direction TB
         V[(vendors)]
         D[(datasets)]
@@ -247,7 +249,7 @@ flowchart TD
 
 ```sql
 -- ============================================
--- ALCHMY DB - Full Schema
+-- INVESTIGATION DB - Full Schema
 -- ============================================
 
 -- Vendors table
@@ -557,22 +559,22 @@ WHERE 'silver/2025/11/28/work/Xpressfeed/pkgGIC01/070847--f_gic_comp-20251128.01
 
 ```bash
 # Find source for missing file
-alchmy-db find-source --gold "sp_global_mi/gics_direct/1.0/raw/2025/20251128/*.zip"
+invdb find-source --gold "sp_global_mi/gics_direct/1.0/raw/2025/20251128/*.zip"
 
 # Show full lineage
-alchmy-db lineage --file "f_gic_comp-20251128.01.xffmt.zip"
+invdb lineage --file "f_gic_comp-20251128.01.xffmt.zip"
 
 # List stuck files
-alchmy-db stuck --dataset gics_cwiq_pipe --hours 24
+invdb stuck --dataset gics_cwiq_pipe --hours 24
 
 # Test pattern match
-alchmy-db test-pattern --path "silver/2025/11/28/work/..." --verbose
+invdb test-pattern --path "silver/2025/11/28/work/..." --verbose
 
 # Show delta between runs
-alchmy-db delta --run-id 123 --compare-run 122
+invdb delta --run-id 123 --compare-run 122
 
 # Export patterns to JSON
-alchmy-db export-patterns --dataset gics_cwiq_pipe --output patterns.json
+invdb export-patterns --dataset gics_cwiq_pipe --output patterns.json
 ```
 
 ## Architecture
@@ -586,7 +588,7 @@ graph TD
         G --> P[Platinum Handler]
     end
 
-    subgraph Alchmy DB
+    subgraph Investigation DB
         B -->|log| DB[(SQLite/PostgreSQL)]
         S -->|log| DB
         G -->|log| DB
