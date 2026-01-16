@@ -611,13 +611,6 @@ flowchart LR
     DB --> |"browse & query"| DS
 ```
 
-## Open Questions
-
-- [ ] :thinking: Pattern versioning strategy?
-- [ ] :thinking: Delta table tracking approach?
-- [ ] :thinking: CDP migration status tracking?
-- [ ] :thinking: Audit trail for changes?
-
 ## References
 
 - :link: **Repo:** [alchmydb](https://git.codewilling.com/alchmy/database/alchmydb)
