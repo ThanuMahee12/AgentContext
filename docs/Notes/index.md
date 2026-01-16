@@ -1,11 +1,7 @@
 # Notes
 
-Persistent knowledge, learnings, and documentation.
+Persistent knowledge & learnings.
 
 ## Projects
 
-- [data-alchemy](projects/data-alchemy/index.md) - Data pipeline project notes
-
-## Topics
-
-*Coming soon*
+- [data-alchemy](projects/data-alchemy/)

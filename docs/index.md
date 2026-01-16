@@ -10,7 +10,7 @@
 | 2026-01-15 | Claude | Windows, Linux | bbocax-futures pipeline |
 | 2026-01-14 | Claude | Windows, Linux | Bloomberg mapping |
 
-[:octicons-arrow-right-24: All Sessions](Sessions/index.md)
+[:octicons-arrow-right-24: All Sessions](sessions/)
 
 ---
 
@@ -18,9 +18,9 @@
 
 | Topic | Description |
 |-------|-------------|
-| [GICS Discussion](Discussion/GicsDiscussion.md) | S&P GICS data pipeline |
+| [GICS](discussions/GicsDiscussion.md) | S&P GICS data pipeline |
 
-[:octicons-arrow-right-24: All Discussions](Discussion/index.md)
+[:octicons-arrow-right-24: All Discussions](discussions/)
 
 ---
 
@@ -29,7 +29,7 @@
 ```mermaid
 graph LR
     A[Sessions] --> B[Daily Logs]
-    C[Discussion] --> D[Topic Threads]
+    C[Discussions] --> D[Topic Threads]
     E[Notes] --> F[Knowledge Base]
     G[Brainstorms] --> H[Ideas & Tools]
     I[RunBooks] --> J[Guides]
@@ -50,4 +50,4 @@ graph TD
 
 **Branch:** `feature/bbocax-futures`
 
-[:octicons-arrow-right-24: Project Notes](Notes/projects/data-alchemy/index.md)
+[:octicons-arrow-right-24: Project Notes](notes/projects/data-alchemy/)
