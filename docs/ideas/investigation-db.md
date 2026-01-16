@@ -1,9 +1,13 @@
 # Investigation DB
 
+[![Repo](https://img.shields.io/badge/GitHub-invdb-blue)](https://github.com/ThanuMahee12/invdb)
+
 Pattern-based reverse lookup database for medallion-architecture pipelines.
 
 > **Purpose:** Given a Platinum/Gold pattern, find the Bronze source pattern, service, and grabber map.
 > No individual file tracking - only pattern relationships.
+>
+> **Repo:** [github.com/ThanuMahee12/invdb](https://github.com/ThanuMahee12/invdb)
 
 ## Problem
 
@@ -409,6 +413,45 @@ FROM datasets d
 JOIN services s ON d.service_id = s.id
 LEFT JOIN grabber_maps gm ON gm.dataset_id = d.id
 ORDER BY s.name, d.source_vendor;
+```
+
+### 5. Find Dataset by Filename Pattern
+
+```sql
+-- Which dataset handles files like "f_gic_comp-*.xffmt.zip"?
+SELECT
+    s.name as service,
+    d.source_vendor || '/' || d.source_dataset as dataset,
+    lp.layer,
+    lp.pattern_glob,
+    lp.example_path,
+    gm.filename as grabber_map
+FROM layer_patterns lp
+JOIN datasets d ON lp.dataset_id = d.id
+JOIN services s ON d.service_id = s.id
+LEFT JOIN grabber_maps gm ON gm.dataset_id = d.id
+WHERE lp.example_path LIKE '%f_gic_comp%'
+   OR lp.pattern_glob LIKE '%xffmt%';
+```
+
+### 6. Find Incomplete Dataset Configurations
+
+```sql
+-- Which datasets are missing patterns for certain layers?
+SELECT
+    d.source_vendor || '/' || d.source_dataset as dataset,
+    s.name as service,
+    GROUP_CONCAT(lp.layer) as configured_layers,
+    CASE
+        WHEN SUM(CASE WHEN lp.layer = 'bronze' THEN 1 ELSE 0 END) = 0 THEN 'missing bronze'
+        WHEN SUM(CASE WHEN lp.layer = 'gold' THEN 1 ELSE 0 END) = 0 THEN 'missing gold'
+        ELSE 'complete'
+    END as status
+FROM datasets d
+JOIN services s ON d.service_id = s.id
+LEFT JOIN layer_patterns lp ON lp.dataset_id = d.id
+GROUP BY d.id
+HAVING status != 'complete';
 ```
 
 ## CLI Commands
