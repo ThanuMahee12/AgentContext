@@ -418,5 +418,5 @@ flowchart LR
 
 ## References
 
-- :link: **Repo:** `git.codewilling.com:alchmy/database/alchmydb`
+- :link: **Repo:** [alchmydb](https://git.codewilling.com/alchmy/database/alchmydb)
 - :link: **Related:** [PathSeeker](pathseeker.md)
