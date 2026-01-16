@@ -1,171 +1,48 @@
-/* Force dark theme everywhere */
-:root,
-[data-md-color-scheme="slate"] {
-  --md-primary-fg-color: #0d1117 !important;
-  --md-primary-fg-color--light: #161b22 !important;
-  --md-primary-fg-color--dark: #010409 !important;
-  --md-primary-bg-color: #c9d1d9 !important;
-  --md-accent-fg-color: #58a6ff !important;
-  --md-default-bg-color: #0d1117 !important;
-  --md-default-fg-color: #c9d1d9 !important;
-  --md-default-fg-color--light: #8b949e !important;
-  --md-default-fg-color--lighter: #6e7681 !important;
-  --md-code-bg-color: #161b22 !important;
-  --md-code-fg-color: #c9d1d9 !important;
-  --md-typeset-a-color: #58a6ff !important;
-  --md-typeset-color: #c9d1d9 !important;
+/* Minimal custom styles - let Material theme handle colors */
+
+/* Smooth transitions for theme toggle */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Body & Main content */
-body,
-.md-main,
-.md-content {
-  background-color: #0d1117 !important;
+/* Custom link hover effect */
+.md-typeset a:hover {
+  text-decoration: underline;
 }
 
-/* Header */
-.md-header,
-.md-header[data-md-state="shadow"] {
-  background-color: #010409 !important;
-}
-
-/* Navigation tabs */
-.md-tabs {
-  background-color: #010409 !important;
-}
-
-.md-tabs__link {
-  color: #8b949e !important;
-}
-
-.md-tabs__link--active,
-.md-tabs__link:hover {
-  color: #58a6ff !important;
-}
-
-/* Sidebar */
-.md-sidebar,
-.md-sidebar__scrollwrap {
-  background-color: #0d1117 !important;
-}
-
-.md-nav__link {
-  color: #c9d1d9 !important;
-}
-
-.md-nav__link:hover,
-.md-nav__link--active {
-  color: #58a6ff !important;
-}
-
-.md-nav__item--active > .md-nav__link {
-  color: #58a6ff !important;
-}
-
-/* Content area */
-.md-typeset {
-  color: #c9d1d9 !important;
-}
-
-.md-typeset h1,
-.md-typeset h2,
-.md-typeset h3,
-.md-typeset h4,
-.md-typeset h5,
-.md-typeset h6 {
-  color: #c9d1d9 !important;
-}
-
-.md-typeset a {
-  color: #58a6ff !important;
-}
-
-/* Code blocks */
-.highlight,
-.highlighttable,
-pre,
-code {
-  background-color: #161b22 !important;
-}
-
+/* Better code block styling */
 .md-typeset code {
-  background-color: #161b22 !important;
-  color: #c9d1d9 !important;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
 }
 
-/* Admonitions */
+/* Admonition refinements */
 .md-typeset .admonition,
 .md-typeset details {
-  background-color: #161b22 !important;
-  border-color: #30363d !important;
+  border-radius: 8px;
 }
 
-.md-typeset .admonition-title,
-.md-typeset summary {
-  background-color: #21262d !important;
-}
-
-/* Tables */
+/* Table styling */
 .md-typeset table:not([class]) {
-  background-color: #0d1117 !important;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.md-typeset table:not([class]) th {
-  background-color: #161b22 !important;
-  color: #c9d1d9 !important;
-}
-
-.md-typeset table:not([class]) td {
-  border-color: #30363d !important;
-}
-
-/* Footer */
-.md-footer {
-  background-color: #010409 !important;
-}
-
-.md-footer-meta {
-  background-color: #010409 !important;
-}
-
-/* Search */
-.md-search__form {
-  background-color: #161b22 !important;
-}
-
-.md-search__input {
-  background-color: #161b22 !important;
-  color: #c9d1d9 !important;
-}
-
-/* Cards */
+/* Card hover effect */
 .md-typeset .grid.cards > ul > li {
-  background-color: #161b22 !important;
-  border-color: #30363d !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Tabs */
-.md-typeset .tabbed-labels > label {
-  color: #8b949e !important;
+.md-typeset .grid.cards > ul > li:hover {
+  transform: translateY(-2px);
 }
 
-.md-typeset .tabbed-labels > label--active,
-.md-typeset .tabbed-labels > label:hover {
-  color: #58a6ff !important;
+/* Navigation link transitions */
+.md-nav__link {
+  transition: color 0.2s ease;
 }
 
-/* Task lists */
-.md-typeset .task-list-indicator::before {
-  background-color: #58a6ff !important;
-}
-
-/* Horizontal rules */
-.md-typeset hr {
-  border-color: #30363d !important;
-}
-
-/* Blockquotes */
-.md-typeset blockquote {
-  border-color: #30363d !important;
-  color: #8b949e !important;
+/* Tab transitions */
+.md-tabs__link {
+  transition: color 0.2s ease;
 }
