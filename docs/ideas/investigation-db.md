@@ -17,668 +17,674 @@ Output:
   Bronze Pattern: sp/gics_cwiq_pipe/1.0/bronze/*/*--*.tar.gz
   Service:        Xpressfeed
   Grabber Map:    sp_gics_cwiq_pipe_1.0.json
+  Server:         ny5-predpalch01
 ```
 
-## Core Concept
+## Schema Diagram
 
-```mermaid
-flowchart LR
-    subgraph Query["Reverse Lookup Query"]
-        Q[/"Platinum Pattern"/]
-    end
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                              INVESTIGATION DB SCHEMA                                 │
+│                         (Optimized with pattern_combo)                              │
+└─────────────────────────────────────────────────────────────────────────────────────┘
 
-    subgraph DB["Investigation DB"]
-        PC[(pattern_chains)]
-        LP[(layer_patterns)]
-        GM[(grabber_maps)]
-        SV[(services)]
-    end
+┌─────────────────────┐       ┌─────────────────────────────────┐
+│   alchemy_server    │◄──────│        alchemy_service          │
+├─────────────────────┤       ├─────────────────────────────────┤
+│ server_id       PK  │       │ service_id                  PK  │
+│ server_name         │       │ server_id                   FK  │──► alchemy_server
+│ ip_address          │       │ raw_id                      FK  │──► alchemy_raw
+│ cpu_cores, ram_gb   │       │ vendor_id                   FK  │──► vendor
+│ disk_gb, os_version │       │ dataset_name, dataset_version   │
+│ environment         │       │ service_name, environment       │
+│ datacenter, status  │       │ exec_script, watch_interval     │
+└─────────────────────┘       │ fp_prefix, raw_fp_prefix        │
+                              │ log_path, playbook_file         │
+                              │ is_active                       │
+                              └─────────────────────────────────┘
 
-    subgraph Result["Result"]
-        R1[Bronze Pattern]
-        R2[Service Name]
-        R3[Grabber Map Path]
-    end
+┌─────────────────────┐       ┌─────────────────────────────┐
+│       vendor        │       │      vendor_credential      │
+├─────────────────────┤       ├─────────────────────────────┤
+│ vendor_id       PK  │◄──────│ credential_id           PK  │
+│ vendor_code         │       │ vendor_id               FK  │
+│ vendor_name         │       │ aws_secret_path             │
+│ website             │       │ credential_type             │
+└─────────────────────┘       └─────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────┐
+│      cwiq_pipe_source_dataset       │
+├─────────────────────────────────────┤
+│ source_id                       PK  │
+│ vendor_id                       FK  │──► vendor
+│ credential_id                   FK  │──► vendor_credential
+│ dataset_name, dataset_version       │
+│ connector_type, exporter_type       │
+│ source_path, source_host            │
+│ scan_time, env_enabled, online      │
+└─────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────┐       ┌─────────────────────┐       ┌─────────────────┐
+│        alchemy_raw          │       │    raw_filetype     │       │    filetype     │
+├─────────────────────────────┤       ├─────────────────────┤       ├─────────────────┤
+│ raw_id                  PK  │◄──────│ raw_filetype_id PK  │──────►│ filetype_id PK  │
+│ source_id               FK  │       │ raw_id          FK  │       │ extension       │
+│ base_path                   │       │ filetype_id     FK  │       │ mime_type       │
+│ is_live                     │       │ is_primary          │       │ category        │
+└─────────────────────────────┘       └─────────────────────┘       └─────────────────┘
+         │
+         ▼
+┌─────────────────────────────┐
+│      raw_pattern_rel        │  (Bridge: raw → combo)
+├─────────────────────────────┤
+│ rel_id                  PK  │
+│ raw_id                  FK  │──► alchemy_raw
+│ combo_id                FK  │──► pattern_combo
+│ is_active                   │
+└─────────────────────────────┘
+                    │
+                    ▼
+         ┌──────────────────────┐
+         │    pattern_combo     │  (Reusable for raw/bronze/gold)
+         ├──────────────────────┤
+         │ combo_id         PK  │
+         │ file_pattern_id  FK  │──► file_pattern
+         │ path_pattern_id  FK  │──► path_pattern
+         │ description          │
+         └──────────────────────┘
+                    │
+       ┌────────────┼────────────┐
+       │            │            │
+       ▼            │            ▼
+┌─────────────────┐ │  ┌─────────────────┐
+│  file_pattern   │ │  │  path_pattern   │
+├─────────────────┤ │  ├─────────────────┤
+│ file_pattern_id │ │  │ path_pattern_id │
+│ pattern_regex   │ │  │ pattern_struct  │
+│ format_id    FK │ │  │ format_id    FK │
+└─────────────────┘ │  └─────────────────┘
+       │            │            │
+       └────────────┼────────────┘
+                    ▼
+         ┌──────────────────────┐
+         │    date_format       │  (Lookup)
+         ├──────────────────────┤
+         │ format_id        PK  │
+         │ format_code          │  ← YYYY, YYYYMM, YYYYMMDD
+         │ format_regex         │
+         │ example              │
+         └──────────────────────┘
 
-    Q --> PC
-    PC --> LP
-    LP --> GM
-    LP --> SV
-    GM --> R3
-    SV --> R2
-    LP --> R1
+         ┌──────────────────────┐
+         │    path_example      │  (Full path examples)
+         ├──────────────────────┤
+         │ example_id       PK  │
+         │ combo_id         FK  │──► pattern_combo
+         │ example_filename     │  ← 2025/12/02/123456--file.csv
+         │ example_rel_path     │
+         │ file_date            │
+         └──────────────────────┘
 ```
 
-## Schema
+## Entity Relationship Summary
 
-### ER Diagram
+```
+alchemy_server (3) ◄─── alchemy_service (20)
+                              │
+                              ├──► vendor
+                              └──► alchemy_raw
 
-```mermaid
-erDiagram
-    vendors ||--o{ datasets : "owns"
-    services ||--o{ datasets : "delivers"
-    datasets ||--o{ grabber_maps : "configured by"
-    datasets ||--o{ layer_patterns : "has"
-    datasets ||--o{ file_types : "produces"
-    layer_patterns ||--o{ pattern_chains : "source"
-    layer_patterns ||--o{ pattern_chains : "target"
-    file_types ||--o{ delta_tables : "stored as"
-    file_types ||--o{ parquet_files : "stored as"
-    file_types ||--o{ raw_files : "stored as"
-    file_types ||--o{ cdp_files : "stored as"
+vendor (13)
+  ├── vendor_credential (22)
+  ├── alchemy_service (20)
+  └── cwiq_pipe_source_dataset (22)
+        └── alchemy_raw (22)
+              ├── raw_filetype (47) ──► filetype (13)
+              ├── alchemy_service (20)
+              └── raw_pattern_rel (34) ──► pattern_combo (32)
+                                                │
+                                      ┌─────────┴─────────┐
+                                      ▼                   ▼
+                               file_pattern (32)    path_pattern (5)
+                                      │                   │
+                                      └─────────┬─────────┘
+                                                ▼
+                                          date_format (7)
+                                                ▲
+                                                │
+                                          path_example (29)
 
-    vendors {
-        int id PK
-        string name UK
-        string display_name
-        string timezone
-        string description
-    }
-
-    services {
-        int id PK
-        string name UK
-        string description
-        string delivery_method
-        string schedule
-        string connection_info
-    }
-
-    datasets {
-        int id PK
-        int vendor_id FK
-        int service_id FK
-        string source_dataset
-        string source_version
-        string target_dataset
-        string target_version
-        boolean active
-    }
-
-    grabber_maps {
-        int id PK
-        int dataset_id FK
-        string filename
-        string filepath
-        string checksum
-        datetime updated_at
-    }
-
-    file_types {
-        int id PK
-        int dataset_id FK
-        string type
-        string layer
-        string pattern_glob
-        string pattern_regex
-        string example_path
-    }
-
-    layer_patterns {
-        int id PK
-        int dataset_id FK
-        string layer
-        string pattern_glob
-        string pattern_regex
-        string example_path
-        string description
-    }
-
-    pattern_chains {
-        int id PK
-        int source_pattern_id FK
-        int target_pattern_id FK
-        string transformation_type
-        string notes
-    }
-
-    delta_tables {
-        int id PK
-        int file_type_id FK
-        string table_name
-        string table_path
-        string partition_cols
-        int version
-        datetime created_at
-    }
-
-    parquet_files {
-        int id PK
-        int file_type_id FK
-        string pattern_glob
-        string compression
-        string schema_path
-    }
-
-    raw_files {
-        int id PK
-        int file_type_id FK
-        string pattern_glob
-        string file_format
-        string encoding
-    }
-
-    cdp_files {
-        int id PK
-        int file_type_id FK
-        string pattern_glob
-        string cdp_type
-        string legacy_path
-    }
+project (4) ──► layer (6) ──► full_path_pattern (22)
+                                      │
+                                      └──► pattern_combo (reuse)
 ```
 
-### Entity Descriptions
+## Project/Layer Flow
 
-| Entity | Purpose |
-|--------|---------|
-| **vendors** | Data vendors (sp, bloomberg, refinitiv) |
-| **services** | Delivery services (Xpressfeed, Bloomberg_SFTP) |
-| **datasets** | Source → Target dataset mappings |
-| **grabber_maps** | JSON config files for extraction |
-| **file_types** | File type classification per layer |
-| **layer_patterns** | Glob/regex patterns per layer |
-| **pattern_chains** | Layer transformation mappings |
-| **delta_tables** | Delta Lake table metadata |
-| **parquet_files** | Parquet file patterns |
-| **raw_files** | Raw/landing file patterns |
-| **cdp_files** | Legacy CDP file patterns |
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────────────────┐
+│   project   │────►│    layer    │────►│   full_path_pattern     │
+├─────────────┤     ├─────────────┤     ├─────────────────────────┤
+│ cwiq_pipe   │     │ raw (1)     │     │ /sf/data/.../raw/...    │
+│ data_alchemy│     │ bronze (2)  │     │ /sf/data/.../bronze/... │
+│ cds_job     │     │ silver (3)  │     │ /sf/data/.../silver/... │
+│ delta_share │     │ gold (4)    │     │ /sf/data/.../gold/...   │
+└─────────────┘     │ raw_enrich  │     │ /sf/data/.../raw/...    │
+                    │ delta (6)   │     └─────────────────────────┘
+                    └─────────────┘
+```
 
-### SQL Schema
+## Tables Overview
+
+| Table | Type | Records | Purpose |
+|-------|------|---------|---------|
+| `alchemy_server` | Dimension | 3 | Production servers (ny5-predpalch01/04/06) |
+| `alchemy_service` | Dimension | 20 | Systemd services running data-alchemy pipelines |
+| `vendor` | Dimension | 13 | Source vendors (bloomberg, sp, factset, etc.) |
+| `vendor_credential` | Dimension | 22 | AWS Secrets Manager paths |
+| `cwiq_pipe_source_dataset` | Dimension | 22 | Source dataset configurations |
+| `alchemy_raw` | Dimension | 22 | Raw file landing paths |
+| `filetype` | Lookup | 13 | Reusable file extensions (csv, parquet, gz, etc.) |
+| `raw_filetype` | Bridge | 47 | Links alchemy_raw to filetype |
+| `date_format` | Lookup | 7 | Date format patterns (YYYY, YYYYMM, etc.) |
+| `file_pattern` | Dimension | 32 | File regex patterns (reusable) |
+| `path_pattern` | Dimension | 5 | Directory structures (reusable) |
+| `pattern_combo` | Dimension | 32 | Combines file + path pattern (reusable) |
+| `path_example` | Dimension | 29 | Full path examples |
+| `raw_pattern_rel` | Bridge | 34 | Links raw → combo |
+| `project` | Lookup | 4 | Systems (cwiq_pipe, data_alchemy, cds_job, delta_share) |
+| `layer` | Lookup | 6 | Pipeline layers (raw, bronze, silver, gold, raw_enriched, delta) |
+| `full_path_pattern` | Dimension | 22 | Complete paths for traceability |
+
+## SQL Schema
 
 ```sql
 -- ============================================
 -- INVESTIGATION DB - Full Schema
 -- ============================================
 
+-- Servers (production infrastructure)
+CREATE TABLE alchemy_server (
+    server_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    server_name VARCHAR(100) UNIQUE NOT NULL,  -- 'ny5-predpalch01'
+    ip_address VARCHAR(45),
+    cpu_cores INTEGER,
+    ram_gb INTEGER,
+    disk_gb INTEGER,
+    os_version VARCHAR(50),
+    environment VARCHAR(20),                    -- 'prod', 'dev', 'staging'
+    datacenter VARCHAR(50),
+    status VARCHAR(20) DEFAULT 'active',        -- 'active', 'maintenance', 'offline'
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Vendors (data providers)
-CREATE TABLE vendors (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(50) UNIQUE NOT NULL,      -- 'sp', 'bloomberg', 'refinitiv'
-    display_name VARCHAR(100),              -- 'S&P Global', 'Bloomberg LP'
-    timezone VARCHAR(50) DEFAULT 'UTC',
-    description TEXT,
+CREATE TABLE vendor (
+    vendor_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    vendor_code VARCHAR(50) UNIQUE NOT NULL,    -- 'sp', 'bloomberg', 'factset'
+    vendor_name VARCHAR(100),                   -- 'S&P Global', 'Bloomberg LP'
+    website VARCHAR(200),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Services (delivery mechanisms)
-CREATE TABLE services (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(100) UNIQUE NOT NULL,      -- 'Xpressfeed', 'Bloomberg_SFTP'
-    description TEXT,
-    delivery_method VARCHAR(50),            -- 'sftp', 'api', 'feed'
-    schedule VARCHAR(100),                  -- 'daily 07:00 UTC', 'hourly'
-    connection_info TEXT,                   -- JSON: host, port, credentials ref
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Datasets (source → target mapping)
-CREATE TABLE datasets (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+-- Vendor Credentials (AWS Secrets)
+CREATE TABLE vendor_credential (
+    credential_id INTEGER PRIMARY KEY AUTOINCREMENT,
     vendor_id INTEGER NOT NULL,
-    service_id INTEGER NOT NULL,
-
-    -- Source naming (Bronze/Silver)
-    source_dataset VARCHAR(200) NOT NULL,   -- 'gics_cwiq_pipe'
-    source_version VARCHAR(20) NOT NULL,    -- '1.0'
-
-    -- Target naming (Gold/Platinum)
-    target_dataset VARCHAR(200),            -- 'gics_direct'
-    target_version VARCHAR(20),             -- '1.0'
-
-    active BOOLEAN DEFAULT TRUE,
+    aws_secret_path VARCHAR(500),               -- 'arn:aws:secretsmanager:...'
+    credential_type VARCHAR(50),                -- 'sftp', 'api', 'gpg'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (vendor_id) REFERENCES vendors(id),
-    FOREIGN KEY (service_id) REFERENCES services(id),
-    UNIQUE (vendor_id, source_dataset, source_version)
+    FOREIGN KEY (vendor_id) REFERENCES vendor(vendor_id)
 );
 
--- Grabber Maps (JSON config files)
-CREATE TABLE grabber_maps (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dataset_id INTEGER NOT NULL,
-    filename VARCHAR(200) NOT NULL,         -- 'sp_gics_cwiq_pipe_1.0.json'
-    filepath VARCHAR(500),                  -- 'resc/grabber_maps/...'
-    checksum VARCHAR(64),
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (dataset_id) REFERENCES datasets(id)
+-- CWIQ Pipe Source Dataset (source configurations)
+CREATE TABLE cwiq_pipe_source_dataset (
+    source_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    vendor_id INTEGER NOT NULL,
+    credential_id INTEGER,
+    dataset_name VARCHAR(200) NOT NULL,         -- 'gics_cwiq_pipe'
+    dataset_version VARCHAR(20) NOT NULL,       -- '1.0'
+    connector_type VARCHAR(50),                 -- 'sftp', 'api'
+    exporter_type VARCHAR(50),                  -- 'tar', 'zip'
+    source_path VARCHAR(500),
+    source_host VARCHAR(200),
+    scan_time VARCHAR(50),                      -- '07:00 UTC'
+    env_enabled VARCHAR(100),                   -- 'env1,env2,env3'
+    online BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (vendor_id) REFERENCES vendor(vendor_id),
+    FOREIGN KEY (credential_id) REFERENCES vendor_credential(credential_id),
+    UNIQUE (vendor_id, dataset_name, dataset_version)
 );
 
--- File Types (classification per dataset/layer)
-CREATE TABLE file_types (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dataset_id INTEGER NOT NULL,
-    type VARCHAR(50) NOT NULL,              -- 'delta', 'parquet', 'raw', 'cdp'
-    layer VARCHAR(20) NOT NULL,             -- 'bronze', 'silver', 'gold', 'platinum'
-    pattern_glob TEXT NOT NULL,
-    pattern_regex TEXT,
-    example_path TEXT,
+-- Alchemy Raw (raw file landing paths)
+CREATE TABLE alchemy_raw (
+    raw_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_id INTEGER NOT NULL,
+    base_path VARCHAR(500) NOT NULL,            -- '/sf/data/sp/gics_cwiq_pipe/1.0'
+    is_live BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (source_id) REFERENCES cwiq_pipe_source_dataset(source_id)
+);
+
+-- Alchemy Service (systemd services)
+CREATE TABLE alchemy_service (
+    service_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    server_id INTEGER NOT NULL,
+    raw_id INTEGER NOT NULL,
+    vendor_id INTEGER NOT NULL,
+    dataset_name VARCHAR(200) NOT NULL,
+    dataset_version VARCHAR(20) NOT NULL,
+    service_name VARCHAR(200) NOT NULL,         -- 'data-alchemy-sp-gics'
+    environment VARCHAR(20),                    -- 'prod', 'dev'
+    exec_script VARCHAR(500),
+    watch_interval INTEGER DEFAULT 300,
+    fp_prefix VARCHAR(500),                     -- '/sf/data'
+    raw_fp_prefix VARCHAR(500),
+    log_path VARCHAR(500),
+    playbook_file VARCHAR(200),                 -- 'deploy-data-alchemy-prod01.yml'
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (server_id) REFERENCES alchemy_server(server_id),
+    FOREIGN KEY (raw_id) REFERENCES alchemy_raw(raw_id),
+    FOREIGN KEY (vendor_id) REFERENCES vendor(vendor_id)
+);
+
+-- Filetype (lookup: file extensions)
+CREATE TABLE filetype (
+    filetype_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    extension VARCHAR(20) UNIQUE NOT NULL,      -- 'csv', 'parquet', 'tar.gz'
+    mime_type VARCHAR(100),
+    category VARCHAR(50)                        -- 'data', 'archive', 'compressed'
+);
+
+-- Raw Filetype (bridge: raw → filetype)
+CREATE TABLE raw_filetype (
+    raw_filetype_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    raw_id INTEGER NOT NULL,
+    filetype_id INTEGER NOT NULL,
+    is_primary BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (raw_id) REFERENCES alchemy_raw(raw_id),
+    FOREIGN KEY (filetype_id) REFERENCES filetype(filetype_id),
+    UNIQUE (raw_id, filetype_id)
+);
+
+-- Date Format (lookup)
+CREATE TABLE date_format (
+    format_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    format_code VARCHAR(50) UNIQUE NOT NULL,    -- 'YYYY', 'YYYYMM', 'YYYYMMDD'
+    format_regex VARCHAR(100) NOT NULL,         -- '\d{4}', '\d{6}', '\d{8}'
+    example VARCHAR(50)                         -- '2025', '202512', '20251210'
+);
+
+-- File Pattern (reusable file regex)
+CREATE TABLE file_pattern (
+    file_pattern_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pattern_regex VARCHAR(500) NOT NULL,        -- '^\d{6}--.*\.tar\.gz$'
+    format_id INTEGER,
     description TEXT,
-
-    FOREIGN KEY (dataset_id) REFERENCES datasets(id),
-    UNIQUE (dataset_id, type, layer)
+    FOREIGN KEY (format_id) REFERENCES date_format(format_id)
 );
 
--- Layer Patterns (glob/regex per layer)
-CREATE TABLE layer_patterns (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dataset_id INTEGER NOT NULL,
-    layer VARCHAR(20) NOT NULL,             -- 'bronze', 'silver', 'gold', 'platinum', 'raw'
-    pattern_glob TEXT NOT NULL,
-    pattern_regex TEXT,
-    example_path TEXT,
+-- Path Pattern (reusable directory structures)
+CREATE TABLE path_pattern (
+    path_pattern_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pattern_structure VARCHAR(200) NOT NULL,    -- 'YYYY/MM/DD/', 'YYYY/YYYYMMDD/'
+    format_id INTEGER,
     description TEXT,
-
-    FOREIGN KEY (dataset_id) REFERENCES datasets(id),
-    UNIQUE (dataset_id, layer, pattern_glob)
+    FOREIGN KEY (format_id) REFERENCES date_format(format_id)
 );
 
--- Pattern Chains (layer transformations)
-CREATE TABLE pattern_chains (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    source_pattern_id INTEGER NOT NULL,
-    target_pattern_id INTEGER NOT NULL,
-    transformation_type VARCHAR(50),        -- 'decompress', 'rename', 'restructure', 'curate'
-    notes TEXT,
-
-    FOREIGN KEY (source_pattern_id) REFERENCES layer_patterns(id),
-    FOREIGN KEY (target_pattern_id) REFERENCES layer_patterns(id)
+-- Pattern Combo (combines file + path pattern)
+CREATE TABLE pattern_combo (
+    combo_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_pattern_id INTEGER NOT NULL,
+    path_pattern_id INTEGER NOT NULL,
+    description TEXT,
+    FOREIGN KEY (file_pattern_id) REFERENCES file_pattern(file_pattern_id),
+    FOREIGN KEY (path_pattern_id) REFERENCES path_pattern(path_pattern_id),
+    UNIQUE (file_pattern_id, path_pattern_id)
 );
 
--- ============================================
--- FILE TYPE SPECIFIC TABLES
--- ============================================
-
--- Delta Tables (Delta Lake metadata)
-CREATE TABLE delta_tables (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    file_type_id INTEGER NOT NULL,
-    table_name VARCHAR(200) NOT NULL,       -- 'gics_master'
-    table_path VARCHAR(500) NOT NULL,       -- '/lakehouse/sp/gics/delta/'
-    partition_cols VARCHAR(200),            -- 'year,month,day'
-    current_version INTEGER DEFAULT 0,
-    total_files INTEGER,
-    total_size_bytes BIGINT,
-    last_modified DATETIME,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (file_type_id) REFERENCES file_types(id)
+-- Path Example (full path examples)
+CREATE TABLE path_example (
+    example_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    combo_id INTEGER NOT NULL,
+    example_filename VARCHAR(500),              -- '070847--Xpressfeed_pkgGIC01.tar.gz'
+    example_rel_path VARCHAR(500),              -- '2025/12/02/070847--file.tar.gz'
+    file_date DATE,
+    FOREIGN KEY (combo_id) REFERENCES pattern_combo(combo_id)
 );
 
--- Parquet Files (Parquet metadata)
-CREATE TABLE parquet_files (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    file_type_id INTEGER NOT NULL,
-    pattern_glob TEXT NOT NULL,             -- '*.parquet'
-    compression VARCHAR(20),                -- 'snappy', 'gzip', 'lz4'
-    schema_path VARCHAR(500),               -- path to schema file
-    row_group_size INTEGER,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (file_type_id) REFERENCES file_types(id)
+-- Raw Pattern Rel (bridge: raw → combo)
+CREATE TABLE raw_pattern_rel (
+    rel_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    raw_id INTEGER NOT NULL,
+    combo_id INTEGER NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (raw_id) REFERENCES alchemy_raw(raw_id),
+    FOREIGN KEY (combo_id) REFERENCES pattern_combo(combo_id)
 );
 
--- Raw Files (Landing zone files)
-CREATE TABLE raw_files (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    file_type_id INTEGER NOT NULL,
-    pattern_glob TEXT NOT NULL,             -- '*.tar.gz', '*.zip'
-    file_format VARCHAR(50),                -- 'tar.gz', 'zip', 'csv', 'xml'
-    encoding VARCHAR(20) DEFAULT 'UTF-8',
-    delimiter VARCHAR(10),                  -- for CSV: ',', '|', '\t'
-    has_header BOOLEAN DEFAULT TRUE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (file_type_id) REFERENCES file_types(id)
+-- Project (systems)
+CREATE TABLE project (
+    project_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_name VARCHAR(100) UNIQUE NOT NULL,  -- 'cwiq_pipe', 'data_alchemy', 'cds_job'
+    description TEXT
 );
 
--- CDP Files (Legacy CDP format)
-CREATE TABLE cdp_files (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    file_type_id INTEGER NOT NULL,
-    pattern_glob TEXT NOT NULL,
-    cdp_type VARCHAR(50),                   -- 'snapshot', 'delta', 'full'
-    legacy_path VARCHAR(500),               -- old CDP path structure
-    migration_status VARCHAR(20),           -- 'pending', 'migrated', 'deprecated'
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+-- Layer (pipeline layers)
+CREATE TABLE layer (
+    layer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    layer_name VARCHAR(50) NOT NULL,            -- 'raw', 'bronze', 'silver', 'gold', 'delta'
+    layer_order INTEGER NOT NULL,
+    description TEXT,
+    FOREIGN KEY (project_id) REFERENCES project(project_id),
+    UNIQUE (project_id, layer_name)
+);
 
-    FOREIGN KEY (file_type_id) REFERENCES file_types(id)
+-- Full Path Pattern (complete paths for traceability)
+CREATE TABLE full_path_pattern (
+    path_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    layer_id INTEGER NOT NULL,
+    combo_id INTEGER NOT NULL,
+    base_path VARCHAR(500) NOT NULL,            -- '/sf/data/sp/gics_cwiq_pipe/1.0/bronze'
+    full_path_example VARCHAR(1000),            -- '/sf/data/.../2025/12/02/070847--file.tar.gz'
+    FOREIGN KEY (layer_id) REFERENCES layer(layer_id),
+    FOREIGN KEY (combo_id) REFERENCES pattern_combo(combo_id)
 );
 
 -- ============================================
 -- INDEXES
 -- ============================================
 
-CREATE INDEX idx_vendors_name ON vendors(name);
-CREATE INDEX idx_datasets_vendor ON datasets(vendor_id);
-CREATE INDEX idx_datasets_service ON datasets(service_id);
-CREATE INDEX idx_patterns_layer ON layer_patterns(layer);
-CREATE INDEX idx_patterns_dataset ON layer_patterns(dataset_id);
-CREATE INDEX idx_grabber_dataset ON grabber_maps(dataset_id);
-CREATE INDEX idx_file_types_dataset ON file_types(dataset_id);
-CREATE INDEX idx_file_types_type ON file_types(type);
-CREATE INDEX idx_delta_tables_file_type ON delta_tables(file_type_id);
-CREATE INDEX idx_parquet_files_file_type ON parquet_files(file_type_id);
-CREATE INDEX idx_raw_files_file_type ON raw_files(file_type_id);
-CREATE INDEX idx_cdp_files_file_type ON cdp_files(file_type_id);
+CREATE INDEX idx_vendor_code ON vendor(vendor_code);
+CREATE INDEX idx_source_vendor ON cwiq_pipe_source_dataset(vendor_id);
+CREATE INDEX idx_raw_source ON alchemy_raw(source_id);
+CREATE INDEX idx_service_server ON alchemy_service(server_id);
+CREATE INDEX idx_service_vendor ON alchemy_service(vendor_id);
+CREATE INDEX idx_raw_filetype_raw ON raw_filetype(raw_id);
+CREATE INDEX idx_pattern_rel_raw ON raw_pattern_rel(raw_id);
+CREATE INDEX idx_pattern_rel_combo ON raw_pattern_rel(combo_id);
+CREATE INDEX idx_full_path_layer ON full_path_pattern(layer_id);
+CREATE INDEX idx_full_path_combo ON full_path_pattern(combo_id);
 ```
 
-## Data Flow
+## Lookup Tables
 
-```mermaid
-flowchart TB
-    subgraph Layers["Pipeline Layers"]
-        B["Bronze<br/>sp/gics_cwiq_pipe/1.0/bronze/*/*--*.tar.gz"]
-        S["Silver<br/>sp/gics_cwiq_pipe/1.0/silver/*/work/*/*--*.zip"]
-        G["Gold<br/>sp_global_mi/gics_direct/1.0/raw/*/*.zip"]
-        P["Platinum<br/>sp_global_mi/gics_direct/1.0/curated/*.parquet"]
+### Date Format
 
-        B -->|decompress| S
-        S -->|restructure| G
-        G -->|curate| P
-    end
+| format_code | format_regex | example |
+|-------------|--------------|---------|
+| YYYY | `\d{4}` | 2025 |
+| YYYYMM | `\d{6}` | 202511 |
+| YYYYMMDD | `\d{8}` | 20251119 |
+| YYMMDD | `\d{6}` | 251119 |
+| YYYYMMDD_HHMMSS | `\d{8}_\d{6}` | 20251119_143022 |
+| HHMMSS | `\d{6}` | 143022 |
+| MM | `\d{2}` | 11 |
 
-    subgraph Registry["Pattern Registry"]
-        LP1[layer_patterns: bronze]
-        LP2[layer_patterns: silver]
-        LP3[layer_patterns: gold]
-        LP4[layer_patterns: platinum]
+### Path Pattern Structures
 
-        PC1[pattern_chain: B→S]
-        PC2[pattern_chain: S→G]
-        PC3[pattern_chain: G→P]
-    end
+| pattern_structure | format | example |
+|-------------------|--------|---------|
+| `YYYY/MM/DD/` | YYYYMMDD | 2025/12/02/ |
+| `YYYY/YYYYMM/` | YYYYMM | 2025/202512/ |
+| `YYYY/YYYYMMDD/` | YYYYMMDD | 2025/20251202/ |
+| `YYYY/` | YYYY | 2025/ |
+| `/` | - | (flat) |
 
-    B -.-> LP1
-    S -.-> LP2
-    G -.-> LP3
-    P -.-> LP4
+### Filetype
 
-    LP1 --> PC1 --> LP2
-    LP2 --> PC2 --> LP3
-    LP3 --> PC3 --> LP4
-```
+| extension | mime_type | category |
+|-----------|-----------|----------|
+| csv | text/csv | data |
+| parquet | application/parquet | data |
+| json | application/json | data |
+| tar.gz | application/gzip | archive |
+| zip | application/zip | archive |
+| gz | application/gzip | compressed |
+| gpg | application/pgp-encrypted | encrypted |
 
-## Reverse Lookup Flow
+### Layer
 
-```mermaid
-flowchart TD
-    INPUT[/"Gold: sp_global_mi/gics_direct/1.0/raw/2025/20251128/*.zip"/]
-
-    subgraph Step1["1. Match Gold Pattern"]
-        LP_GOLD["layer_patterns WHERE layer='gold'<br/>AND pattern matches input"]
-    end
-
-    subgraph Step2["2. Walk Chain Backwards"]
-        PC["pattern_chains<br/>target_pattern_id → source_pattern_id"]
-    end
-
-    subgraph Step3["3. Get Bronze Pattern"]
-        LP_BRONZE["layer_patterns WHERE layer='bronze'"]
-    end
-
-    subgraph Step4["4. Get Service & Grabber Map"]
-        DS["datasets"]
-        SV["services"]
-        GM["grabber_maps"]
-    end
-
-    subgraph Output["Result"]
-        R1["Bronze: sp/gics_cwiq_pipe/1.0/bronze/*/*--*.tar.gz"]
-        R2["Service: Xpressfeed"]
-        R3["Grabber: sp_gics_cwiq_pipe_1.0.json"]
-    end
-
-    INPUT --> Step1
-    Step1 --> Step2
-    Step2 --> Step3
-    Step3 --> DS
-    DS --> SV --> R2
-    DS --> GM --> R3
-    Step3 --> R1
-```
+| layer_name | layer_order | description |
+|------------|-------------|-------------|
+| raw | 1 | Landing zone (cwiq-pipe) |
+| bronze | 2 | Timestamped archives |
+| silver | 3 | Extracted files |
+| gold | 4 | Restructured/renamed |
+| raw_enriched | 5 | CDP legacy format |
+| delta | 6 | Delta Lake tables |
 
 ## Sample Data
 
 ```sql
 -- ============================================
+-- SERVERS
+-- ============================================
+INSERT INTO alchemy_server (server_name, ip_address, environment, datacenter, status) VALUES
+('ny5-predpalch01', '10.0.1.1', 'prod', 'NY5', 'active'),
+('ny5-predpalch04', '10.0.1.4', 'prod', 'NY5', 'active'),
+('ny5-predpalch06', '10.0.1.6', 'prod', 'NY5', 'active');
+
+-- ============================================
 -- VENDORS
 -- ============================================
-INSERT INTO vendors (name, display_name, timezone, description) VALUES
-('sp', 'S&P Global', 'UTC', 'S&P Global Market Intelligence'),
-('bloomberg', 'Bloomberg LP', 'America/New_York', 'Bloomberg Data License'),
-('refinitiv', 'Refinitiv', 'UTC', 'Refinitiv Data Services');
+INSERT INTO vendor (vendor_code, vendor_name, website) VALUES
+('sp', 'S&P Global', 'https://spglobal.com'),
+('bloomberg', 'Bloomberg LP', 'https://bloomberg.com'),
+('factset', 'FactSet', 'https://factset.com'),
+('refinitiv', 'Refinitiv', 'https://refinitiv.com');
 
 -- ============================================
--- SERVICES
+-- VENDOR CREDENTIALS
 -- ============================================
-INSERT INTO services (name, description, delivery_method, schedule, connection_info) VALUES
-('Xpressfeed', 'S&P Global Market Intelligence Feed', 'sftp', 'daily 07:00 UTC', '{"host": "sftp.spglobal.com"}'),
-('Bloomberg_SFTP', 'Bloomberg Data License SFTP', 'sftp', 'daily 06:00 EST', '{"host": "sftp.bloomberg.com"}'),
-('Refinitiv_API', 'Refinitiv Data API', 'api', 'hourly', '{"endpoint": "https://api.refinitiv.com"}');
+INSERT INTO vendor_credential (vendor_id, aws_secret_path, credential_type) VALUES
+(1, 'arn:aws:secretsmanager:us-east-1:123:secret/sp-sftp', 'sftp'),
+(2, 'arn:aws:secretsmanager:us-east-1:123:secret/bloomberg-sftp', 'sftp'),
+(2, 'arn:aws:secretsmanager:us-east-1:123:secret/bloomberg-gpg', 'gpg');
 
 -- ============================================
--- DATASETS
+-- SOURCE DATASETS
 -- ============================================
-INSERT INTO datasets (vendor_id, service_id, source_dataset, source_version, target_dataset, target_version) VALUES
-(1, 1, 'gics_cwiq_pipe', '1.0', 'gics_direct', '1.0'),
-(2, 2, 'bbocax_cwiq_pipe', '1.0', 'bbocax_futures', '1.0');
+INSERT INTO cwiq_pipe_source_dataset (vendor_id, credential_id, dataset_name, dataset_version, connector_type, exporter_type, scan_time) VALUES
+(1, 1, 'gics_cwiq_pipe', '1.0', 'sftp', 'tar', '07:00 UTC'),
+(2, 2, 'bbocax_cwiq_pipe', '1.0', 'sftp', 'tar', '06:00 EST');
 
 -- ============================================
--- GRABBER MAPS
+-- ALCHEMY RAW
 -- ============================================
-INSERT INTO grabber_maps (dataset_id, filename, filepath, checksum) VALUES
-(1, 'sp_gics_cwiq_pipe_1.0.json', 'resc/grabber_maps/sp_gics_cwiq_pipe_1.0.json', 'abc123'),
-(2, 'bloomberg_bbocax_cwiq_pipe_1.0.json', 'resc/grabber_maps/bloomberg_bbocax_cwiq_pipe_1.0.json', 'def456');
+INSERT INTO alchemy_raw (source_id, base_path, is_live) VALUES
+(1, '/sf/data/sp/gics_cwiq_pipe/1.0', TRUE),
+(2, '/sf/data/bloomberg/bbocax_cwiq_pipe/1.0', TRUE);
 
 -- ============================================
--- FILE TYPES
+-- FILETYPES
 -- ============================================
-INSERT INTO file_types (dataset_id, type, layer, pattern_glob, pattern_regex, example_path, description) VALUES
--- SP GICS file types
-(1, 'raw', 'bronze', 'sp/gics_cwiq_pipe/1.0/bronze/*/*/*/*--*.tar.gz', NULL,
-   'sp/gics_cwiq_pipe/1.0/bronze/2025/11/28/070847--Xpressfeed_pkgGIC01.tar.gz', 'Raw compressed archives'),
-(1, 'parquet', 'platinum', 'sp_global_mi/gics_direct/1.0/curated/*.parquet', NULL,
-   'sp_global_mi/gics_direct/1.0/curated/gics_data.parquet', 'Curated parquet files'),
-(1, 'delta', 'platinum', 'sp_global_mi/gics_direct/1.0/delta/*', NULL,
-   'sp_global_mi/gics_direct/1.0/delta/gics_master', 'Delta Lake tables'),
-(1, 'cdp', 'gold', 'cdp/sp/gics/*/*.csv', NULL,
-   'cdp/sp/gics/2025/gics_20251128.csv', 'Legacy CDP format');
+INSERT INTO filetype (extension, mime_type, category) VALUES
+('csv', 'text/csv', 'data'),
+('parquet', 'application/parquet', 'data'),
+('tar.gz', 'application/gzip', 'archive'),
+('zip', 'application/zip', 'archive'),
+('gpg', 'application/pgp-encrypted', 'encrypted');
 
 -- ============================================
--- LAYER PATTERNS
+-- DATE FORMATS
 -- ============================================
-INSERT INTO layer_patterns (dataset_id, layer, pattern_glob, pattern_regex, example_path, description) VALUES
-(1, 'raw', 'cwiq-pipe/sp/gics_cwiq_pipe/1.0/env*/*--*.tar.gz', NULL,
-   'cwiq-pipe/sp/gics_cwiq_pipe/1.0/env1/070847--Xpressfeed_pkgGIC01.tar.gz', 'Raw landing zone'),
-(1, 'bronze', 'sp/gics_cwiq_pipe/1.0/bronze/*/*/*/*--*.tar.gz',
-   'sp/gics_cwiq_pipe/1\\.0/bronze/\\d{4}/\\d{2}/\\d{2}/\\d{6}--.*\\.tar\\.gz',
-   'sp/gics_cwiq_pipe/1.0/bronze/2025/11/28/070847--Xpressfeed_pkgGIC01.tar.gz', 'Bronze archives'),
-(1, 'silver', 'sp/gics_cwiq_pipe/1.0/silver/*/work/*/*/*/*--*.zip',
-   'sp/gics_cwiq_pipe/1\\.0/silver/\\d{4}/\\d{2}/\\d{2}/work/[^/]+/[^/]+/\\d{6}--.*\\.zip',
-   'sp/gics_cwiq_pipe/1.0/silver/2025/11/28/work/Xpressfeed/pkgGIC01/070847--f_gic_comp-20251128.01.xffmt.zip', 'Silver extracted'),
-(1, 'gold', 'sp_global_mi/gics_direct/1.0/raw/*/*/*.zip',
-   'sp_global_mi/gics_direct/1\\.0/raw/\\d{4}/\\d{8}/.*\\.zip',
-   'sp_global_mi/gics_direct/1.0/raw/2025/20251128/f_gic_comp-20251128.01.xffmt.zip', 'Gold restructured'),
-(1, 'platinum', 'sp_global_mi/gics_direct/1.0/curated/*.parquet',
-   'sp_global_mi/gics_direct/1\\.0/curated/.*\\.parquet',
-   'sp_global_mi/gics_direct/1.0/curated/gics_data.parquet', 'Platinum curated');
+INSERT INTO date_format (format_code, format_regex, example) VALUES
+('YYYY', '\\d{4}', '2025'),
+('YYYYMM', '\\d{6}', '202512'),
+('YYYYMMDD', '\\d{8}', '20251210'),
+('HHMMSS', '\\d{6}', '070847'),
+('MM', '\\d{2}', '12'),
+('DD', '\\d{2}', '10');
 
 -- ============================================
--- PATTERN CHAINS
+-- PATH PATTERNS
 -- ============================================
-INSERT INTO pattern_chains (source_pattern_id, target_pattern_id, transformation_type, notes) VALUES
-(1, 2, 'copy', 'raw → bronze (timestamp prefix)'),
-(2, 3, 'decompress', 'tar.gz → extracted files'),
-(3, 4, 'restructure', 'YYYY/MM/DD → YYYY/YYYYMMDD, vendor rename'),
-(4, 5, 'curate', 'zip → parquet conversion');
+INSERT INTO path_pattern (pattern_structure, format_id, description) VALUES
+('YYYY/MM/DD/', 3, 'Year/Month/Day directories'),
+('YYYY/YYYYMMDD/', 3, 'Year/DateStamp directories'),
+('YYYY/', 1, 'Year only');
 
 -- ============================================
--- DELTA TABLES
+-- FILE PATTERNS
 -- ============================================
-INSERT INTO delta_tables (file_type_id, table_name, table_path, partition_cols, current_version, total_files, total_size_bytes) VALUES
-(3, 'gics_master', '/lakehouse/sp_global_mi/gics_direct/1.0/delta/gics_master', 'year,month', 42, 156, 1073741824),
-(3, 'gics_history', '/lakehouse/sp_global_mi/gics_direct/1.0/delta/gics_history', 'year', 18, 89, 536870912);
+INSERT INTO file_pattern (pattern_regex, format_id, description) VALUES
+('^\\d{6}--.*\\.tar\\.gz$', 4, 'Timestamped tar.gz archives'),
+('^\\d{6}--.*\\.zip$', 4, 'Timestamped zip files'),
+('^.*\\.parquet$', NULL, 'Parquet files'),
+('^.*\\.csv$', NULL, 'CSV files');
 
 -- ============================================
--- PARQUET FILES
+-- PATTERN COMBOS
 -- ============================================
-INSERT INTO parquet_files (file_type_id, pattern_glob, compression, schema_path, row_group_size) VALUES
-(2, '*.parquet', 'snappy', 'schemas/gics_schema.json', 1000000),
-(2, '*_daily.parquet', 'lz4', 'schemas/gics_daily_schema.json', 500000);
+INSERT INTO pattern_combo (file_pattern_id, path_pattern_id, description) VALUES
+(1, 1, 'Bronze: YYYY/MM/DD/HHMMSS--*.tar.gz'),
+(2, 1, 'Silver: YYYY/MM/DD/HHMMSS--*.zip'),
+(3, 2, 'Gold: YYYY/YYYYMMDD/*.parquet');
 
 -- ============================================
--- RAW FILES
+-- PROJECTS & LAYERS
 -- ============================================
-INSERT INTO raw_files (file_type_id, pattern_glob, file_format, encoding, delimiter, has_header) VALUES
-(1, '*.tar.gz', 'tar.gz', 'UTF-8', NULL, FALSE),
-(1, '*.zip', 'zip', 'UTF-8', NULL, FALSE),
-(1, '*.csv', 'csv', 'UTF-8', ',', TRUE);
+INSERT INTO project (project_name, description) VALUES
+('cwiq_pipe', 'CWIQ Pipeline - raw landing'),
+('data_alchemy', 'Data Alchemy - bronze/silver/gold'),
+('cds_job', 'CDS Jobs - downstream'),
+('delta_share', 'Delta Share - delta tables');
 
--- ============================================
--- CDP FILES (Legacy)
--- ============================================
-INSERT INTO cdp_files (file_type_id, pattern_glob, cdp_type, legacy_path, migration_status) VALUES
-(4, 'gics_*.csv', 'snapshot', '/cdp/sp/gics/', 'migrated'),
-(4, 'gics_delta_*.csv', 'delta', '/cdp/sp/gics/delta/', 'pending');
+INSERT INTO layer (project_id, layer_name, layer_order, description) VALUES
+(1, 'raw', 1, 'Raw landing zone'),
+(2, 'bronze', 2, 'Timestamped archives'),
+(2, 'silver', 3, 'Extracted files'),
+(2, 'gold', 4, 'Restructured output'),
+(3, 'raw_enriched', 5, 'CDP legacy format'),
+(4, 'delta', 6, 'Delta Lake tables');
 ```
 
 ## Query Examples
 
-### 1. Reverse Lookup: Gold → Bronze
+### 1. Reverse Lookup: Gold → Bronze → Service
 
 ```sql
--- Given a gold path, find bronze pattern and service
-WITH RECURSIVE chain AS (
-    -- Start from gold pattern that matches
-    SELECT
-        lp.id,
-        lp.layer,
-        lp.pattern_glob,
-        lp.dataset_id,
-        1 as depth
-    FROM layer_patterns lp
-    WHERE lp.layer = 'gold'
-      AND 'sp_global_mi/gics_direct/1.0/raw/2025/20251128/f_gic_comp.zip' GLOB lp.pattern_glob
-
-    UNION ALL
-
-    -- Walk backwards through chain
-    SELECT
-        lp.id,
-        lp.layer,
-        lp.pattern_glob,
-        lp.dataset_id,
-        c.depth + 1
-    FROM chain c
-    JOIN pattern_chains pc ON pc.target_pattern_id = c.id
-    JOIN layer_patterns lp ON lp.id = pc.source_pattern_id
-    WHERE c.depth < 10
-)
+-- Given a gold path, find bronze pattern, service, and server
 SELECT
-    c.layer,
-    c.pattern_glob,
-    s.name as service,
-    gm.filename as grabber_map
-FROM chain c
-JOIN datasets d ON c.dataset_id = d.id
-JOIN services s ON d.service_id = s.id
-LEFT JOIN grabber_maps gm ON gm.dataset_id = d.id
-ORDER BY c.depth DESC;
+    v.vendor_code,
+    d.dataset_name,
+    l_bronze.layer_name as source_layer,
+    fpp_bronze.full_path_example as bronze_path,
+    l_gold.layer_name as target_layer,
+    fpp_gold.full_path_example as gold_path,
+    svc.service_name,
+    srv.server_name
+FROM full_path_pattern fpp_gold
+JOIN layer l_gold ON fpp_gold.layer_id = l_gold.layer_id
+JOIN pattern_combo pc ON fpp_gold.combo_id = pc.combo_id
+JOIN raw_pattern_rel rpr ON pc.combo_id = rpr.combo_id
+JOIN alchemy_raw ar ON rpr.raw_id = ar.raw_id
+JOIN cwiq_pipe_source_dataset d ON ar.source_id = d.source_id
+JOIN vendor v ON d.vendor_id = v.vendor_id
+JOIN alchemy_service svc ON svc.raw_id = ar.raw_id
+JOIN alchemy_server srv ON svc.server_id = srv.server_id
+JOIN full_path_pattern fpp_bronze ON fpp_bronze.combo_id = pc.combo_id
+JOIN layer l_bronze ON fpp_bronze.layer_id = l_bronze.layer_id
+WHERE l_gold.layer_name = 'gold'
+  AND l_bronze.layer_name = 'bronze'
+  AND fpp_gold.full_path_example LIKE '%gics%';
 ```
 
-### 2. Find All Patterns for a Service
+### 2. Find All Patterns for a Vendor
 
 ```sql
 SELECT
-    s.name as service,
-    d.source_vendor || '/' || d.source_dataset as source,
-    d.target_vendor || '/' || d.target_dataset as target,
-    lp.layer,
-    lp.pattern_glob,
-    lp.example_path
-FROM services s
-JOIN datasets d ON d.service_id = s.id
-JOIN layer_patterns lp ON lp.dataset_id = d.id
-WHERE s.name = 'Xpressfeed'
-ORDER BY d.id,
-    CASE lp.layer
-        WHEN 'bronze' THEN 1
-        WHEN 'silver' THEN 2
-        WHEN 'gold' THEN 3
-        WHEN 'platinum' THEN 4
-    END;
+    v.vendor_code,
+    d.dataset_name,
+    fp.pattern_regex as file_pattern,
+    pp.pattern_structure as path_pattern,
+    pe.example_rel_path
+FROM vendor v
+JOIN cwiq_pipe_source_dataset d ON v.vendor_id = d.vendor_id
+JOIN alchemy_raw r ON d.source_id = r.source_id
+JOIN raw_pattern_rel rel ON r.raw_id = rel.raw_id
+JOIN pattern_combo pc ON rel.combo_id = pc.combo_id
+JOIN file_pattern fp ON pc.file_pattern_id = fp.file_pattern_id
+JOIN path_pattern pp ON pc.path_pattern_id = pp.path_pattern_id
+LEFT JOIN path_example pe ON pc.combo_id = pe.combo_id
+WHERE v.vendor_code = 'bloomberg';
 ```
 
-### 3. Find Grabber Map for Pattern
+### 3. List Services by Server
 
 ```sql
 SELECT
-    gm.filename,
-    gm.filepath,
-    d.source_vendor,
-    d.source_dataset,
-    d.source_version
-FROM grabber_maps gm
-JOIN datasets d ON gm.dataset_id = d.id
-JOIN layer_patterns lp ON lp.dataset_id = d.id
-WHERE lp.layer = 'gold'
-  AND 'sp_global_mi/gics_direct/1.0/raw/2025/20251128/test.zip' GLOB lp.pattern_glob;
+    s.server_name,
+    svc.service_name,
+    svc.environment,
+    v.vendor_code,
+    svc.dataset_name,
+    svc.dataset_version,
+    svc.is_active
+FROM alchemy_service svc
+JOIN alchemy_server s ON svc.server_id = s.server_id
+JOIN vendor v ON svc.vendor_id = v.vendor_id
+WHERE s.server_name = 'ny5-predpalch01'
+ORDER BY v.vendor_code, svc.dataset_name;
 ```
 
-### 4. List All Dataset Mappings
+### 4. Impact Analysis: Find Affected Datasets
 
 ```sql
+-- Given a missing raw_enriched path, find the source dataset
 SELECT
-    s.name as service,
-    d.source_vendor || '/' || d.source_dataset || '/' || d.source_version as bronze_naming,
-    d.target_vendor || '/' || d.target_dataset || '/' || d.target_version as gold_naming,
-    gm.filename as grabber_map,
-    d.active
-FROM datasets d
-JOIN services s ON d.service_id = s.id
-LEFT JOIN grabber_maps gm ON gm.dataset_id = d.id
-ORDER BY s.name, d.source_vendor;
+    p.project_name,
+    l.layer_name,
+    fpp.full_path_example,
+    d.dataset_name as source_dataset,
+    v.vendor_code
+FROM full_path_pattern fpp
+JOIN layer l ON fpp.layer_id = l.layer_id
+JOIN project p ON l.project_id = p.project_id
+JOIN pattern_combo pc ON fpp.combo_id = pc.combo_id
+JOIN raw_pattern_rel rpr ON pc.combo_id = rpr.combo_id
+JOIN alchemy_raw ar ON rpr.raw_id = ar.raw_id
+JOIN cwiq_pipe_source_dataset d ON ar.source_id = d.source_id
+JOIN vendor v ON d.vendor_id = v.vendor_id
+WHERE l.layer_name = 'raw_enriched'
+  AND fpp.full_path_example LIKE '%bloomberg%';
 ```
 
-### 5. Find Dataset by Filename Pattern
+### 5. Trace Full Path Across Layers
 
 ```sql
--- Which dataset handles files like "f_gic_comp-*.xffmt.zip"?
+-- See all layers for a specific combo_id (same file pattern)
 SELECT
-    s.name as service,
-    d.source_vendor || '/' || d.source_dataset as dataset,
-    lp.layer,
-    lp.pattern_glob,
-    lp.example_path,
-    gm.filename as grabber_map
-FROM layer_patterns lp
-JOIN datasets d ON lp.dataset_id = d.id
-JOIN services s ON d.service_id = s.id
-LEFT JOIN grabber_maps gm ON gm.dataset_id = d.id
-WHERE lp.example_path LIKE '%f_gic_comp%'
-   OR lp.pattern_glob LIKE '%xffmt%';
+    p.project_name,
+    l.layer_name,
+    l.layer_order,
+    fpp.base_path,
+    fpp.full_path_example
+FROM full_path_pattern fpp
+JOIN layer l ON fpp.layer_id = l.layer_id
+JOIN project p ON l.project_id = p.project_id
+WHERE fpp.combo_id = 1
+ORDER BY l.layer_order;
 ```
 
-### 6. Find Incomplete Dataset Configurations
+### 6. Find File Types per Dataset
 
 ```sql
--- Which datasets are missing patterns for certain layers?
 SELECT
-    d.source_vendor || '/' || d.source_dataset as dataset,
-    s.name as service,
-    GROUP_CONCAT(lp.layer) as configured_layers,
-    CASE
-        WHEN SUM(CASE WHEN lp.layer = 'bronze' THEN 1 ELSE 0 END) = 0 THEN 'missing bronze'
-        WHEN SUM(CASE WHEN lp.layer = 'gold' THEN 1 ELSE 0 END) = 0 THEN 'missing gold'
-        ELSE 'complete'
-    END as status
-FROM datasets d
-JOIN services s ON d.service_id = s.id
-LEFT JOIN layer_patterns lp ON lp.dataset_id = d.id
-GROUP BY d.id
-HAVING status != 'complete';
+    d.dataset_name,
+    GROUP_CONCAT(f.extension) as extensions
+FROM cwiq_pipe_source_dataset d
+JOIN alchemy_raw r ON d.source_id = r.source_id
+JOIN raw_filetype rf ON r.raw_id = rf.raw_id
+JOIN filetype f ON rf.filetype_id = f.filetype_id
+GROUP BY d.dataset_name;
 ```
 
 ## CLI Commands
@@ -687,17 +693,20 @@ HAVING status != 'complete';
 # Reverse lookup: find bronze for gold pattern
 invdb reverse --gold "sp_global_mi/gics_direct/1.0/raw/*/*.zip"
 
-# Find service for a pattern
-invdb service --pattern "sp/gics_cwiq_pipe/1.0/bronze/*/*--*.tar.gz"
+# Find service for a dataset
+invdb service --vendor sp --dataset gics_cwiq_pipe
 
-# Get grabber map for dataset
-invdb grabber-map --dataset "sp/gics_cwiq_pipe/1.0"
+# List all servers and their services
+invdb servers --list
 
-# List all patterns for a service
-invdb patterns --service Xpressfeed
+# Find patterns by vendor
+invdb patterns --vendor bloomberg
 
-# Validate pattern chain (bronze → platinum)
-invdb validate-chain --dataset "sp/gics_cwiq_pipe/1.0"
+# Trace path across layers
+invdb trace --combo-id 1
+
+# Impact analysis
+invdb impact --layer raw_enriched --pattern "*bloomberg*"
 
 # Export all mappings to JSON
 invdb export --output mappings.json
@@ -706,40 +715,76 @@ invdb export --output mappings.json
 ## Views
 
 ```sql
--- View: Full pattern chain with service info
-CREATE VIEW v_pattern_chain AS
+-- View: Full denormalized data
+CREATE VIEW v_full_investigation AS
 SELECT
-    s.name as service,
-    d.source_vendor || '/' || d.source_dataset as source_path,
-    d.target_vendor || '/' || d.target_dataset as target_path,
-    lp_b.pattern_glob as bronze_pattern,
-    lp_s.pattern_glob as silver_pattern,
-    lp_g.pattern_glob as gold_pattern,
-    lp_p.pattern_glob as platinum_pattern,
-    gm.filename as grabber_map
-FROM datasets d
-JOIN services s ON d.service_id = s.id
-LEFT JOIN layer_patterns lp_b ON lp_b.dataset_id = d.id AND lp_b.layer = 'bronze'
-LEFT JOIN layer_patterns lp_s ON lp_s.dataset_id = d.id AND lp_s.layer = 'silver'
-LEFT JOIN layer_patterns lp_g ON lp_g.dataset_id = d.id AND lp_g.layer = 'gold'
-LEFT JOIN layer_patterns lp_p ON lp_p.dataset_id = d.id AND lp_p.layer = 'platinum'
-LEFT JOIN grabber_maps gm ON gm.dataset_id = d.id;
+    srv.server_name,
+    svc.service_name,
+    v.vendor_code,
+    v.vendor_name,
+    d.dataset_name,
+    d.dataset_version,
+    ar.base_path,
+    p.project_name,
+    l.layer_name,
+    l.layer_order,
+    fp.pattern_regex as file_pattern,
+    pp.pattern_structure as path_pattern,
+    fpp.full_path_example
+FROM alchemy_service svc
+JOIN alchemy_server srv ON svc.server_id = srv.server_id
+JOIN vendor v ON svc.vendor_id = v.vendor_id
+JOIN alchemy_raw ar ON svc.raw_id = ar.raw_id
+JOIN cwiq_pipe_source_dataset d ON ar.source_id = d.source_id
+JOIN raw_pattern_rel rpr ON ar.raw_id = rpr.raw_id
+JOIN pattern_combo pc ON rpr.combo_id = pc.combo_id
+JOIN file_pattern fp ON pc.file_pattern_id = fp.file_pattern_id
+JOIN path_pattern pp ON pc.path_pattern_id = pp.path_pattern_id
+JOIN full_path_pattern fpp ON pc.combo_id = fpp.combo_id
+JOIN layer l ON fpp.layer_id = l.layer_id
+JOIN project p ON l.project_id = p.project_id;
 
 -- View: Quick reverse lookup
 CREATE VIEW v_reverse_lookup AS
 SELECT
-    lp_g.pattern_glob as gold_pattern,
-    lp_b.pattern_glob as bronze_pattern,
-    s.name as service,
-    gm.filename as grabber_map,
-    d.source_vendor,
-    d.source_dataset
-FROM layer_patterns lp_g
-JOIN datasets d ON lp_g.dataset_id = d.id
-JOIN services s ON d.service_id = s.id
-LEFT JOIN layer_patterns lp_b ON lp_b.dataset_id = d.id AND lp_b.layer = 'bronze'
-LEFT JOIN grabber_maps gm ON gm.dataset_id = d.id
-WHERE lp_g.layer = 'gold';
+    l_gold.layer_name as gold_layer,
+    fpp_gold.full_path_example as gold_path,
+    l_bronze.layer_name as bronze_layer,
+    fpp_bronze.full_path_example as bronze_path,
+    v.vendor_code,
+    d.dataset_name,
+    svc.service_name,
+    srv.server_name
+FROM full_path_pattern fpp_gold
+JOIN layer l_gold ON fpp_gold.layer_id = l_gold.layer_id
+JOIN pattern_combo pc ON fpp_gold.combo_id = pc.combo_id
+JOIN full_path_pattern fpp_bronze ON fpp_bronze.combo_id = pc.combo_id
+JOIN layer l_bronze ON fpp_bronze.layer_id = l_bronze.layer_id
+JOIN raw_pattern_rel rpr ON pc.combo_id = rpr.combo_id
+JOIN alchemy_raw ar ON rpr.raw_id = ar.raw_id
+JOIN cwiq_pipe_source_dataset d ON ar.source_id = d.source_id
+JOIN vendor v ON d.vendor_id = v.vendor_id
+LEFT JOIN alchemy_service svc ON svc.raw_id = ar.raw_id
+LEFT JOIN alchemy_server srv ON svc.server_id = srv.server_id
+WHERE l_gold.layer_name = 'gold'
+  AND l_bronze.layer_name = 'bronze';
+```
+
+## Data Flow
+
+```
+CWIQ-Pipe Source                    Raw Landing Zone
+─────────────────                   ────────────────
+vendor/dataset/version    ───►      base_path (alchemy_raw)
+                                           │
+                                           ▼
+                                    file_pattern (regex)
+                                           +
+                                    path_pattern (directory)
+                                           │
+                                           ▼
+                                    path_example (full path)
+                                    2025/12/02/123456--file.csv
 ```
 
 ## Integration with PathSeeker
@@ -752,13 +797,16 @@ flowchart LR
     end
 
     subgraph InvestigationDB
-        LP[(layer_patterns)]
-        PC[(pattern_chains)]
+        FP[(file_pattern)]
+        PP[(path_pattern)]
+        PC[(pattern_combo)]
     end
 
     PS --> PAT
-    PAT -->|"import"| LP
-    LP --> PC
+    PAT -->|"import"| FP
+    PAT -->|"import"| PP
+    FP --> PC
+    PP --> PC
 ```
 
 ```bash
