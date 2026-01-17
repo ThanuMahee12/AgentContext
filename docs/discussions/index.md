@@ -1,3 +1,3 @@
 # Discussions
 
-- [GICS](GicsDiscussion.md) - S&P GICS pipeline
+{{ discussions_links() }}

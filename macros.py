@@ -8,6 +8,30 @@ def define_env(env):
     """Define macros for MkDocs."""
 
     @env.macro
+    def discussions_links():
+        """Generate links to GitHub Discussions."""
+        repos = [
+            ("AgentContext", "ThanuMahee12/AgentContext", "General, GICS, Cross-project"),
+            ("PathSeeker", "ThanuMahee12/pathseek", "PathSeeker specific"),
+        ]
+
+        lines = ['<div class="grid cards" markdown>']
+
+        for name, repo, desc in repos:
+            lines.append(f"""
+-   **{name}**
+
+    ---
+
+    {desc}
+
+    [:octicons-comment-discussion-16: Discussions](https://github.com/{repo}/discussions)
+""")
+
+        lines.append("</div>")
+        return "\n".join(lines)
+
+    @env.macro
     def session_calendar():
         """Generate a calendar table of all sessions."""
         docs_path = Path(env.project_dir) / "docs" / "sessions"
