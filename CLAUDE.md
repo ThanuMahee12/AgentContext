@@ -114,6 +114,36 @@ uv run mkdocs serve
 uv run mkdocs build
 ```
 
+## Gists (Brainstorms & Ideas)
+
+**Use Gists for:** Ideas, brainstorms, diagrams, code snippets
+
+**Benefits:**
+- Mermaid diagrams render automatically
+- Shareable URL
+- Versioned (git history)
+- Claude can create/read via `gh gist`
+
+**Commands:**
+```bash
+# Create from file
+gh gist create --public -d "description" file.md
+
+# List gists
+gh gist list
+
+# View gist content
+gh gist view <id>
+
+# Edit gist
+gh gist edit <id>
+```
+
+**Current Gists:**
+- [PathSeeker](https://gist.github.com/ThanuMahee12/75938d6097425ee9c3d6690be29e6558) - Path analysis brainstorm
+
+**Workflow:** Create gist → Share URL → Link in discussions JSON if needed
+
 ## Quick Reference
 
 | Action | Command |
@@ -123,3 +153,5 @@ uv run mkdocs build
 | Dev server | `uv run mkdocs serve` |
 | List topics | `ls discussions/*.json` |
 | View sessions | `ls docs/sessions/claude/` |
+| Create gist | `gh gist create --public -d "desc" file.md` |
+| List gists | `gh gist list` |
