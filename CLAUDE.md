@@ -34,14 +34,21 @@ AgentContext/
 
 ## Discussions (JSON Knowledge)
 
-Claude reads `discussions/*.json` for quick context. Each file contains:
+**Two-tier approach:**
 
+| Tier | Source | Speed | Use |
+|------|--------|-------|-----|
+| 1 | `discussions/*.json` | Instant | 90% - quick context |
+| 2 | GitHub Discussion API | Network | 10% - deep dive |
+
+**JSON Schema:**
 ```json
 {
   "id": "topic-id",
+  "date": "YYYY-MM-DD",
   "title": "Topic Title",
   "url": "https://github.com/.../discussions/N",
-  "summary": "Detailed summary for quick understanding...",
+  "summary": "Full detailed summary for quick understanding...",
   "comments": [
     {"date": "YYYY-MM-DD", "topic": "subtopic", "content": "Details..."}
   ],
@@ -49,9 +56,16 @@ Claude reads `discussions/*.json` for quick context. Each file contains:
 }
 ```
 
-**Workflow:**
-1. Read JSON → instant context (90% of time)
-2. Need more? → Fetch GitHub Discussion via API
+**Key fields:**
+- `date` - For sorting (newest first on site)
+- `summary` - Full content (no truncation)
+- `url` - Link to GitHub Discussion for deep dive
+- `comments` - Sub-topics/updates
+
+**Adding new discussion:**
+1. Create `discussions/{topic}.json` with schema above
+2. Optionally create GitHub Discussion and add URL
+3. MkDocs renders automatically (sorted by date, newest first)
 
 **Current topics:**
 - `gics.json` - S&P GICS pipeline analysis
@@ -73,8 +87,9 @@ sessions/gemini/YYYY-MM-DD.md     # Gemini sessions
 ```bash
 cd ~/AgentContext && git pull
 ```
-- Read `discussions/*.json` for topic context
-- Check `docs/sessions/claude/` for latest session
+1. **Read `discussions/*.json`** - instant topic context (IMPORTANT)
+2. Check `docs/sessions/claude/` for latest session
+3. Need deep dive? → Fetch GitHub Discussion via API
 
 ### End of session
 ```bash

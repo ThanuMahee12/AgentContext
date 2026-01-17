@@ -10,28 +10,52 @@ def define_env(env):
 
     @env.macro
     def discussions_list():
-        """Generate simple discussion links from JSON files."""
+        """Generate discussion links with summary, ordered by date (newest first)."""
         discussions_path = Path(env.project_dir) / "discussions"
 
         if not discussions_path.exists():
             return "*No discussions found.*"
 
-        lines = []
-
-        for json_file in sorted(discussions_path.glob("*.json")):
+        # Load all discussions
+        discussions = []
+        for json_file in discussions_path.glob("*.json"):
             with open(json_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
+                data["_file"] = json_file.stem
+                discussions.append(data)
 
-            title = data.get("title", json_file.stem)
+        # Sort by date (newest first)
+        discussions.sort(key=lambda x: x.get("date", ""), reverse=True)
+
+        lines = []
+        for data in discussions:
+            title = data.get("title", data["_file"])
             url = data.get("url")
+            summary = data.get("summary", "")
             tags = data.get("tags", [])
+            date = data.get("date", "")
 
-            # Simple list item with link
+            # Title with link
             if url:
-                tag_str = " ".join([f"`{t}`" for t in tags]) if tags else ""
-                lines.append(f"- [{title}]({url}) {tag_str}")
+                lines.append(f"### [{title}]({url})")
             else:
-                lines.append(f"- {title}")
+                lines.append(f"### {title}")
+
+            # Date and tags
+            tag_str = " ".join([f"`{t}`" for t in tags]) if tags else ""
+            if date:
+                lines.append(f"*{date}* {tag_str}")
+            elif tag_str:
+                lines.append(tag_str)
+            lines.append("")
+
+            # Summary (full)
+            if summary:
+                lines.append(summary)
+                lines.append("")
+
+            lines.append("---")
+            lines.append("")
 
         return "\n".join(lines) if lines else "*No discussions found.*"
 
