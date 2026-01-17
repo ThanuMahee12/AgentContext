@@ -24,6 +24,8 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
   features:
+    - navigation.instant
+    - navigation.tracking
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.sections
@@ -33,6 +35,7 @@ theme:
     - navigation.indexes
     - search.highlight
     - search.suggest
+    - search.share
     - content.code.copy
     - content.code.annotate
     - content.tabs.link
@@ -43,29 +46,11 @@ plugins:
   - awesome-pages:
       collapse_single_pages: false
       strict: false
-
-nav:
-  - Home: index.md
-  - Sessions:
-    - sessions/index.md
-    - Claude:
-      - sessions/claude/index.md
-      - sessions/claude/w-2026-01-16.md
-      - sessions/claude/w-2026-01-15.md
-      - sessions/claude/w-2026-01-14.md
-      - sessions/claude/w-2026-01-13.md
-      - sessions/claude/w-2026-01-12.md
-      - sessions/claude/w-2026-01-11.md
-      - sessions/claude/l-2026-01-15.md
-      - sessions/claude/l-2026-01-14.md
-      - sessions/claude/l-2026-01-13.md
-      - sessions/claude/l-2026-01-12.md
-    - Gemini:
-      - sessions/gemini/index.md
-  - Discussions: discussions/
-  - Notes: notes/
-  - Brainstorms: brainstorms/
-  - RunBooks: runbooks/
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: date
+  - macros:
+      module_name: macros
 
 markdown_extensions:
   # Code blocks with Mermaid support
@@ -128,6 +113,3 @@ extra:
 
 extra_css:
   - stylesheets/extra.css
-
-extra_javascript:
-  - https://unpkg.com/mermaid@10/dist/mermaid.min.js

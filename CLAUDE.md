@@ -13,22 +13,24 @@ Global context and session notes for Claude Code.
 AgentContext/
 ├── docs/
 │   ├── index.md              # Dashboard (Home)
-│   ├── Sessions/             # Daily session logs
+│   ├── sessions/             # Daily session logs
 │   │   ├── index.md
-│   │   └── YYYY-MM-DD/
-│   │       ├── claude-windows.md
-│   │       ├── claude-linux.md
-│   │       └── gemini.md
-│   ├── Discussion/           # Topic discussions
+│   │   ├── claude/           # Claude sessions
+│   │   │   ├── w-YYYY-MM-DD.md   # Windows (w- prefix)
+│   │   │   └── l-YYYY-MM-DD.md   # Linux (l- prefix)
+│   │   └── gemini/           # Gemini sessions
+│   │       └── YYYY-MM-DD.md
+│   ├── discussions/          # Topic discussions
 │   │   └── index.md
-│   ├── Notes/                # Persistent knowledge
+│   ├── notes/                # Persistent knowledge
 │   │   ├── index.md
 │   │   └── projects/
 │   │       └── {project}/
-│   ├── Brainstorms/          # Ideas, new tools
+│   ├── brainstorms/          # Ideas, new tools
 │   │   └── index.md
-│   └── RunBooks/             # Operational guides
+│   └── runbooks/             # Operational guides
 │       └── index.md
+├── pyproject.toml            # uv dependencies
 ├── mkdocs.yml
 └── CLAUDE.md
 ```
@@ -38,8 +40,8 @@ AgentContext/
 | Tab | Purpose |
 |-----|---------|
 | **Home** | Dashboard - current session, active projects, recent activity |
-| **Sessions** | Daily work logs (date/agent-machine) |
-| **Discussion** | Topic discussions |
+| **Sessions** | Daily work logs by agent (claude/gemini) |
+| **Discussions** | Topic discussions |
 | **Notes** | Persistent knowledge & learnings |
 | **Brainstorms** | Ideas, new tools, experiments |
 | **RunBooks** | Operational guides |
@@ -47,9 +49,9 @@ AgentContext/
 ## Session Naming
 
 ```
-Sessions/YYYY-MM-DD/claude-windows.md
-Sessions/YYYY-MM-DD/claude-linux.md
-Sessions/YYYY-MM-DD/gemini.md
+sessions/claude/w-YYYY-MM-DD.md   # Windows (w- prefix)
+sessions/claude/l-YYYY-MM-DD.md   # Linux (l- prefix)
+sessions/gemini/YYYY-MM-DD.md     # Gemini sessions
 ```
 
 ## Workflow
@@ -58,7 +60,7 @@ Sessions/YYYY-MM-DD/gemini.md
 ```bash
 cd ~/AgentContext && git pull
 ```
-- Check `docs/Sessions/` for latest session
+- Check `docs/sessions/claude/` for latest session
 - Read previous day's session for context
 
 ### End of session
@@ -67,7 +69,7 @@ cd ~/AgentContext && git add -A && git commit -m "docs: update session" && git p
 ```
 
 ### New session file
-Create: `docs/Sessions/YYYY-MM-DD/claude-{machine}.md`
+Create: `docs/sessions/claude/w-YYYY-MM-DD.md` (Windows) or `l-YYYY-MM-DD.md` (Linux)
 
 ## Session Content
 
@@ -86,11 +88,25 @@ Create: `docs/Sessions/YYYY-MM-DD/claude-{machine}.md`
 - Feature proposals
 - Experiments
 
+## Local Development
+
+```bash
+# Setup (first time)
+cd ~/AgentContext && uv sync
+
+# Start dev server
+uv run mkdocs serve
+
+# Build static site
+uv run mkdocs build
+```
+
 ## Quick Reference
 
 | Action | Command |
 |--------|---------|
-| Sync | `cd ~/AgentContext && git pull` |
-| Save | `cd ~/AgentContext && git add -A && git commit -m "docs: update" && git push` |
-| View sessions | `ls ~/AgentContext/docs/Sessions/` |
-| New session | `mkdir -p ~/AgentContext/docs/Sessions/$(date +%Y-%m-%d)` |
+| Sync repo | `cd ~/AgentContext && git pull` |
+| Save changes | `git add -A && git commit -m "docs: update" && git push` |
+| Dev server | `uv run mkdocs serve` |
+| Build site | `uv run mkdocs build` |
+| View sessions | `ls docs/sessions/claude/` |

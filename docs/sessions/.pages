@@ -1,0 +1,4 @@
+nav:
+  - index.md
+  - Claude: claude
+  - Gemini: gemini

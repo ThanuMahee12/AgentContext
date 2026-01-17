@@ -1,9 +1,11 @@
 # Sessions
 
-- [Claude](claude/) - Anthropic Claude
-- [Gemini](gemini/) - Google Gemini
+{{ session_calendar() }}
 
-| Prefix | Machine |
+## Legend
+
+| Symbol | Meaning |
 |--------|---------|
-| w- | Windows |
-| l- | Linux |
+| W | Windows |
+| L | Linux |
+| G | Gemini |

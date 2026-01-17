@@ -1,0 +1,7 @@
+nav:
+  - Home: index.md
+  - Sessions: sessions
+  - Discussions: discussions
+  - Notes: notes
+  - Brainstorms: brainstorms
+  - RunBooks: runbooks

@@ -1,0 +1,19 @@
+[project]
+name = "agent-context"
+version = "0.1.0"
+description = "AI Agent Sessions & Project Notes - MkDocs site"
+requires-python = ">=3.11"
+dependencies = [
+    "mkdocs-material>=9.5",
+    "mkdocs-awesome-pages-plugin>=2.9",
+    "mkdocs-git-revision-date-localized-plugin>=1.2",
+    "mkdocs-macros-plugin>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mkdocs>=1.6",
+]
+
+[tool.uv]
+dev-dependencies = []
