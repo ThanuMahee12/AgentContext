@@ -1,0 +1,24 @@
+{
+  "id": "investigation-db",
+  "title": "Investigation DB: Pattern-Based Reverse Lookup",
+  "url": null,
+  "summary": "Pattern-based reverse lookup for data pipelines. Core idea: Don't track files - track patterns! When Gold/Platinum file is missing, trace back to Bronze source, Service, Server. Key entities: Infrastructure (Servers, Services, Credentials), Data Sources (Vendors, Datasets, Raw Landing), Patterns (File Patterns, Path Patterns, Pattern Combos), Pipeline (Projects, Layers, Full Paths). Six layers: raw (landing zone) → bronze (timestamped archives) → silver (extracted) → gold (restructured) → raw_enriched (CDP legacy) → delta (Delta Lake). Tables: alchemy_server, alchemy_service, vendor, vendor_credential, cwiq_pipe_source_dataset, alchemy_raw, filetype, file_pattern, path_pattern, pattern_combo, layer, full_path_pattern, delta_table, raw_enriched_data.",
+  "comments": [
+    {
+      "date": "2026-01-17",
+      "topic": "use-cases",
+      "content": "Reverse Lookup (Gold → Bronze), Impact Analysis (missing file → affected datasets), Service Discovery (vendor + dataset → server & service), Pattern Tracing (combo_id → all layers)."
+    },
+    {
+      "date": "2026-01-17",
+      "topic": "cli-ideas",
+      "content": "invdb reverse --gold pattern, invdb service --vendor --dataset, invdb servers --list, invdb trace --combo-id, invdb impact --layer --pattern."
+    },
+    {
+      "date": "2026-01-17",
+      "topic": "integration",
+      "content": "PathSeeker extracts patterns → Investigation DB stores patterns → Datasette browses & queries."
+    }
+  ],
+  "tags": ["database", "reverse-lookup", "patterns", "pipeline"]
+}

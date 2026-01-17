@@ -1,6 +1,7 @@
 """MkDocs macros for AgentContext site."""
 
 from pathlib import Path
+import json
 import re
 
 
@@ -8,28 +9,31 @@ def define_env(env):
     """Define macros for MkDocs."""
 
     @env.macro
-    def discussions_links():
-        """Generate links to GitHub Discussions."""
-        repos = [
-            ("AgentContext", "ThanuMahee12/AgentContext", "General, GICS, Cross-project"),
-            ("PathSeeker", "ThanuMahee12/pathseek", "PathSeeker specific"),
-        ]
+    def discussions_list():
+        """Generate simple discussion links from JSON files."""
+        discussions_path = Path(env.project_dir) / "discussions"
 
-        lines = ['<div class="grid cards" markdown>']
+        if not discussions_path.exists():
+            return "*No discussions found.*"
 
-        for name, repo, desc in repos:
-            lines.append(f"""
--   **{name}**
+        lines = []
 
-    ---
+        for json_file in sorted(discussions_path.glob("*.json")):
+            with open(json_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
 
-    {desc}
+            title = data.get("title", json_file.stem)
+            url = data.get("url")
+            tags = data.get("tags", [])
 
-    [:octicons-comment-discussion-16: Discussions](https://github.com/{repo}/discussions)
-""")
+            # Simple list item with link
+            if url:
+                tag_str = " ".join([f"`{t}`" for t in tags]) if tags else ""
+                lines.append(f"- [{title}]({url}) {tag_str}")
+            else:
+                lines.append(f"- {title}")
 
-        lines.append("</div>")
-        return "\n".join(lines)
+        return "\n".join(lines) if lines else "*No discussions found.*"
 
     @env.macro
     def session_calendar():

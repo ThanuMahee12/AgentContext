@@ -1,0 +1,19 @@
+{
+  "id": "gics",
+  "title": "GICS Pipeline: S&P Data Processing",
+  "url": "https://github.com/ThanuMahee12/AgentContext/discussions/1",
+  "summary": "S&P Global Industry Classification Standard (GICS) data pipeline. Source paths cwiq-pipe/env[1-3]/gics/ converge to single gics_direct/ target. Shovel uses ZIP expansion with virtual paths - extracts ZIP contents and maps internal files to flat structure. Key regex pattern: (?P<package>bgicshglb03|pkgGIC01)\\.(?P<date>\\d{8})\\.zip with virtual_path {package}/{filename}. Compression flow: ZIP input → LZ4 output, but grabber map only handles ZIP passthrough (no LZ4). Products directory currently unmapped. Package status: 2 available (bgicshglb03, pkgGIC01), 23 missing from source including asc/bgicshglb03, busdescl, caintl, CompustatRefDataV2, seg, segh etc.",
+  "comments": [
+    {
+      "date": "2026-01-17",
+      "topic": "grabber-map",
+      "content": "Grabber map pattern ^env[123]/gics/(?P<filename>.*\\.zip)$ maps to gics_direct/{filename}. Missing patterns: *.asc.zip, *.txt.NN.lz4, *.cnt.NN.lz4. Two options: Option 1 ZIP passthrough only (current, simple), Option 2 full shovel mimic (adds products/ pattern). Recommendation: start Option 1, extend later if products needed."
+    },
+    {
+      "date": "2026-01-17",
+      "topic": "source-comparison",
+      "content": "Available packages: bgicshglb03, pkgGIC01. Missing 23 packages: asc/bgicshglb03, busdescl, caintl, caintntl, caprihistxna, caref, caustic, CompustatRefDataV2, epsalloc, globsupp, gvissue, ii, iqr, sec_mshare, secidcusiphist, secidisinbycusiphist, secidsedolintlhist, secidsedolnahist, secidtichist, secidunlicisinhist, seg, segh, suppcxf."
+    }
+  ],
+  "tags": ["pipeline", "sp", "data-alchemy"]
+}

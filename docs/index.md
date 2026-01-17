@@ -10,7 +10,7 @@
 | 2026-01-15 | Claude | Windows, Linux | bbocax-futures pipeline |
 | 2026-01-14 | Claude | Windows, Linux | Bloomberg mapping |
 
-[:octicons-arrow-right-24: All Sessions](sessions/)
+[:octicons-arrow-right-24: All Sessions](sessions/index.md)
 
 ---
 
@@ -18,9 +18,12 @@
 
 | Topic | Description |
 |-------|-------------|
-| [GICS](discussions/GicsDiscussion.md) | S&P GICS data pipeline |
+| GICS Pipeline | S&P GICS data processing |
+| Data Quality | Pipeline validation framework |
+| PathSeeker | Path analysis tool |
+| Investigation DB | Pattern-based reverse lookup |
 
-[:octicons-arrow-right-24: All Discussions](discussions/)
+[:octicons-arrow-right-24: All Discussions](discussions/index.md)
 
 ---
 
@@ -50,4 +53,4 @@ graph TD
 
 **Branch:** `feature/bbocax-futures`
 
-[:octicons-arrow-right-24: Project Notes](notes/projects/data-alchemy/)
+[:octicons-arrow-right-24: Project Notes](notes/projects/data-alchemy/index.md)

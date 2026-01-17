@@ -11,40 +11,53 @@ Global context and session notes for Claude Code.
 
 ```
 AgentContext/
+├── discussions/             # JSON knowledge (Claude reads first)
+│   ├── gics.json
+│   ├── dq.json
+│   ├── pathseeker.json
+│   └── investigation-db.json
 ├── docs/
-│   ├── index.md              # Dashboard (Home)
-│   ├── sessions/             # Daily session logs
-│   │   ├── index.md
-│   │   ├── claude/           # Claude sessions
-│   │   │   ├── w-YYYY-MM-DD.md   # Windows (w- prefix)
-│   │   │   └── l-YYYY-MM-DD.md   # Linux (l- prefix)
-│   │   └── gemini/           # Gemini sessions
+│   ├── index.md
+│   ├── sessions/            # Daily logs
+│   │   ├── claude/
+│   │   │   ├── w-YYYY-MM-DD.md   # Windows
+│   │   │   └── l-YYYY-MM-DD.md   # Linux
+│   │   └── gemini/
 │   │       └── YYYY-MM-DD.md
-│   ├── discussions/          # Topic discussions
-│   │   └── index.md
-│   ├── notes/                # Persistent knowledge
-│   │   ├── index.md
-│   │   └── projects/
-│   │       └── {project}/
-│   ├── brainstorms/          # Ideas, new tools
-│   │   └── index.md
-│   └── runbooks/             # Operational guides
-│       └── index.md
-├── pyproject.toml            # uv dependencies
+│   ├── notes/               # Persistent markdown
+│   ├── brainstorms/         # Ideas markdown
+│   └── runbooks/            # Operational guides
+├── pyproject.toml
 ├── mkdocs.yml
 └── CLAUDE.md
 ```
 
-## Navigation
+## Discussions (JSON Knowledge)
 
-| Tab | Purpose |
-|-----|---------|
-| **Home** | Dashboard - current session, active projects, recent activity |
-| **Sessions** | Daily work logs by agent (claude/gemini) |
-| **Discussions** | Topic discussions |
-| **Notes** | Persistent knowledge & learnings |
-| **Brainstorms** | Ideas, new tools, experiments |
-| **RunBooks** | Operational guides |
+Claude reads `discussions/*.json` for quick context. Each file contains:
+
+```json
+{
+  "id": "topic-id",
+  "title": "Topic Title",
+  "url": "https://github.com/.../discussions/N",
+  "summary": "Detailed summary for quick understanding...",
+  "comments": [
+    {"date": "YYYY-MM-DD", "topic": "subtopic", "content": "Details..."}
+  ],
+  "tags": ["tag1", "tag2"]
+}
+```
+
+**Workflow:**
+1. Read JSON → instant context (90% of time)
+2. Need more? → Fetch GitHub Discussion via API
+
+**Current topics:**
+- `gics.json` - S&P GICS pipeline analysis
+- `dq.json` - Data quality framework
+- `pathseeker.json` - Path analysis tool
+- `investigation-db.json` - Pattern-based reverse lookup
 
 ## Session Naming
 
@@ -60,33 +73,18 @@ sessions/gemini/YYYY-MM-DD.md     # Gemini sessions
 ```bash
 cd ~/AgentContext && git pull
 ```
+- Read `discussions/*.json` for topic context
 - Check `docs/sessions/claude/` for latest session
-- Read previous day's session for context
 
 ### End of session
 ```bash
 cd ~/AgentContext && git add -A && git commit -m "docs: update session" && git push
 ```
 
-### New session file
-Create: `docs/sessions/claude/w-YYYY-MM-DD.md` (Windows) or `l-YYYY-MM-DD.md` (Linux)
-
-## Session Content
-
-**Include:**
-- Branch name and project context
-- What was done (bullet points)
-- Key decisions/findings
-- Next steps
-
-**Keep in Notes/ instead:**
-- Long-lived reference info (schemas, mappings)
-- Project-specific guidelines
-
-**Keep in Brainstorms/ instead:**
-- New tool ideas
-- Feature proposals
-- Experiments
+### Adding knowledge
+- Quick context → Add to `discussions/{topic}.json`
+- Detailed discussion → GitHub Discussion (link in JSON)
+- Daily log → `docs/sessions/claude/`
 
 ## Local Development
 
@@ -108,5 +106,5 @@ uv run mkdocs build
 | Sync repo | `cd ~/AgentContext && git pull` |
 | Save changes | `git add -A && git commit -m "docs: update" && git push` |
 | Dev server | `uv run mkdocs serve` |
-| Build site | `uv run mkdocs build` |
+| List topics | `ls discussions/*.json` |
 | View sessions | `ls docs/sessions/claude/` |

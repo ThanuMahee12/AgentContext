@@ -1,3 +1,3 @@
 # Discussions
 
-{{ discussions_links() }}
+{{ discussions_list() }}

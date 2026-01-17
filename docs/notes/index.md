@@ -4,4 +4,4 @@ Persistent knowledge & learnings.
 
 ## Projects
 
-- [data-alchemy](projects/data-alchemy/)
+- [data-alchemy](projects/data-alchemy/index.md)
