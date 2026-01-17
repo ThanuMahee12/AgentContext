@@ -60,6 +60,70 @@ def define_env(env):
         return "\n".join(lines) if lines else "*No discussions found.*"
 
     @env.macro
+    def brainstorms_list():
+        """Generate brainstorm links with summary, ordered by date (newest first)."""
+        brainstorms_path = Path(env.project_dir) / "brainstorms"
+
+        if not brainstorms_path.exists():
+            return "*No brainstorms found.*"
+
+        # Load all brainstorms
+        brainstorms = []
+        for json_file in brainstorms_path.glob("*.json"):
+            with open(json_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                data["_file"] = json_file.stem
+                brainstorms.append(data)
+
+        # Sort by date (newest first)
+        brainstorms.sort(key=lambda x: x.get("date", ""), reverse=True)
+
+        lines = []
+        for data in brainstorms:
+            title = data.get("title", data["_file"])
+            gist = data.get("gist")
+            url = data.get("url")
+            summary = data.get("summary", "")
+            tags = data.get("tags", [])
+            date = data.get("date", "")
+
+            # Title with gist link (prefer gist for brainstorms)
+            if gist:
+                lines.append(f"### [{title}]({gist})")
+            elif url:
+                lines.append(f"### [{title}]({url})")
+            else:
+                lines.append(f"### {title}")
+
+            # Date and tags
+            tag_str = " ".join([f"`{t}`" for t in tags]) if tags else ""
+            if date:
+                lines.append(f"*{date}* {tag_str}")
+            elif tag_str:
+                lines.append(tag_str)
+            lines.append("")
+
+            # Summary (full)
+            if summary:
+                lines.append(summary)
+                lines.append("")
+
+            # Links row
+            link_items = []
+            if gist:
+                link_items.append(f"[:octicons-file-code-16: Gist]({gist})")
+            if url:
+                link_items.append(f"[:octicons-comment-discussion-16: Discussion]({url})")
+            if link_items:
+                lines.append(" | ".join(link_items))
+                lines.append("")
+
+            lines.append("---")
+            lines.append("")
+
+        return "\n".join(lines) if lines else "*No brainstorms found.*"
+
+    @env.macro
     def session_calendar():
         """Generate a calendar table of all sessions."""
         docs_path = Path(env.project_dir) / "docs" / "sessions"

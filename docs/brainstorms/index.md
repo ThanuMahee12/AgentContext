@@ -1,8 +1,5 @@
 # Brainstorms
 
-Ideas, concepts, and new tools.
+Personal ideas and concepts.
 
-## Projects
-
-- [Investigation DB](investigation-db.md) - Pattern-based reverse lookup for pipelines
-- [PathSeeker](pathseeker.md) - Path analysis and pattern extraction tool
+{{ brainstorms_list() }}

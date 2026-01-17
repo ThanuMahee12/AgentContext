@@ -11,9 +11,10 @@ Global context and session notes for Claude Code.
 
 ```
 AgentContext/
-├── discussions/             # JSON knowledge (Claude reads first)
+├── discussions/             # Collaborative topics (JSON)
 │   ├── gics.json
-│   ├── dq.json
+│   └── dq.json
+├── brainstorms/             # Personal ideas (JSON)
 │   ├── pathseeker.json
 │   └── investigation-db.json
 ├── docs/
@@ -24,22 +25,23 @@ AgentContext/
 │   │   │   └── l-YYYY-MM-DD.md   # Linux
 │   │   └── gemini/
 │   │       └── YYYY-MM-DD.md
+│   ├── discussions/         # MkDocs page (renders from JSON)
+│   ├── brainstorms/         # MkDocs page (renders from JSON)
 │   ├── notes/               # Persistent markdown
-│   ├── brainstorms/         # Ideas markdown
 │   └── runbooks/            # Operational guides
 ├── pyproject.toml
 ├── mkdocs.yml
 └── CLAUDE.md
 ```
 
-## Discussions (JSON Knowledge)
+## Knowledge System (JSON)
 
-**Two-tier approach:**
+**Two types:**
 
-| Tier | Source | Speed | Use |
-|------|--------|-------|-----|
-| 1 | `discussions/*.json` | Instant | 90% - quick context |
-| 2 | GitHub Discussion API | Network | 10% - deep dive |
+| Type | Folder | Purpose | Links |
+|------|--------|---------|-------|
+| **Discussions** | `discussions/` | Collaborative topics | GitHub Discussion URL |
+| **Brainstorms** | `brainstorms/` | Personal ideas | GitHub Gist URL |
 
 **JSON Schema:**
 ```json
@@ -48,30 +50,30 @@ AgentContext/
   "date": "YYYY-MM-DD",
   "title": "Topic Title",
   "url": "https://github.com/.../discussions/N",
-  "summary": "Full detailed summary for quick understanding...",
-  "comments": [
-    {"date": "YYYY-MM-DD", "topic": "subtopic", "content": "Details..."}
-  ],
+  "gist": "https://gist.github.com/.../...",
+  "summary": "Full detailed summary...",
+  "related": ["other-id"],
   "tags": ["tag1", "tag2"]
 }
 ```
 
 **Key fields:**
-- `date` - For sorting (newest first on site)
-- `summary` - Full content (no truncation)
-- `url` - Link to GitHub Discussion for deep dive
-- `comments` - Sub-topics/updates
+- `date` - For sorting (newest first)
+- `summary` - Full content
+- `url` - GitHub Discussion link (discussions)
+- `gist` - GitHub Gist link (brainstorms, Mermaid)
+- `related` - Link to related topics
 
-**Adding new discussion:**
-1. Create `discussions/{topic}.json` with schema above
-2. Optionally create GitHub Discussion and add URL
-3. MkDocs renders automatically (sorted by date, newest first)
+**Claude reads:**
+1. `discussions/*.json` → Collaborative topics
+2. `brainstorms/*.json` → Personal ideas
+3. Follow `related` links if needed
 
-**Current topics:**
-- `gics.json` - S&P GICS pipeline analysis
-- `dq.json` - Data quality framework
-- `pathseeker.json` - Path analysis tool
-- `investigation-db.json` - Pattern-based reverse lookup
+**Current:**
+- `discussions/gics.json` - S&P GICS pipeline
+- `discussions/dq.json` - Data quality framework
+- `brainstorms/pathseeker.json` - Path analysis tool
+- `brainstorms/investigation-db.json` - Reverse lookup DB
 
 ## Session Naming
 
