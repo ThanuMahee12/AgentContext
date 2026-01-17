@@ -146,6 +146,35 @@ gh gist edit <id>
 
 **Workflow:** Create gist → Share URL → Link in discussions JSON if needed
 
+## Notion (Investigation DB)
+
+**Use Notion for:** Databases, relational data, Investigation DB
+
+**Credentials:** `~/.notion/credentials`
+
+**Current Databases:**
+- `alchemy_server` - Server infrastructure (ny5-predpalch02/04/06)
+- `alchemy_service` - Data-alchemy services (32 services)
+
+**API Usage:**
+```bash
+# Read credentials
+cat ~/.notion/credentials
+
+# Query database
+curl -X POST "https://api.notion.com/v1/databases/{db_id}/query" \
+  -H "Authorization: Bearer {API_KEY}" \
+  -H "Notion-Version: 2022-06-28"
+
+# Update page
+curl -X PATCH "https://api.notion.com/v1/pages/{page_id}" \
+  -H "Authorization: Bearer {API_KEY}" \
+  -H "Notion-Version: 2022-06-28" \
+  -d '{"properties": {...}}'
+```
+
+**Workflow:** Read ~/.notion/credentials → Use API via curl
+
 ## Quick Reference
 
 | Action | Command |
@@ -157,3 +186,4 @@ gh gist edit <id>
 | View sessions | `ls docs/sessions/claude/` |
 | Create gist | `gh gist create --public -d "desc" file.md` |
 | List gists | `gh gist list` |
+| Notion creds | `cat ~/.notion/credentials` |
