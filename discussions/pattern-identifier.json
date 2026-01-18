@@ -1,0 +1,17 @@
+{
+  "id": "pattern-identifier",
+  "date": "2026-01-18",
+  "title": "Pattern Identifier: Auto Regex Suggestion",
+  "url": "https://git.codewilling.com/-/snippets/7",
+  "project": "sf-storage-migration",
+  "summary": "Tool to identify patterns and suggest regex for unknown file paths. Problem: 232 handlers, new paths require manual regex creation. Solution: pattern.py script that searches existing patterns, if UNKNOWN suggests regex automatically. Features: date format detection (YYYY/MM/DD, YYYYMMDD, YYYY-MM-DD, etc.), component extraction (vendor, dataset, subdirs, filename), similar pattern finding, batch directory scanning.",
+  "commands": {
+    "match": "pattern.py match <path> - Find pattern for single path",
+    "suggest": "pattern.py suggest <path> - Suggest regex for unknown",
+    "scan": "pattern.py scan <dir> - Scan directory for patterns",
+    "report": "pattern.py report <csv> - Batch process CSV"
+  },
+  "date_formats": ["YYYY/MM/DD", "YYYYMMDD", "YYYY-MM-DD", "YYYY_MM_DD", "MonYYYY"],
+  "comments": [],
+  "tags": ["regex", "patterns", "sf-storage-migration", "automation"]
+}
