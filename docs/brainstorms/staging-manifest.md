@@ -64,15 +64,138 @@ flowchart TB
 ## Manifest Format
 
 ```mermaid
-flowchart LR
-    subgraph JSONL["manifest.jsonl"]
-        L1["line 1: {raw, bronze, mtime}"]
-        L2["line 2: {raw, bronze, mtime}"]
-        L3["line 3: {raw, bronze, mtime}"]
+flowchart TB
+    subgraph JSONL["📄 manifest.jsonl"]
+        direction TB
+        L1["Line 1"]
+        L2["Line 2"]
+        L3["Line 3"]
+        L4["..."]
     end
+
+    subgraph ENTRY["Each Line Structure"]
+        direction LR
+        F1["raw"]
+        F2["bronze"]
+        F3["mtime"]
+    end
+
+    L1 --> ENTRY
 ```
 
-**Example:**
+---
+
+## JSONL Entry Structure
+
+```mermaid
+classDiagram
+    class ManifestEntry {
+        +string raw
+        +string bronze
+        +float mtime
+    }
+
+    note for ManifestEntry "One entry per processed file"
+```
+
+---
+
+## JSONL Visual Example
+
+```mermaid
+flowchart LR
+    subgraph LINE1["Line 1"]
+        direction TB
+        A1["raw: raw/env0/data.csv"]
+        A2["bronze: bronze/2026/01/18/143000--data.csv"]
+        A3["mtime: 1737200000.0"]
+    end
+
+    subgraph LINE2["Line 2"]
+        direction TB
+        B1["raw: raw/env1/file.parquet"]
+        B2["bronze: bronze/2026/01/18/143005--file.parquet"]
+        B3["mtime: 1737200100.0"]
+    end
+
+    LINE1 --> LINE2
+```
+
+---
+
+## Path Transformation
+
+```mermaid
+flowchart LR
+    subgraph RAW["Raw Path"]
+        R["raw/env0/data.csv"]
+    end
+
+    subgraph TRANSFORM["Transformation"]
+        T1["remove env0"]
+        T2["add date: 2026/01/18"]
+        T3["add time prefix: 143000--"]
+    end
+
+    subgraph BRONZE["Bronze Path"]
+        B["bronze/2026/01/18/143000--data.csv"]
+    end
+
+    R --> T1 --> T2 --> T3 --> B
+```
+
+---
+
+## JSONL File Location
+
+```mermaid
+flowchart TB
+    subgraph ROOT["{FP_PREFIX}"]
+        subgraph VENDOR["sp/"]
+            subgraph DATASET["gics_cwiq_pipe/"]
+                subgraph VERSION["1.0/"]
+                    BRONZE["bronze/"]
+                    SILVER["silver/"]
+                    GOLD["gold/"]
+                    subgraph MANIFESTS["manifests/"]
+                        M1["processed.jsonl"]
+                        M2["processed_2026-01-18.jsonl"]
+                    end
+                end
+            end
+        end
+    end
+
+    style M1 fill:#90EE90
+    style M2 fill:#90EE90
+```
+
+---
+
+## Write Flow
+
+```mermaid
+flowchart TD
+    A["File processed: raw/env0/data.csv"] --> B["rsync to bronze"]
+    B --> C["Get bronze path"]
+    C --> D["Get file mtime"]
+    D --> E["Create JSON object"]
+    E --> F["Append to manifest.jsonl"]
+
+    subgraph JSON["JSON Object"]
+        J1["{"]
+        J2["  raw: raw/env0/data.csv"]
+        J3["  bronze: bronze/.../data.csv"]
+        J4["  mtime: 1737200000.0"]
+        J5["}"]
+    end
+
+    E --> JSON
+```
+
+---
+
+## Raw JSON Example
 
 ```jsonl
 {"raw": "raw/env0/data.csv", "bronze": "bronze/2026/01/18/143000--data.csv", "mtime": 1737200000.0}
