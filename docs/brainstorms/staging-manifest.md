@@ -1,45 +1,343 @@
-# Staging Manifest - Simple Approach
+# Staging Manifest - Complete Design Document
 
 **Date:** 2026-01-18
+**Status:** Brainstorm
+**Author:** Session with Claude
 
 ---
 
-## Overview
+## Table of Contents
 
-Simple staging solution: Prod writes JSONL manifest, Staging samples from Bronze.
+1. [Problem Statement](#problem-statement)
+2. [Root Cause Analysis](#root-cause-analysis)
+3. [Solutions Explored](#solutions-explored)
+4. [Why Watchdog/Inotifywait Don't Work](#why-watchdoginotifywait-dont-work)
+5. [The Simple Solution](#the-simple-solution)
+6. [Implementation Details](#implementation-details)
+7. [Benefits](#benefits)
 
 ---
 
-## Flow Diagram
+## Problem Statement
+
+### Current Situation
+
+```mermaid
+flowchart LR
+    subgraph CURRENT["Current: Single Monolithic Process"]
+        A["Files arrive"] --> B["data-alchemy cycle"]
+        B --> C["discover → tree → bronze → silver → gold"]
+    end
+```
+
+**Issues:**
+- Everything happens in one process
+- No visibility before files are processed
+- Can't preview/sample files before prod moves them
+- No staging layer for validation
+
+### What We Want
+
+```mermaid
+flowchart LR
+    subgraph WANTED["Wanted: Staging + Prod Separation"]
+        A["Files arrive"] --> B["Staging: scan & sample"]
+        B --> C["Prod: process files"]
+        B --> D["Sample files for preview"]
+    end
+```
+
+**Goals:**
+- Separate staging from production
+- Sample files WITHOUT copying TBs of data
+- No impact on prod performance
+- Track what was processed (raw → bronze mapping)
+
+---
+
+## Root Cause Analysis
+
+### Why Can't We Just Scan Raw Files?
 
 ```mermaid
 flowchart TB
-    subgraph RAW["Raw Layer"]
+    subgraph PROBLEM["The Problem"]
+        P1["Files can be TB in size"]
+        P2["Millions of files per hour"]
+        P3["Can't copy to temp for scanning"]
+        P4["Scanning in prod cycle slows it down"]
+    end
+
+    P1 --> RESULT["Can't do traditional staging"]
+    P2 --> RESULT
+    P3 --> RESULT
+    P4 --> RESULT
+```
+
+### Scale Challenges
+
+| Challenge | Impact |
+|-----------|--------|
+| TB-sized files | Can't copy to temp location |
+| Millions of files/hour | Can't process all proactively |
+| Prod cycle every 5 min | Adding scan step slows prod |
+| Raw files may be deleted | After move, raw is gone |
+
+---
+
+## Solutions Explored
+
+### Solution 1: Watchdog (Python File Listener)
+
+```mermaid
+flowchart TB
+    subgraph WATCHDOG["Watchdog Approach"]
+        W1["watchdog detects file arrival"]
+        W2["trigger scan immediately"]
+        W3["mark file as 'ready'"]
+        W4["prod cycle processes ready files"]
+    end
+
+    W1 --> W2 --> W3 --> W4
+```
+
+**What is Watchdog?**
+- Python library for file system events
+- Cross-platform (Windows, Linux, Mac)
+- Detects: create, modify, move, delete events
+
+```python
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+class MyHandler(FileSystemEventHandler):
+    def on_created(self, event):
+        # File created - trigger scan
+        scan_file(event.src_path)
+```
+
+**Why It Doesn't Work:**
+
+```mermaid
+flowchart TB
+    subgraph PROBLEM["Watchdog Problem"]
+        A["watchdog: File arrived!"] --> B["scan done"]
+        C["prod cycle (5 min later)"] --> D["runs anyway"]
+        B -.- E["No coordination!"]
+        D -.- E
+    end
+```
+
+- Watchdog is reactive, prod cycle is scheduled
+- No natural coordination between them
+- Would need complex state management
+- Still need to scan TB files (slow)
+
+---
+
+### Solution 2: Inotifywait (Linux Native)
+
+```mermaid
+flowchart TB
+    subgraph INOTIFY["Inotifywait Approach"]
+        I1["inotifywait watches directories"]
+        I2["detects close_write, moved_to"]
+        I3["debounce 30 seconds"]
+        I4["trigger processing"]
+    end
+
+    I1 --> I2 --> I3 --> I4
+```
+
+**What is Inotifywait?**
+- Linux native file system monitoring
+- CLI tool from inotify-tools package
+- More efficient than polling
+
+```bash
+inotifywait -m -r -e close_write /raw/
+```
+
+**Why It Doesn't Work:**
+
+| Issue | Problem |
+|-------|---------|
+| Linux only | No Windows support |
+| Same coordination issue | Async events vs scheduled cycle |
+| Still need to scan | TB files still slow |
+| Complex state | Need to track what's scanned |
+
+---
+
+### Solution 3: Scan Inside Prod Cycle
+
+```mermaid
+flowchart TB
+    subgraph INLINE["Scan Inside Cycle"]
+        A["discover files"] --> B["scan each file"]
+        B --> C["if valid: process"]
+        B --> D["if invalid: skip"]
+    end
+```
+
+**Why It Doesn't Work:**
+
+```mermaid
+flowchart LR
+    subgraph SLOW["Performance Impact"]
+        A["Current: 5 min cycle"]
+        B["With scan: 5 min + scan time"]
+        C["Result: SLOWER PROD"]
+    end
+
+    A --> B --> C
+```
+
+- Adds latency to every cycle
+- Scanning TB files takes time
+- Defeats purpose of fast prod processing
+
+---
+
+### Solution 4: Two-Step (Scan Raw, Check Bronze)
+
+```mermaid
+flowchart TB
+    subgraph TWOSTEP["Two-Step Approach"]
+        A["Step 1: Scan raw, status=pending"]
+        B["Prod runs: raw → bronze"]
+        C["Step 2: Check bronze exists, sample"]
+    end
+
+    A --> B --> C
+```
+
+**Why It's Overcomplicated:**
+- Two separate scans needed
+- State management for pending/ready
+- More moving parts to fail
+
+---
+
+## Why Watchdog/Inotifywait Don't Work
+
+### The Core Problem
+
+```mermaid
+flowchart TB
+    subgraph MISMATCH["Fundamental Mismatch"]
+        direction TB
+        A["File Listeners (watchdog/inotify)"]
+        B["Event-driven: react to file changes"]
+        C["Prod Cycle"]
+        D["Schedule-driven: runs every 5 min"]
+    end
+
+    A --> B
+    C --> D
+    B -.- E["These don't naturally coordinate!"]
+    D -.- E
+```
+
+### What Would Be Needed
+
+```mermaid
+flowchart TB
+    subgraph COMPLEX["Complex Requirements"]
+        R1["Shared state between services"]
+        R2["Locking mechanism"]
+        R3["Retry logic"]
+        R4["Error handling"]
+        R5["Monitoring"]
+    end
+
+    R1 --> RESULT["Too much complexity!"]
+    R2 --> RESULT
+    R3 --> RESULT
+    R4 --> RESULT
+    R5 --> RESULT
+```
+
+### The Insight
+
+```mermaid
+flowchart TB
+    subgraph INSIGHT["Key Insight"]
+        A["Bronze files ALREADY EXIST"]
+        B["Bronze has same content as raw"]
+        C["Bronze files PERSIST (not deleted)"]
+        D["DB has raw → bronze mapping"]
+    end
+
+    A --> SOLUTION["Sample from Bronze instead!"]
+    B --> SOLUTION
+    C --> SOLUTION
+    D --> SOLUTION
+```
+
+**Why sample from Bronze?**
+- Files are already copied (no extra I/O)
+- Files persist (safe to read anytime)
+- Smaller time window (not TB backlog)
+- Path mapping exists in DB
+
+---
+
+## The Simple Solution
+
+### Core Idea
+
+```mermaid
+flowchart TB
+    subgraph SIMPLE["Simple Solution"]
+        A["Prod processes file"]
+        B["Append to manifest.jsonl"]
+        C["Staging reads manifest"]
+        D["Sample from bronze path"]
+    end
+
+    A --> B
+    B --> C
+    C --> D
+
+    style B fill:#90EE90
+```
+
+**One line change in prod: append to JSONL**
+
+---
+
+### Complete Flow
+
+```mermaid
+flowchart TB
+    subgraph RAW["1. Raw Layer"]
         R1["raw/env0/data.csv"]
         R2["raw/env1/file.parquet"]
     end
 
-    subgraph PROD["Prod Service"]
+    subgraph PROD["2. Prod Service (existing)"]
         P1["rsync raw → bronze"]
-        P2["append to manifest.jsonl"]
+        P2["NEW: append to manifest.jsonl"]
     end
 
-    subgraph BRONZE["Bronze Layer"]
+    subgraph BRONZE["3. Bronze Layer"]
         B1["bronze/2026/01/18/143000--data.csv"]
         B2["bronze/2026/01/18/143005--file.parquet"]
     end
 
-    subgraph MANIFEST["manifest.jsonl"]
+    subgraph MANIFEST["4. manifest.jsonl"]
         M1["{raw, bronze, mtime}"]
+        M2["{raw, bronze, mtime}"]
     end
 
-    subgraph STAGING["Staging Service"]
+    subgraph STAGING["5. Staging Service (new)"]
         S1["read manifest.jsonl"]
-        S2["sample from bronze"]
-        S3["create sample files"]
+        S2["check mtime (lazy load)"]
+        S3["stream sample from bronze"]
     end
 
-    subgraph SAMPLES["Samples"]
+    subgraph SAMPLES["6. Sample Files"]
         SA1["samples/data_sample.csv"]
         SA2["samples/file_sample.parquet"]
     end
@@ -50,42 +348,25 @@ flowchart TB
     P1 --> B2
     P1 --> P2
     P2 --> M1
-    B1 --> S2
-    B2 --> S2
+    P2 --> M2
     M1 --> S1
+    M2 --> S1
     S1 --> S2
     S2 --> S3
+    B1 --> S3
+    B2 --> S3
     S3 --> SA1
     S3 --> SA2
+
+    style P2 fill:#FFD700
+    style S1 fill:#87CEEB
+    style S2 fill:#87CEEB
+    style S3 fill:#87CEEB
 ```
 
 ---
 
-## Manifest Format
-
-```mermaid
-flowchart TB
-    subgraph JSONL["📄 manifest.jsonl"]
-        direction TB
-        L1["Line 1"]
-        L2["Line 2"]
-        L3["Line 3"]
-        L4["..."]
-    end
-
-    subgraph ENTRY["Each Line Structure"]
-        direction LR
-        F1["raw"]
-        F2["bronze"]
-        F3["mtime"]
-    end
-
-    L1 --> ENTRY
-```
-
----
-
-## JSONL Entry Structure
+### JSONL Manifest Format
 
 ```mermaid
 classDiagram
@@ -95,12 +376,10 @@ classDiagram
         +float mtime
     }
 
-    note for ManifestEntry "One entry per processed file"
+    note for ManifestEntry "One JSON line per processed file"
 ```
 
----
-
-## JSONL Visual Example
+**Visual Structure:**
 
 ```mermaid
 flowchart LR
@@ -121,9 +400,16 @@ flowchart LR
     LINE1 --> LINE2
 ```
 
+**Raw Example:**
+
+```jsonl
+{"raw": "raw/env0/data.csv", "bronze": "bronze/2026/01/18/143000--data.csv", "mtime": 1737200000.0}
+{"raw": "raw/env1/file.parquet", "bronze": "bronze/2026/01/18/143005--file.parquet", "mtime": 1737200100.0}
+```
+
 ---
 
-## Path Transformation
+### Path Transformation
 
 ```mermaid
 flowchart LR
@@ -132,9 +418,9 @@ flowchart LR
     end
 
     subgraph TRANSFORM["Transformation"]
-        T1["remove env0"]
-        T2["add date: 2026/01/18"]
-        T3["add time prefix: 143000--"]
+        T1["1. remove env0"]
+        T2["2. add date: 2026/01/18"]
+        T3["3. add time prefix: 143000--"]
     end
 
     subgraph BRONZE["Bronze Path"]
@@ -146,7 +432,7 @@ flowchart LR
 
 ---
 
-## JSONL File Location
+### File Location
 
 ```mermaid
 flowchart TB
@@ -159,7 +445,10 @@ flowchart TB
                     GOLD["gold/"]
                     subgraph MANIFESTS["manifests/"]
                         M1["processed.jsonl"]
-                        M2["processed_2026-01-18.jsonl"]
+                    end
+                    subgraph SAMPLES["samples/"]
+                        S1["data_sample.csv"]
+                        S2["file_sample.parquet"]
                     end
                 end
             end
@@ -167,44 +456,32 @@ flowchart TB
     end
 
     style M1 fill:#90EE90
-    style M2 fill:#90EE90
+    style S1 fill:#87CEEB
+    style S2 fill:#87CEEB
 ```
 
 ---
 
-## Write Flow
+### Lazy Load (mtime Check)
 
 ```mermaid
 flowchart TD
-    A["File processed: raw/env0/data.csv"] --> B["rsync to bronze"]
-    B --> C["Get bronze path"]
-    C --> D["Get file mtime"]
-    D --> E["Create JSON object"]
-    E --> F["Append to manifest.jsonl"]
-
-    subgraph JSON["JSON Object"]
-        J1["{"]
-        J2["  raw: raw/env0/data.csv"]
-        J3["  bronze: bronze/.../data.csv"]
-        J4["  mtime: 1737200000.0"]
-        J5["}"]
-    end
-
-    E --> JSON
+    A["Read manifest entry"] --> B{"mtime changed?"}
+    B -->|Yes| C["Sample from bronze"]
+    B -->|No| D["Skip - already sampled"]
+    C --> E["Update cached mtime"]
+    E --> F["Next entry"]
+    D --> F
 ```
+
+**Why mtime?**
+- If file unchanged (same mtime), skip sampling
+- Only sample new or modified files
+- Efficient for millions of files
 
 ---
 
-## Raw JSON Example
-
-```jsonl
-{"raw": "raw/env0/data.csv", "bronze": "bronze/2026/01/18/143000--data.csv", "mtime": 1737200000.0}
-{"raw": "raw/env1/file.parquet", "bronze": "bronze/2026/01/18/143005--file.parquet", "mtime": 1737200100.0}
-```
-
----
-
-## Service Interaction
+### Service Interaction
 
 ```mermaid
 sequenceDiagram
@@ -215,108 +492,183 @@ sequenceDiagram
     participant S as Staging Service
     participant SA as Samples
 
-    R->>P: file arrives
-    P->>B: rsync copy
+    Note over R,P: File arrives in raw
+
+    R->>P: new file detected
+    P->>B: rsync copy to bronze
     P->>M: append {raw, bronze, mtime}
 
-    Note over S: runs after prod cycle
+    Note over S: Staging runs (separate schedule)
 
     S->>M: read new entries
-    S->>B: stream sample (first N rows)
+    S->>S: check mtime (lazy load)
+    S->>B: stream first N rows
     S->>SA: save sample file
+
+    Note over SA: Samples available for preview
 ```
 
 ---
 
-## Lazy Load (mtime check)
-
-```mermaid
-flowchart TD
-    A["Read manifest entry"] --> B{"mtime changed?"}
-    B -->|Yes| C["Sample from bronze"]
-    B -->|No| D["Skip - already sampled"]
-    C --> E["Update cached mtime"]
-    D --> F["Next entry"]
-    E --> F
-```
-
----
-
-## File Structure
-
-```mermaid
-flowchart TB
-    subgraph FP["{FP_PREFIX}/{vendor}/{dataset}/{version}"]
-        subgraph LAYERS["Layers"]
-            RAW["raw/env*/"]
-            BRONZE["bronze/YYYY/MM/DD/"]
-            SILVER["silver/"]
-            GOLD["gold/"]
-        end
-        subgraph META["Metadata"]
-            MANIFEST["manifests/processed.jsonl"]
-            SAMPLES["samples/"]
-        end
-    end
-```
-
----
-
-## Implementation
+## Implementation Details
 
 ### Prod Change (handle_bronze.py)
 
 ```python
-# After rsync success
-manifest_path = fp_prefix / vendor / dataset / version / "manifests" / "processed.jsonl"
-manifest_path.parent.mkdir(parents=True, exist_ok=True)
+import json
+from pathlib import Path
 
-with open(manifest_path, 'a') as f:
-    f.write(json.dumps({
-        "raw": str(raw_path),
-        "bronze": str(bronze_path),
-        "mtime": file_mtime
-    }) + '\n')
+def handle_bronze(raw_path, bronze_path, file_mtime, ...):
+    # Existing rsync logic
+    rsync_copy(raw_path, bronze_path)
+
+    # NEW: Append to manifest
+    manifest_path = get_manifest_path(vendor, dataset, version)
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(manifest_path, 'a') as f:
+        f.write(json.dumps({
+            "raw": str(raw_path),
+            "bronze": str(bronze_path),
+            "mtime": file_mtime
+        }) + '\n')
 ```
 
-### Staging Service
+**That's it. One append per file.**
+
+---
+
+### Staging Service (new file)
 
 ```python
-def run_staging(manifest_path, samples_dir):
-    cached_mtime = load_cache()
+import json
+from pathlib import Path
 
-    for line in open(manifest_path):
-        entry = json.loads(line)
+def run_staging(manifest_path, samples_dir, cache_path):
+    # Load mtime cache
+    cached_mtime = load_cache(cache_path)
 
-        # Lazy load - skip if unchanged
-        if cached_mtime.get(entry['raw']) == entry['mtime']:
-            continue
+    # Read manifest
+    with open(manifest_path) as f:
+        for line in f:
+            entry = json.loads(line)
 
-        # Sample from bronze
-        sample = stream_sample(entry['bronze'], rows=100)
-        save_sample(sample, samples_dir / Path(entry['raw']).name)
+            # Lazy load - skip if unchanged
+            if cached_mtime.get(entry['raw']) == entry['mtime']:
+                continue
 
-        # Update cache
-        cached_mtime[entry['raw']] = entry['mtime']
+            # Stream sample from bronze (first N rows only)
+            sample = stream_sample(entry['bronze'], rows=100)
 
-    save_cache(cached_mtime)
+            # Save sample
+            sample_name = Path(entry['raw']).stem + '_sample' + Path(entry['raw']).suffix
+            save_sample(sample, samples_dir / sample_name)
+
+            # Update cache
+            cached_mtime[entry['raw']] = entry['mtime']
+
+    # Save cache
+    save_cache(cached_mtime, cache_path)
+
+
+def stream_sample(filepath, rows=100):
+    """Stream sample WITHOUT loading full file."""
+
+    if filepath.endswith('.csv'):
+        import pandas as pd
+        return pd.read_csv(filepath, nrows=rows)
+
+    elif filepath.endswith('.parquet'):
+        import pyarrow.parquet as pq
+        return pq.read_table(filepath).slice(0, rows).to_pandas()
+
+    elif filepath.endswith('.gz'):
+        import gzip
+        with gzip.open(filepath, 'rt') as f:
+            return [next(f) for _ in range(rows)]
+
+    elif filepath.endswith('.zip'):
+        import zipfile
+        with zipfile.ZipFile(filepath) as z:
+            return {"contents": z.namelist()}
+
+    else:
+        # Binary/unknown - just get size and first bytes
+        with open(filepath, 'rb') as f:
+            return {"size": Path(filepath).stat().st_size, "head": f.read(1024)}
+```
+
+---
+
+### Staging Service File
+
+```ini
+# /etc/systemd/system/staging-sampler.service
+[Unit]
+Description=Data Alchemy Staging Sampler
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python -m data_alchemy.staging_sampler
+Restart=always
+RestartSec=60
+Environment=FP_PREFIX=/data
+
+[Install]
+WantedBy=multi-user.target
 ```
 
 ---
 
 ## Benefits
 
-| Benefit | Description |
-|---------|-------------|
-| Simple | One JSONL append per file |
-| No prod slowdown | Just one write per file |
-| Lazy load | mtime check skips unchanged |
-| Stream sample | No TB copy, just first N rows |
-| Decoupled | Staging runs independently |
+### Comparison Table
+
+| Aspect | Watchdog/Inotify | JSONL Manifest |
+|--------|------------------|----------------|
+| Complexity | High (event coordination) | Low (just append) |
+| Prod impact | Potential slowdown | Zero (one write) |
+| State management | Complex | Simple (JSONL + cache) |
+| Cross-platform | Varies | Works everywhere |
+| Debugging | Hard (async events) | Easy (read JSONL) |
+
+### Why This Works
+
+```mermaid
+flowchart TB
+    subgraph BENEFITS["Benefits"]
+        B1["No TB copies - stream samples"]
+        B2["No prod slowdown - just append"]
+        B3["Lazy load - skip unchanged"]
+        B4["Decoupled - staging runs separately"]
+        B5["Debuggable - JSONL is human-readable"]
+    end
+```
+
+### Summary
+
+```mermaid
+flowchart LR
+    subgraph BEFORE["Before"]
+        A1["Monolithic process"]
+        A2["No staging visibility"]
+        A3["Complex event systems"]
+    end
+
+    subgraph AFTER["After"]
+        B1["Prod: append JSONL"]
+        B2["Staging: read & sample"]
+        B3["Simple, decoupled"]
+    end
+
+    BEFORE --> |"Simple solution"| AFTER
+```
 
 ---
 
 ## Links
 
 - [Investigation DB](https://git.codewilling.com/-/snippets/4)
-- [staging-watcher-design.md](../../alchmy/docs/data-alchemy/staging-watcher-design.md)
+- [GICS Pipeline Issue](https://git.codewilling.com/alchmy/inverstigations/-/issues/1)
+- [Data Quality Issue](https://git.codewilling.com/alchmy/inverstigations/-/issues/2)
