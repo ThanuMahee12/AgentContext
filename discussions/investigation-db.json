@@ -1,0 +1,19 @@
+{
+  "id": "investigation-db",
+  "date": "2026-01-17",
+  "title": "Investigation DB: Pattern-Based Reverse Lookup + Notion",
+  "url": "https://git.codewilling.com/-/snippets/4",
+  "github_gist": "https://gist.github.com/ThanuMahee12/10ca4add500e93626342da06475966eb",
+  "summary": "Pattern-based reverse lookup for data pipelines + Notion service tracking. When a file is missing in Gold/Platinum, trace back to Bronze source, Service, and Server. Core idea: track patterns not files. Includes full entity relationships, layer definitions (raw→bronze→silver→gold→raw_enriched→delta), CLI ideas (invdb reverse/service/servers/trace/impact), and Notion integration with alchemy_service and alchemy_server databases.",
+  "notion": {
+    "alchemy_service": "2eb56dc5-f1d9-811d-bae0-debc72af6178",
+    "alchemy_server": "2eb56dc5-f1d9-816d-93a4-c2aa8038bbb0"
+  },
+  "servers": {
+    "ny5-predpalch02": "staging",
+    "ny5-predpalch04": "prod",
+    "ny5-predpalch06": "prod"
+  },
+  "comments": [],
+  "tags": ["notion", "infrastructure", "patterns", "reverse-lookup"]
+}
