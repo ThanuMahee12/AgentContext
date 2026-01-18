@@ -843,10 +843,3 @@ flowchart LR
     BEFORE --> |"Simple solution"| AFTER
 ```
 
----
-
-## Links
-
-- [Investigation DB](https://git.codewilling.com/-/snippets/4)
-- [GICS Pipeline Issue](https://git.codewilling.com/alchmy/inverstigations/-/issues/1)
-- [Data Quality Issue](https://git.codewilling.com/alchmy/inverstigations/-/issues/2)
