@@ -432,6 +432,57 @@ flowchart LR
 
 ---
 
+### Sample File Types (Same Format as Original)
+
+```mermaid
+flowchart TB
+    subgraph INPUT["Bronze File"]
+        B["bronze/data.xxx"]
+    end
+
+    subgraph DETECT["Detect File Type"]
+        D{".ext?"}
+    end
+
+    subgraph OUTPUT["Sample File (Same Format)"]
+        O1[".csv → sample.csv"]
+        O2[".parquet → sample.parquet"]
+        O3[".json → sample.json"]
+        O4[".jsonl → sample.jsonl"]
+        O5[".gz → sample.gz"]
+        O6[".zip → sample.zip"]
+        O7[".tar → sample.txt (list)"]
+        O8["unknown → sample.meta.json"]
+    end
+
+    B --> D
+    D -->|.csv| O1
+    D -->|.parquet| O2
+    D -->|.json| O3
+    D -->|.jsonl| O4
+    D -->|.gz| O5
+    D -->|.zip| O6
+    D -->|.tar| O7
+    D -->|other| O8
+```
+
+**Sample Strategy by Type:**
+
+| File Type | Sample Strategy | Output |
+|-----------|-----------------|--------|
+| `.csv` | First N rows | `.csv` |
+| `.parquet` | First N rows | `.parquet` |
+| `.json` | First N records (if array) | `.json` |
+| `.jsonl` | First N lines | `.jsonl` |
+| `.gz` | Decompress → first N lines → compress | `.gz` |
+| `.zip` | Manifest + first small file | `.zip` |
+| `.tar` | List contents only | `.txt` |
+| unknown | Metadata (size, mtime) | `.meta.json` |
+
+**Key Principle:** Sample files are **real files** in the same format - can be used for testing/preview.
+
+---
+
 ### File Location
 
 ```mermaid
@@ -571,31 +622,79 @@ def run_staging(manifest_path, samples_dir, cache_path):
     save_cache(cached_mtime, cache_path)
 
 
-def stream_sample(filepath, rows=100):
-    """Stream sample WITHOUT loading full file."""
+def create_sample_file(bronze_path, sample_path, rows=100):
+    """Create sample file in SAME FORMAT as original."""
 
-    if filepath.endswith('.csv'):
+    ext = Path(bronze_path).suffix.lower()
+
+    if ext == '.csv':
+        # CSV → sample CSV
         import pandas as pd
-        return pd.read_csv(filepath, nrows=rows)
+        df = pd.read_csv(bronze_path, nrows=rows)
+        df.to_csv(sample_path, index=False)
 
-    elif filepath.endswith('.parquet'):
+    elif ext == '.parquet':
+        # Parquet → sample Parquet
         import pyarrow.parquet as pq
-        return pq.read_table(filepath).slice(0, rows).to_pandas()
+        table = pq.read_table(bronze_path).slice(0, rows)
+        pq.write_table(table, sample_path)
 
-    elif filepath.endswith('.gz'):
+    elif ext == '.json':
+        # JSON → sample JSON (first N records)
+        import json
+        with open(bronze_path) as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            data = data[:rows]
+        with open(sample_path, 'w') as f:
+            json.dump(data, f, indent=2)
+
+    elif ext == '.jsonl':
+        # JSONL → sample JSONL (first N lines)
+        with open(bronze_path) as f:
+            lines = [next(f) for _ in range(rows)]
+        with open(sample_path, 'w') as f:
+            f.writelines(lines)
+
+    elif ext == '.gz':
+        # .gz → sample .gz (compressed)
         import gzip
-        with gzip.open(filepath, 'rt') as f:
-            return [next(f) for _ in range(rows)]
+        with gzip.open(bronze_path, 'rt') as f:
+            lines = [next(f) for _ in range(rows)]
+        with gzip.open(sample_path, 'wt') as f:
+            f.writelines(lines)
 
-    elif filepath.endswith('.zip'):
+    elif ext == '.zip':
+        # ZIP → sample ZIP (list + first file sample)
         import zipfile
-        with zipfile.ZipFile(filepath) as z:
-            return {"contents": z.namelist()}
+        with zipfile.ZipFile(bronze_path) as zin:
+            names = zin.namelist()
+            with zipfile.ZipFile(sample_path, 'w') as zout:
+                # Write manifest
+                zout.writestr('_manifest.txt', '\n'.join(names))
+                # Sample first file if small
+                if names and zin.getinfo(names[0]).file_size < 1_000_000:
+                    zout.writestr(names[0], zin.read(names[0]))
+
+    elif ext == '.tar':
+        # TAR → sample TAR (list contents)
+        import tarfile
+        with tarfile.open(bronze_path) as tin:
+            names = tin.getnames()
+        with open(sample_path.with_suffix('.txt'), 'w') as f:
+            f.write('\n'.join(names))
 
     else:
-        # Binary/unknown - just get size and first bytes
-        with open(filepath, 'rb') as f:
-            return {"size": Path(filepath).stat().st_size, "head": f.read(1024)}
+        # Unknown → metadata file
+        import json
+        stat = Path(bronze_path).stat()
+        with open(sample_path.with_suffix('.meta.json'), 'w') as f:
+            json.dump({
+                "original": str(bronze_path),
+                "size": stat.st_size,
+                "mtime": stat.st_mtime,
+                "type": "unknown"
+            }, f, indent=2)
 ```
 
 ---
