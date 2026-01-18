@@ -283,6 +283,85 @@ flowchart TB
 
 ---
 
+## Alternative Approaches
+
+### Option A: Sample from Bronze (Recommended)
+
+Generate sample files from bronze layer after prod processes.
+
+```mermaid
+flowchart LR
+    A["raw file"] --> B["prod processes"]
+    B --> C["bronze file"]
+    C --> D["staging samples from bronze"]
+```
+
+**Pros:** No impact on prod, files already exist
+**Cons:** Slight delay (after prod cycle)
+
+---
+
+### Option B: Temp File in Raw (Optional)
+
+Create `temp_` prefixed file while writing, rename when complete.
+
+```mermaid
+flowchart TB
+    subgraph RAW["Raw Layer"]
+        A["File arriving..."]
+        B["temp_data.csv (incomplete)"]
+        C["data.csv (complete)"]
+    end
+
+    A --> B
+    B -->|"write complete"| C
+    C --> D["Staging can sample"]
+```
+
+**How it works:**
+
+```mermaid
+sequenceDiagram
+    participant S as Source System
+    participant R as Raw Directory
+    participant ST as Staging Service
+
+    S->>R: create temp_data.csv
+    S->>R: write data...
+    S->>R: write more...
+    S->>R: rename temp_data.csv → data.csv
+
+    Note over ST: Staging only reads files WITHOUT temp_ prefix
+
+    ST->>R: scan for non-temp files
+    ST->>ST: sample from complete files
+```
+
+**Rules:**
+- Files with `temp_` prefix = incomplete, skip
+- Files without `temp_` prefix = complete, safe to sample
+
+**Pros:** Can sample from raw before bronze
+**Cons:** Requires source system to follow temp_ convention
+
+---
+
+### Option C: Hybrid (Both)
+
+```mermaid
+flowchart TB
+    subgraph OPTION["Choose based on need"]
+        A["Need early sample?"]
+        B["Sample from raw (after temp_ rename)"]
+        C["Sample from bronze (after prod)"]
+    end
+
+    A -->|Yes| B
+    A -->|No| C
+```
+
+---
+
 ## The Simple Solution
 
 ### Core Idea
