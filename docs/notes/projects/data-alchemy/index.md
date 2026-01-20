@@ -10,6 +10,7 @@ Core data processing engine (Bronze → Silver → Gold → Platinum).
 |-------|-------------|
 | [Mapping](mapping.md) | Grabber maps, bbocax approach, decrypt logic |
 | [DevOps](Devops.md) | ACL permissions, deployment, CLI tools |
+| [Server Commands](server-commands.md) | Tree scan, rsync, parallel execution, nice/ionice |
 
 ---
 
