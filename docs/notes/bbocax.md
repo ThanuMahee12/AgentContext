@@ -250,6 +250,74 @@ find /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/bronze/2026/01/21 -type f | sed 's/
 
 ---
 
+---
+
+## Futures Mapping
+
+### Current Grabber Maps
+
+| Map | Target | Files Handled | Status |
+|-----|--------|---------------|--------|
+| `futures_2_0.json` | `back_office_futures/2.0` | `*FuturesBulk*` | ✅ CORRECT |
+
+### Missing - FuturesExtended
+
+**Production structure (ny5-predpalch01):**
+```
+/sf/data/bloomberg/back_office_futures_extended/
+├── 1.0/raw/{share,non_share}_futures_extended/YYYY/YYYYMMDD/
+├── 2.0/raw/{share,non_share}_futures_extended/YYYY/YYYYMMDD/
+└── 3.0/raw/{share,non_share}_futures_extended/YYYY/YYYYMMDD/
+```
+
+**Version mapping (from shovel `bbo.py`):**
+
+| Filename Pattern | Target Version | Regex |
+|------------------|----------------|-------|
+| `*FuturesExtended*` (no V suffix) | 1.0 | `^(share\|nonShare)FuturesExtended(?!.*V[23]).*$` |
+| `*FuturesExtended*V2*` | 2.0 | `^(share\|nonShare)FuturesExtended.*V2.*$` |
+| `*FuturesExtended*V3*` | 3.0 | `^(share\|nonShare)FuturesExtended.*V3.*$` |
+
+**Subdirectory mapping:**
+
+| Prefix | Target Subdirectory |
+|--------|---------------------|
+| `shareFuturesExtended*` | `share_futures_extended/` |
+| `nonShareFuturesExtended*` | `non_share_futures_extended/` |
+
+**Grabber maps to create:**
+1. `bloomberg_bbocax_cwiq_pipe_futures_extended_1_0.json`
+2. `bloomberg_bbocax_cwiq_pipe_futures_extended_2_0.json`
+3. `bloomberg_bbocax_cwiq_pipe_futures_extended_3_0.json`
+
+---
+
+## DQ Validation
+
+### Equities DQ (20260101-20260111)
+
+**Command:**
+```bash
+cd data-alchemy && source .env && uv run python -m data_alchemy.main \
+  --vendor bloomberg --dataset bbocax_cwiq_pipe --version 1.0 \
+  --dq --dq-date-range 20260101:20260111 --file-pattern ".*equity.*"
+```
+
+**Result:** `back_office_equities/1.0` **PASSED** (11 dates, 699 files)
+
+### File Counts - back_office_equities/1.0/raw
+
+| Period | Weekday | Weekend (Sat) |
+|--------|---------|---------------|
+| Oct 11 - Nov 16, 2025 | 68 | 28 |
+| Nov 17, 2025 | 157 | - |
+| Nov 18, 2025+ | **210** | **82** |
+
+**File extensions (weekday):**
+- .csv: 75, .parquet: 67, .out: 20, .dif: 20, .px: 11, .hpc: 11, .rpx: 6
+
+---
+
 ## History
 
 | Date | Action |
@@ -257,5 +325,8 @@ find /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/bronze/2026/01/21 -type f | sed 's/
 | 2026-01-22 | Created notes, analyzed bronze counts |
 | 2026-01-22 | Added local vs real server comparison chart |
 | 2026-01-22 | Added equity files comparison (Jan 01-11 exact match) |
-| 2026-01-22 | Verified equities mapping: 103 files/weekday matches reference |
+| 2026-01-22 | Verified equities mapping: 210 files/weekday, 82 files/weekend |
 | 2026-01-22 | Confirmed: equityOptions/Index NOT in reference, excluded correctly |
+| 2026-01-22 | DQ validation PASSED for back_office_equities/1.0 |
+| 2026-01-22 | Analyzed futures mapping: futures_2_0.json correct for FuturesBulk |
+| 2026-01-22 | Identified need for 3 futures_extended grabber maps (1.0, 2.0, 3.0) |
