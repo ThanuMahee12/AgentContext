@@ -188,10 +188,57 @@ find /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/bronze/2026/01/21 -type f | sed 's/
 
 ### Observations
 
-- **Dec 2025:** Local has more data than real server (sample data from old tree?)
-- **Jan 2026 (01-11):** Nearly match (~3-10 file difference)
-- **2026/01/12:** Local has only 40 files vs 8,320 on server (incomplete)
-- **Action needed:** Regenerate sample data from latest tree for accurate testing
+- **Dec 2025:** Local has more data than real server - OK for testing
+- **Jan 2026 (01-11):** Nearly match (~3-10 file difference) - OK for testing
+- **2026/01/12+:** Local incomplete - needs regeneration
+
+---
+
+## Equity Files Comparison
+
+**Checked:** 2026-01-22
+
+| Date | Local | Real Server | Status |
+|------|-------|-------------|--------|
+| 2025/12/08 | 1,676 | 636 | OK (more) |
+| 2025/12/09 | 2,428 | 2,428 | EXACT |
+| 2025/12/10 | 3,011 | 2,307 | OK (more) |
+| 2025/12/11 | 1,810 | 660 | OK (more) |
+| 2025/12/12 | 2,877 | 623 | OK (more) |
+| 2025/12/18 | - | 736 | - |
+| 2025/12/23 | - | 1,310 | - |
+| 2025/12/26 | - | 12 | - |
+| 2025/12/30 | - | 1,324 | - |
+| 2025/12/31 | 2,364 | 2,364 | EXACT |
+| 2026/01/01 | 2,364 | 2,364 | EXACT |
+| 2026/01/02 | 2,324 | 2,324 | EXACT |
+| 2026/01/03 | 1,684 | 1,684 | EXACT |
+| 2026/01/04 | 2,364 | 2,364 | EXACT |
+| 2026/01/05 | 2,384 | 2,384 | EXACT |
+| 2026/01/06 | 2,376 | 2,376 | EXACT |
+| 2026/01/07 | 2,364 | 2,364 | EXACT |
+| 2026/01/08 | 2,364 | 2,364 | EXACT |
+| 2026/01/09 | 2,360 | 2,360 | EXACT |
+| 2026/01/10 | 1,684 | 1,684 | EXACT |
+| 2026/01/11 | 2,364 | 2,364 | EXACT |
+| 2026/01/12 | 20 | 2,460 | NOT OK |
+| 2026/01/13 | - | 2,206 | - |
+| 2026/01/14 | - | 2,460 | - |
+| 2026/01/15 | - | 1,706 | - |
+| 2026/01/16 | - | 1,708 | - |
+| 2026/01/17 | - | 1,780 | - |
+| 2026/01/18 | - | 2,434 | - |
+| 2026/01/19 | - | 2,448 | - |
+| 2026/01/20 | - | 2,460 | - |
+| 2026/01/21 | - | 2,460 | - |
+| 2026/01/22 | - | 680 | - |
+
+### Equity Summary
+
+- **Full weekday:** ~2,360-2,460 equity files
+- **Weekends/partial:** ~1,680-1,780 equity files
+- **Valid test range:** Jan 01-11 (exact match)
+- **Needs regen:** Jan 12+ (local incomplete)
 
 ---
 
@@ -209,3 +256,4 @@ find /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/bronze/2026/01/21 -type f | sed 's/
 |------|--------|
 | 2026-01-22 | Created notes, analyzed bronze counts |
 | 2026-01-22 | Added local vs real server comparison chart |
+| 2026-01-22 | Added equity files comparison (Jan 01-11 exact match) |
