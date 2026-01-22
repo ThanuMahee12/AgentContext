@@ -136,6 +136,65 @@ find /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/bronze/2026/01/21 -type f | sed 's/
 
 ---
 
+## Local vs Real Server Comparison
+
+**Checked:** 2026-01-22
+
+| Date | Local /sf/data | Real Server | Match |
+|------|----------------|-------------|-------|
+| 2025/12/01 | 7,976 | - | N/A |
+| 2025/12/02 | 7,974 | - | N/A |
+| 2025/12/03 | 7,987 | - | N/A |
+| 2025/12/04 | 9,533 | - | N/A |
+| 2025/12/05 | 7,914 | - | N/A |
+| 2025/12/06 | 4,733 | - | N/A |
+| 2025/12/07 | 7,968 | - | N/A |
+| 2025/12/08 | 5,536 | 1,672 | NO |
+| 2025/12/09 | 8,218 | 8,226 | ~YES |
+| 2025/12/10 | 10,518 | 8,026 | NO |
+| 2025/12/11 | 5,861 | 1,832 | NO |
+| 2025/12/12 | 9,985 | 2,139 | NO |
+| 2025/12/13 | 4,721 | - | N/A |
+| 2025/12/14 | 7,964 | - | N/A |
+| 2025/12/15 | 7,965 | - | N/A |
+| 2025/12/16 | 7,978 | - | N/A |
+| 2025/12/17 | 6,034 | - | N/A |
+| 2025/12/18 | 7,366 | 1,656 | NO |
+| 2025/12/19 | 11,525 | - | N/A |
+| 2025/12/20 | 4,721 | - | N/A |
+| 2025/12/21 | 8,023 | - | N/A |
+| 2025/12/22 | 8,028 | - | N/A |
+| 2025/12/23 | 8,012 | 4,042 | NO |
+| 2025/12/24 | 8,076 | - | N/A |
+| 2025/12/25 | 8,035 | - | N/A |
+| 2025/12/26 | 7,964 | 24 | NO |
+| 2025/12/27 | 4,729 | - | N/A |
+| 2025/12/28 | 8,044 | - | N/A |
+| 2025/12/29 | 8,027 | - | N/A |
+| 2025/12/30 | 7,983 | 4,188 | NO |
+| 2025/12/31 | 7,929 | 7,932 | ~YES |
+| 2026/01/01 | 7,938 | 7,944 | ~YES |
+| 2026/01/02 | 7,870 | 7,876 | ~YES |
+| 2026/01/03 | 4,629 | 4,632 | ~YES |
+| 2026/01/04 | 7,922 | 7,926 | ~YES |
+| 2026/01/05 | 7,942 | 7,946 | ~YES |
+| 2026/01/06 | 7,958 | 7,969 | ~YES |
+| 2026/01/07 | 7,929 | 7,932 | ~YES |
+| 2026/01/08 | 7,921 | 7,924 | ~YES |
+| 2026/01/09 | 8,120 | 8,130 | ~YES |
+| 2026/01/10 | 4,631 | 4,634 | ~YES |
+| 2026/01/11 | 7,917 | 7,920 | ~YES |
+| 2026/01/12 | 40 | 8,320 | NO |
+
+### Observations
+
+- **Dec 2025:** Local has more data than real server (sample data from old tree?)
+- **Jan 2026 (01-11):** Nearly match (~3-10 file difference)
+- **2026/01/12:** Local has only 40 files vs 8,320 on server (incomplete)
+- **Action needed:** Regenerate sample data from latest tree for accurate testing
+
+---
+
 ## Related Files
 
 - **Tree file:** `asserts/tree/crawler/bloomberg-bbocax_cwiq_pipe-1.0-tree.json`
@@ -149,3 +208,4 @@ find /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/bronze/2026/01/21 -type f | sed 's/
 | Date | Action |
 |------|--------|
 | 2026-01-22 | Created notes, analyzed bronze counts |
+| 2026-01-22 | Added local vs real server comparison chart |
