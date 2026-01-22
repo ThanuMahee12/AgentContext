@@ -257,3 +257,5 @@ find /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/bronze/2026/01/21 -type f | sed 's/
 | 2026-01-22 | Created notes, analyzed bronze counts |
 | 2026-01-22 | Added local vs real server comparison chart |
 | 2026-01-22 | Added equity files comparison (Jan 01-11 exact match) |
+| 2026-01-22 | Verified equities mapping: 103 files/weekday matches reference |
+| 2026-01-22 | Confirmed: equityOptions/Index NOT in reference, excluded correctly |
