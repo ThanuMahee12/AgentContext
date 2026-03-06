@@ -90,3 +90,55 @@ DUCKDB_TEMP_DIR=/tmp/duckdb  # Spill to disk location
 | `utils/duckdb_ops.py` | DuckDB merge operations |
 | `utils/db.py` | `init_worker_shard_db()`, `get_db_for_current_worker()` |
 | `utils/parallel.py` | Worker ID assignment in thread pool |
+
+---
+
+## Lesson Learned: No Caching for Worker Shards
+
+### Problem
+Cached engine returned for non-existent shard file → "readonly database" error
+
+### Why Caching Failed
+```
+1. Worker creates shard → engine cached
+2. Phase ends → shard deleted (merge + cleanup)
+3. Next cycle → cached engine returned
+4. File doesn't exist → "readonly database" error
+```
+
+### Solution
+No caching for worker shards - they're short-lived:
+```python
+# Simple: create fresh engine each time
+engine = create_engine(url, ...)
+return shard_path, engine
+```
+
+### When to Cache
+| DB Type | Cache? | Reason |
+|---------|--------|--------|
+| Canonical | Yes | Long-lived, reused across phases |
+| Worker shard | No | Deleted after each phase merge |
+
+---
+
+## Troubleshooting "readonly database" Error
+
+### Common Causes
+1. **Stale cache** - Engine cached, file deleted
+2. **NFS permissions** - Mount read-only or no write access
+3. **Disk full** - `df -h`
+4. **File locked** - `fuser *.sqlite`
+
+### Debug Commands
+```bash
+# Check permissions
+ls -la /path/to/silver/YYYY/MM/DD/worker_dbs/
+
+# Check disk space
+df -h /path/to/data/
+
+# Check routing logs
+grep "Routing to" <logfile>
+grep "get_db_for_current_worker: worker_id" <logfile>
+```
