@@ -142,3 +142,63 @@ df -h /path/to/data/
 grep "Routing to" <logfile>
 grep "get_db_for_current_worker: worker_id" <logfile>
 ```
+
+---
+
+## Graceful Shutdown
+
+### Signal Handling
+```python
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+def signal_handler(signum, frame):
+    global _shutdown_requested
+    _shutdown_requested = True
+```
+
+### Flow
+1. Signal received → `_shutdown_requested = True`
+2. `parallel_process` checks `shutdown_flag` before each file
+3. Current file finishes, remaining skipped
+4. Phase ends → **MERGE HAPPENS** (always)
+5. Check `_shutdown_requested` → skip remaining phases
+6. Exit gracefully
+
+### Key Code (main.py)
+```python
+# Merge first (always)
+if effective_workers > 1:
+    duckdb_merge_shards_to_canonical(db_path, effective_workers)
+
+# THEN check shutdown
+if _shutdown_requested:
+    continue  # Skip remaining phases
+```
+
+### Guarantee
+- Processed files always merged before exit
+- No data loss on Ctrl+C or SIGTERM
+- Clean canonical state for next run
+
+---
+
+## Final Design: NullPool, No Caching
+
+```python
+engine = create_engine(
+    url,
+    poolclass=NullPool,  # No pooling
+)
+```
+
+### Why NullPool
+- Fresh connection each time
+- No stale state
+- Simpler code
+- Worker shards are short-lived anyway
+
+### Why No Caching
+- Caching caused stale engine issues
+- Shards deleted after each phase
+- No benefit from caching short-lived objects
