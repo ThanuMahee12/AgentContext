@@ -261,6 +261,46 @@ def push_to_firestore(messages, session_id, cwd, transcript_path, jsonl_path):
     return fb_common.upsert_document(doc_path, doc)
 
 
+def push_agentcontext_md(md_path):
+    """Push an AgentContext daily session-rollup markdown file to Firestore.
+
+    Path: agentcontext/sessions/{platform}/{name}  (e.g. .../claude/l-2026-06-26)
+    The whole markdown is stored inline (rollups are small); if one ever exceeds
+    the doc limit it falls back to the chunked parts/ sub-collection.
+    """
+    if not HAVE_FIRESTORE:
+        return False
+    import re
+    try:
+        p = Path(md_path)
+        content = p.read_text(errors="replace")
+    except Exception:
+        return False
+
+    platform = p.parent.name          # 'claude' or 'gemini'
+    name = p.stem                     # e.g. 'l-2026-06-26'
+    m = re.search(r"(\d{4}-\d{2}-\d{2})", name)
+    date = m.group(1) if m else ""
+    nbytes = len(content.encode("utf-8"))
+    doc_path = f"agentcontext/sessions/{platform}/{name}"
+
+    inline, n_parts = content, 0
+    if len(content) > fb_common.CHUNK_CHARS:          # too big for one doc
+        n_parts, _ = fb_common.upsert_transcript_chunks(doc_path, content)
+        inline = ""                                    # full text lives in parts/
+
+    doc = {
+        "name": name,
+        "platform": platform,
+        "date": date,
+        "content": inline,
+        "content_parts": n_parts,
+        "bytes": nbytes,
+        "updated_at": fb_common.utc_now_iso(),
+    }
+    return fb_common.upsert_document(doc_path, doc)
+
+
 def main():
     if len(sys.argv) < 3:
         print("Usage: extract-session.py <session_id> <cwd>", file=sys.stderr)
@@ -322,6 +362,12 @@ def main():
         import pwd
         pw = pwd.getpwnam("thanumahee")
         os.chown(session_file, pw.pw_uid, pw.pw_gid)
+
+        # Also push the updated daily rollup md to Firestore (best-effort).
+        try:
+            push_agentcontext_md(session_file)
+        except Exception:
+            pass
     except Exception:
         pass
 
