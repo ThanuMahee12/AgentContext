@@ -72,8 +72,10 @@ def main():
 
     deleted = kept_unpushed = kept_recent = skipped = 0
 
-    # Session folders are the parents of notes.md files
-    for notes_file in SESSION_ROOT.rglob("notes.md"):
+    # Session folders are the parents of notes.md files.
+    # Materialize the list up front: we delete folders as we go, so a lazy
+    # walk would try to descend into an already-removed dir (FileNotFoundError).
+    for notes_file in list(SESSION_ROOT.rglob("notes.md")):
         folder = notes_file.parent
         try:
             mtime = datetime.fromtimestamp(notes_file.stat().st_mtime)
