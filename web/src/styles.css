@@ -557,3 +557,13 @@ body {
   line-height: 1.65;
   color: var(--text);
 }
+
+.failure {
+  padding: 16px 18px;
+  background: var(--err-soft);
+  border: 1px solid var(--err);
+  border-radius: var(--r);
+  color: var(--text);
+}
+.failure p { margin: 6px 0 0; font: 400 12px/1.6 var(--mono); word-break: break-word; }
+.failure .hint { color: var(--text-2); font-family: var(--sans); font-size: 12px; }

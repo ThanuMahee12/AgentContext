@@ -36,13 +36,29 @@ service cloud.firestore {
     }
 
     // ---- private: sessions ------------------------------------------------
-    // projects/{project}/days/{day}/sessions/{id} and its subcollections
-    match /projects/{project}/days/{day}/sessions/{sessionId} {
+    // Written at projects/{project}/days/{day}/sessions/{id}.
+    //
+    // The recursive wildcard is load-bearing, not tidiness. The dashboard reads
+    // sessions with a COLLECTION GROUP query, and Firestore only authorises one
+    // of those against a rule whose match path begins with a recursive
+    // wildcard. A rule written against the concrete path
+    // /projects/{p}/days/{d}/sessions/{id} permits fetching a session by its
+    // full path and still denies the collection-group query - which surfaces as
+    // an empty dashboard rather than as a permission error.
+    match /{path=**}/sessions/{sessionId} {
       allow read, write: if isOwner();
+    }
 
-      match /{sub=**} {          // parts/ transcript chunks, commands/
-        allow read, write: if isOwner();
-      }
+    // Subcollections under a session: parts/ chunks, commands/, files/
+    match /projects/{project}/days/{day}/sessions/{sessionId}/{sub=**} {
+      allow read, write: if isOwner();
+    }
+
+    // ---- private: imported legacy markdown notes --------------------------
+    // Created by `agentprobe import-notes`. Missing a rule here meant the 119
+    // migrated notes were unreadable by the very account they belong to.
+    match /notes/{noteId} {
+      allow read, write: if isOwner();
     }
 
     // ---- private: context items (links, tickets, notes) -------------------

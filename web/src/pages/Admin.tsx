@@ -12,6 +12,7 @@ export default function Admin({ user }: { user: User | null }) {
   const [sessions, setSessions] = useState<Session[]>([])
   const [context, setContext] = useState<ContextItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const [query, setQuery] = useState('')
   const [projects, setProjects] = useState<string[]>([])
@@ -36,10 +37,18 @@ export default function Admin({ user }: { user: User | null }) {
   }
 
   useEffect(() => {
-    Promise.all([source.sessions(), source.context()])
+    // Settled, not all: a failure in either query used to reject the pair and
+    // leave both empty, which rendered as "No sessions captured yet" - the same
+    // thing an empty database looks like. A permission or index error must not
+    // be indistinguishable from having no data.
+    Promise.allSettled([source.sessions(), source.context()])
       .then(([s, c]) => {
-        setSessions(s)
-        setContext(c)
+        const problems: string[] = []
+        if (s.status === 'fulfilled') setSessions(s.value)
+        else problems.push(`sessions: ${describe(s.reason)}`)
+        if (c.status === 'fulfilled') setContext(c.value)
+        else problems.push(`links: ${describe(c.reason)}`)
+        setError(problems.join(' · '))
       })
       .finally(() => setLoading(false))
   }, [])
@@ -121,6 +130,16 @@ export default function Admin({ user }: { user: User | null }) {
         <main className="main">
           {loading ? (
             <p className="empty">Loading…</p>
+          ) : error ? (
+            <div className="failure">
+              <strong>Could not load data.</strong>
+              <p>{error}</p>
+              <p className="hint">
+                A permission error means the signed-in account is not the one named in
+                firestore.rules. A failed-precondition error means a query needs an index
+                that has not been built.
+              </p>
+            </div>
           ) : days.length === 0 ? (
             <p className="empty">
               {query ? `Nothing matches “${query}”.` : 'No sessions captured yet.'}
@@ -315,4 +334,11 @@ function formatTime(iso: string): string {
 
 function truncate(s: string, n: number): string {
   return s.length > n ? s.slice(0, n - 1) + '…' : s
+}
+
+/** Firebase errors carry a machine code and a long message; the code is what
+ *  identifies the fault. */
+function describe(err: unknown): string {
+  const e = err as { code?: string; message?: string }
+  return e?.code ? `${e.code}` : (e?.message ?? String(err)).slice(0, 120)
 }
