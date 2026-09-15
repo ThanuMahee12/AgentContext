@@ -7,6 +7,7 @@
  */
 
 import type { ContextItem, Day, Filters, Session } from '../types'
+import { FirestoreSource } from './firestore'
 import fixtures from './fixtures.json'
 
 export interface DataSource {
@@ -39,18 +40,27 @@ class EmptySource implements DataSource {
 
 // --------------------------------------------------------------------------
 
-/** Fixtures are a DEVELOPMENT convenience only.
+/** Pick the data source.
  *
- *  They contain real commands, file paths and conversation previews, and
- *  Firebase Hosting is public - so a production build must never be able to
- *  carry them. The DEV guard above makes that structural rather than a rule
- *  someone has to remember: even if fixtures.json is present at build time,
- *  a production bundle resolves to empty arrays.
+ *  Production always uses Firestore. Development defaults to local fixtures so
+ *  the UI can be worked on offline, and `VITE_DATA_SOURCE=firestore` overrides
+ *  that to test against the real database.
  *
- *  Firestore replaces EmptySource once credentials are wired.
+ *  Fixtures are a DEVELOPMENT convenience only: they contain real commands,
+ *  file paths and conversation previews, and Firebase Hosting is public. The
+ *  DEV guard in FixtureSource makes shipping them structurally impossible
+ *  rather than a rule someone has to remember - a production bundle resolves
+ *  to empty arrays even if fixtures.json exists at build time, which lets
+ *  tree-shaking drop the import entirely.
  */
 export function getSource(): DataSource {
-  return import.meta.env.DEV ? new FixtureSource() : new EmptySource()
+  const requested = import.meta.env.VITE_DATA_SOURCE
+
+  if (requested === 'fixtures') return new FixtureSource()
+  if (requested === 'empty') return new EmptySource()
+  if (requested === 'firestore' || !import.meta.env.DEV) return new FirestoreSource()
+
+  return new FixtureSource()
 }
 
 // -- shaping ----------------------------------------------------------------

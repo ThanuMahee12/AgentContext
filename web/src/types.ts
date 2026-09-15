@@ -34,6 +34,8 @@ export interface Session {
   agent_version: string
   message_count: number
   command_count: number
+  /** Precomputed by AgentProbe: the list query does not carry commands. */
+  failed_count: number
   file_count: number
   preview: string
   transcript_chunks: number

@@ -12,7 +12,7 @@ export default function SessionDetail({
 }) {
   const [tab, setTab] = useState<Tab>('commands')
 
-  const failed = session.commands.filter((c) => c.exit_status === 1).length
+  const failed = session.failed_count ?? session.commands.filter((c) => c.exit_status === 1).length
 
   return (
     <aside className="detail">

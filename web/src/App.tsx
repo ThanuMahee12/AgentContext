@@ -1,11 +1,37 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth'
+import Login from './components/Login'
 import SessionDetail from './components/SessionDetail'
+import { auth } from './firebase'
+import { FirestoreSource } from './data/firestore'
 import { applyFilters, facets, getSource, groupByDay } from './data/source'
 import type { ContextItem, Session } from './types'
 
 const source = getSource()
 
+/** Only the Firestore source needs a signed-in user; fixtures and the empty
+ *  source are local and gating them would just obstruct development. */
+const NEEDS_AUTH = source.name === 'firestore'
+
 export default function App() {
+  const [user, setUser] = useState<User | null>(null)
+  const [authReady, setAuthReady] = useState(!NEEDS_AUTH)
+
+  useEffect(() => {
+    if (!NEEDS_AUTH) return
+    return onAuthStateChanged(auth, (u) => {
+      setUser(u)
+      setAuthReady(true)
+    })
+  }, [])
+
+  if (!authReady) return <div className="empty" style={{ paddingTop: 80 }}>Checking sign-in…</div>
+  if (NEEDS_AUTH && !user) return <Login />
+
+  return <Dashboard user={user} />
+}
+
+function Dashboard({ user }: { user: User | null }) {
   const [sessions, setSessions] = useState<Session[]>([])
   const [context, setContext] = useState<ContextItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -17,6 +43,20 @@ export default function App() {
   const [selected, setSelected] = useState<Session | null>(null)
 
   const searchRef = useRef<HTMLInputElement>(null)
+
+  /** Open a session, fetching its commands if the source keeps them in a
+   *  subcollection. The list query deliberately does not carry them - one real
+   *  session has 141 commands and a 2.2 MB transcript. */
+  const openSession = async (s: Session) => {
+    setSelected(s)
+    if (s.commands?.length || !(source instanceof FirestoreSource)) return
+    try {
+      const commands = await source.commands(s)
+      setSelected((cur) => (cur?.session_id === s.session_id ? { ...cur, commands } : cur))
+    } catch {
+      /* detail panel still shows files and metadata */
+    }
+  }
 
   useEffect(() => {
     Promise.all([source.sessions(), source.context()])
@@ -72,6 +112,11 @@ export default function App() {
         </div>
 
         <div className="spacer" />
+        {user && (
+          <button className="iconbtn" onClick={() => signOut(auth)} title={user.email ?? undefined}>
+            Sign out
+          </button>
+        )}
         <ThemeToggle />
       </div>
 
@@ -127,7 +172,7 @@ export default function App() {
                         key={s.session_id}
                         session={s}
                         selected={selected?.session_id === s.session_id}
-                        onOpen={() => setSelected(s)}
+                        onOpen={() => openSession(s)}
                       />
                     ))}
                   </div>
@@ -156,7 +201,7 @@ function SessionCard({
   selected: boolean
   onOpen: () => void
 }) {
-  const failed = session.commands.filter((c) => c.exit_status === 1).length
+  const failed = session.failed_count ?? session.commands.filter((c) => c.exit_status === 1).length
   return (
     <button className="card" aria-selected={selected} onClick={onOpen}>
       <span className="stripe" data-provider={session.provider} />

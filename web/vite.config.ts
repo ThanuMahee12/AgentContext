@@ -5,7 +5,14 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist',
-    // A manualChunks split for the Firestore SDK belongs here once the data
-    // layer actually imports it. Declaring it early only produces an empty chunk.
+    rollupOptions: {
+      output: {
+        // The Firebase SDK is most of the bundle and changes far less often
+        // than the app, so splitting it lets a redeploy reuse the cached copy.
+        manualChunks: {
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+        },
+      },
+    },
   },
 })
