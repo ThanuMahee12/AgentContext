@@ -27,12 +27,23 @@ service cloud.firestore {
     //   1. the account already exists, so signUp returns EMAIL_EXISTS
     //   2. sign-up is switched off in Authentication > Settings > User actions
     // If sign-up is ever re-enabled, put email_verified back.
-    // The Firebase user account, not the work address. Pinning the wrong one
-    // meant a signed-in session was denied every read, which presents as an
-    // empty dashboard rather than as an access error.
+    // Two roles, deliberately unequal.
+    //
+    // The owner writes; viewers only read. Capture runs with an owner-level
+    // Google credential that bypasses rules entirely, so `allow write` here is
+    // about the dashboard, not the pipeline - but keeping viewers read-only
+    // means a viewer's compromised session cannot alter or delete the archive.
     function isOwner() {
       return request.auth != null
           && request.auth.token.email == 'thanujan.tech@gmail.com';
+    }
+
+    function canView() {
+      return request.auth != null
+          && request.auth.token.email in [
+               'thanujan.tech@gmail.com',
+               'jananthini23@gmail.com'
+             ];
     }
 
     // ---- private: sessions ------------------------------------------------
@@ -46,24 +57,28 @@ service cloud.firestore {
     // full path and still denies the collection-group query - which surfaces as
     // an empty dashboard rather than as a permission error.
     match /{path=**}/sessions/{sessionId} {
-      allow read, write: if isOwner();
+      allow read: if canView();
+      allow write: if isOwner();
     }
 
     // Subcollections under a session: parts/ chunks, commands/, files/
     match /projects/{project}/days/{day}/sessions/{sessionId}/{sub=**} {
-      allow read, write: if isOwner();
+      allow read: if canView();
+      allow write: if isOwner();
     }
 
     // ---- private: imported legacy markdown notes --------------------------
     // Created by `agentprobe import-notes`. Missing a rule here meant the 119
     // migrated notes were unreadable by the very account they belong to.
     match /notes/{noteId} {
-      allow read, write: if isOwner();
+      allow read: if canView();
+      allow write: if isOwner();
     }
 
     // ---- private: context items (links, tickets, notes) -------------------
     match /context/{itemId} {
-      allow read, write: if isOwner();
+      allow read: if canView();
+      allow write: if isOwner();
     }
 
     // ---- private: memory --------------------------------------------------
