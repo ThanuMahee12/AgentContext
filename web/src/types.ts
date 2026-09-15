@@ -22,6 +22,11 @@ export interface Session {
   schema_version: number
   provider: Provider
   session_id: string
+  /** The session this transcript belongs to. Equals session_id for a real
+   *  session; for a subagent run it points at the parent. */
+  parent_session_id: string
+  /** True when the transcript is a subagent run rather than a session. */
+  is_sidechain: boolean
   date: string
   started: string
   ended: string

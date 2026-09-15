@@ -74,6 +74,11 @@ export function getSource(): DataSource {
 export function groupByDay(sessions: Session[], context: ContextItem[]): Day[] {
   const days = new Map<string, Day>()
 
+  // Subagent transcripts are runs within a session, not sessions. Listing them
+  // alongside would treble the timeline with entries that have no preview and
+  // no independent meaning - one observed session spawned eleven.
+  sessions = sessions.filter((s) => !s.is_sidechain)
+
   const ensure = (date: string): Day => {
     let day = days.get(date)
     if (!day) {

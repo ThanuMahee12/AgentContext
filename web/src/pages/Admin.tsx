@@ -67,7 +67,19 @@ export default function Admin({ user }: { user: User | null }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const f = useMemo(() => facets(sessions), [sessions])
+  const f = useMemo(() => facets(sessions.filter((s) => !s.is_sidechain)), [sessions])
+
+  /** Subagent runs per parent session, so a card can say a session spawned
+   *  eleven agents without those agents appearing as sessions themselves. */
+  const agentCounts = useMemo(() => {
+    const out: Record<string, number> = {}
+    for (const s of sessions) {
+      if (!s.is_sidechain) continue
+      const parent = s.parent_session_id
+      if (parent) out[parent] = (out[parent] ?? 0) + 1
+    }
+    return out
+  }, [sessions])
 
   const days = useMemo(
     () => applyFilters(groupByDay(sessions, context), { projects, users, providers, query }),
@@ -167,6 +179,7 @@ export default function Admin({ user }: { user: User | null }) {
                       <SessionCard
                         key={s.session_id}
                         session={s}
+                        agents={agentCounts[s.session_id] ?? 0}
                         selected={selected?.session_id === s.session_id}
                         onOpen={() => openSession(s)}
                       />
@@ -190,10 +203,12 @@ export default function Admin({ user }: { user: User | null }) {
 
 function SessionCard({
   session,
+  agents,
   selected,
   onOpen,
 }: {
   session: Session
+  agents: number
   selected: boolean
   onOpen: () => void
 }) {
@@ -217,6 +232,7 @@ function SessionCard({
           <span className="stat"><b>{session.message_count}</b> msg</span>
           <span className="stat"><b>{session.command_count}</b> cmd</span>
           {failed > 0 && <span className="stat err"><b>{failed}</b> failed</span>}
+          {agents > 0 && <span className="stat"><b>{agents}</b> agents</span>}
           <span className="stat"><b>{session.file_count}</b> files</span>
           <span className="stat">{(session.transcript_bytes / 1024).toFixed(0)} KB</span>
         </span>
