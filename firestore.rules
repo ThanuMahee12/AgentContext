@@ -15,9 +15,20 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Pinned to one address. email_verified is deliberately NOT required: an
+    // account created in the console starts unverified, so demanding it would
+    // lock out the only legitimate user until they completed a verification
+    // mail round-trip.
+    //
+    // What that check normally defends against is someone self-registering
+    // this address through the public accounts:signUp endpoint, which is
+    // reachable with the web API key whenever Email/Password is on. Two things
+    // close that instead, and both must hold:
+    //   1. the account already exists, so signUp returns EMAIL_EXISTS
+    //   2. sign-up is switched off in Authentication > Settings > User actions
+    // If sign-up is ever re-enabled, put email_verified back.
     function isOwner() {
       return request.auth != null
-          && request.auth.token.email_verified == true
           && request.auth.token.email == 'bthanujan.mahendran@codewilling.com';
     }
 
