@@ -77,7 +77,12 @@ export default function App() {
 
       {source.name === 'fixtures' && (
         <div className="banner">
-          Reading local fixtures exported by AgentProbe — Firestore is not connected yet.
+          Local fixtures from AgentProbe — development only, never shipped to a build.
+        </div>
+      )}
+      {source.name === 'not-connected' && (
+        <div className="banner">
+          No data source configured. Firestore is not wired up yet, so this dashboard is empty.
         </div>
       )}
 

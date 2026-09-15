@@ -1,0 +1,70 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "sessions",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "date", "order": "DESCENDING" },
+        { "fieldPath": "started", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "sessions",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "project", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "sessions",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "user_email", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "sessions",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "provider", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "sessions",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "project", "order": "ASCENDING" },
+        { "fieldPath": "user_email", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "context",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "keywords", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "last_seen", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "context",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "project", "order": "ASCENDING" },
+        { "fieldPath": "last_seen", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "context",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "source", "order": "ASCENDING" },
+        { "fieldPath": "last_seen", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

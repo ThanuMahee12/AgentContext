@@ -1,0 +1,62 @@
+rules_version = '2';
+
+// AgentContext access rules.
+//
+// NOT DEPLOYED YET - the project already holds data written by an earlier
+// pipeline, and tightening rules under a live writer breaks it silently.
+// Review against what still writes to this project, then:
+//     firebase deploy --only firestore:rules
+//
+// Design: private data has NO public read path at all. Published pages are
+// physically separate documents written by an explicit publish step, so a
+// mistake in these rules cannot expose the archive - the rule simply does not
+// cover it.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner() {
+      return request.auth != null
+          && request.auth.token.email_verified == true
+          && request.auth.token.email == 'bthanujan.mahendran@codewilling.com';
+    }
+
+    // ---- private: sessions ------------------------------------------------
+    // projects/{project}/days/{day}/sessions/{id} and its subcollections
+    match /projects/{project}/days/{day}/sessions/{sessionId} {
+      allow read, write: if isOwner();
+
+      match /{sub=**} {          // parts/ transcript chunks, commands/
+        allow read, write: if isOwner();
+      }
+    }
+
+    // ---- private: context items (links, tickets, notes) -------------------
+    match /context/{itemId} {
+      allow read, write: if isOwner();
+    }
+
+    // ---- private: memory --------------------------------------------------
+    match /memory/{userId}/{document=**} {
+      allow read, write: if isOwner();
+    }
+
+    // ---- private: credential INVENTORY ------------------------------------
+    // Metadata only - fingerprints, locations, what a key unlocks. Never a
+    // secret value. Kept in its own collection so the publish path, which can
+    // only read `public`, has no route to it whatsoever.
+    match /credentials/{credId} {
+      allow read, write: if isOwner();
+    }
+
+    // ---- public: curated copies only --------------------------------------
+    // Written by the publish flow after redaction review. Nothing here is a
+    // reference to a private document - it is a copy of reviewed content.
+    match /public/{slug} {
+      allow read: if true;
+      allow write: if isOwner();
+    }
+
+    // Anything not matched above is denied.
+  }
+}

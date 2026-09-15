@@ -21,20 +21,36 @@ class FixtureSource implements DataSource {
   readonly name = 'fixtures'
 
   async sessions(): Promise<Session[]> {
-    return fixtures.sessions as unknown as Session[]
+    return (import.meta.env.DEV ? fixtures.sessions : []) as unknown as Session[]
   }
 
   async context(): Promise<ContextItem[]> {
-    return fixtures.context as unknown as ContextItem[]
+    return (import.meta.env.DEV ? fixtures.context : []) as unknown as ContextItem[]
   }
+}
+
+/** Nothing to show, and honest about why. Used for production builds until a
+ *  real Firestore source is configured. */
+class EmptySource implements DataSource {
+  readonly name = 'not-connected'
+  async sessions(): Promise<Session[]> { return [] }
+  async context(): Promise<ContextItem[]> { return [] }
 }
 
 // --------------------------------------------------------------------------
 
-/** Selected by VITE_DATA_SOURCE; defaults to fixtures so the app runs with no
- *  configuration at all. Firestore lands here once credentials exist. */
+/** Fixtures are a DEVELOPMENT convenience only.
+ *
+ *  They contain real commands, file paths and conversation previews, and
+ *  Firebase Hosting is public - so a production build must never be able to
+ *  carry them. The DEV guard above makes that structural rather than a rule
+ *  someone has to remember: even if fixtures.json is present at build time,
+ *  a production bundle resolves to empty arrays.
+ *
+ *  Firestore replaces EmptySource once credentials are wired.
+ */
 export function getSource(): DataSource {
-  return new FixtureSource()
+  return import.meta.env.DEV ? new FixtureSource() : new EmptySource()
 }
 
 // -- shaping ----------------------------------------------------------------
