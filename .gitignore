@@ -13,3 +13,6 @@ site/
 # IDE
 .idea/
 .vscode/
+
+# Firebase CLI local deploy cache
+.firebase/
