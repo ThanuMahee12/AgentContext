@@ -79,3 +79,21 @@ export interface Filters {
   providers: string[]
   query: string
 }
+
+/** A curated page published for public viewing.
+ *
+ *  Deliberately a COPY, not a reference to a session. Publishing writes a new
+ *  document into `public/`; nothing in the private tree is ever made readable.
+ *  A mistake in the rules therefore cannot expose the archive, because no rule
+ *  covers it.
+ */
+export interface PublishedPage {
+  slug: string
+  title: string
+  summary: string
+  body: string
+  tags: string[]
+  published_at: string
+  updated_at: string
+  author: string
+}
