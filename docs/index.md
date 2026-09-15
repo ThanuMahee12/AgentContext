@@ -2,15 +2,12 @@
 
 ---
 
-## Recent Sessions
+## Sessions
 
-| Date | Agent | Machine | Focus |
-|------|-------|---------|-------|
-| 2026-01-16 | Claude | Windows | AgentContext restructure |
-| 2026-01-15 | Claude | Windows, Linux | bbocax-futures pipeline |
-| 2026-01-14 | Claude | Windows, Linux | Bloomberg mapping |
+Session history lives in the **AgentContext dashboard** - searchable across
+previews, commands and file paths, captured automatically by AgentProbe.
 
-[:octicons-arrow-right-24: All Sessions](sessions/index.md)
+[:octicons-arrow-right-24: Open the dashboard](https://agentcontext-sessions.web.app)
 
 ---
 
