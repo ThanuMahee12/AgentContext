@@ -33,8 +33,15 @@ export class FirestoreSource implements DataSource {
   readonly name = 'firestore'
 
   async sessions(): Promise<Session[]> {
+    // Ordered by date THEN started, not started alone. A bare orderBy on a
+    // collection group needs a COLLECTION_GROUP single-field index, which
+    // Firestore does not create automatically - it only builds single-field
+    // indexes at COLLECTION scope. Ordering by the composite (date, started)
+    // uses an index that already exists and sorts identically for a timeline
+    // that groups by day anyway.
     const q = query(
       collectionGroup(db, 'sessions'),
+      orderBy('date', 'desc'),
       orderBy('started', 'desc'),
       limit(SESSION_LIMIT),
     )

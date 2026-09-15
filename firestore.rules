@@ -27,9 +27,12 @@ service cloud.firestore {
     //   1. the account already exists, so signUp returns EMAIL_EXISTS
     //   2. sign-up is switched off in Authentication > Settings > User actions
     // If sign-up is ever re-enabled, put email_verified back.
+    // The Firebase user account, not the work address. Pinning the wrong one
+    // meant a signed-in session was denied every read, which presents as an
+    // empty dashboard rather than as an access error.
     function isOwner() {
       return request.auth != null
-          && request.auth.token.email == 'bthanujan.mahendran@codewilling.com';
+          && request.auth.token.email == 'thanujan.tech@gmail.com';
     }
 
     // ---- private: sessions ------------------------------------------------
