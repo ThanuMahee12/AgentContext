@@ -40,7 +40,19 @@ if (existsSync(fixtures)) {
 }
 
 // Always checked, fixtures or not.
-for (const s of ['BEGIN OPENSSH PRIVATE KEY', 'BEGIN RSA PRIVATE KEY', 'refresh_token']) {
+//
+// These must be secret MATERIAL, not field names. `refresh_token` was in this
+// list and matched the Firebase SDK itself - every auth library contains that
+// identifier, so the guard failed every deploy on a legitimate dependency. A
+// needle that fires on correct code trains people to ignore the guard, which is
+// worse than not having one.
+for (const s of [
+  'BEGIN OPENSSH PRIVATE KEY',
+  'BEGIN RSA PRIVATE KEY',
+  'BEGIN PRIVATE KEY',
+  'BEGIN EC PRIVATE KEY',
+  'service_account', // only ever appears in a service-account key file
+]) {
   needles.add(s)
 }
 
