@@ -1,3 +1,0 @@
-# Discussions
-
-{{ discussions_list() }}

@@ -1,189 +1,68 @@
 # CLAUDE.md
 
-Global context and session notes for Claude Code.
+AgentContext is a React app. It has two halves behind one deployment:
 
-## Site
+- **Public knowledge base** — Home, Brainstorms, KT, Discussions, Notes.
+  Content ships in the bundle; there is no CMS and no runtime fetch.
+- **Private session archive** — `/admin`, sign-in required, reads Firestore.
 
-- **Repo:** https://github.com/ThanuMahee12/AgentContext
-- **Site:** https://thanumahee12.github.io/AgentContext
+**Live:** https://agentcontext-sessions.web.app
+**Capture:** [AgentProbe](https://github.com/ThanuMahee12/AgentProbe) writes the sessions this reads.
 
-## Structure
-
-```
-AgentContext/
-├── discussions/             # Collaborative topics (JSON)
-│   ├── gics.json
-│   └── dq.json
-├── brainstorms/             # Personal ideas (JSON)
-│   ├── pathseeker.json
-│   └── investigation-db.json
-├── docs/
-│   ├── index.md
-│   ├── sessions/            # Daily logs
-│   │   ├── claude/
-│   │   │   ├── w-YYYY-MM-DD.md   # Windows
-│   │   │   └── l-YYYY-MM-DD.md   # Linux
-│   │   └── gemini/
-│   │       └── YYYY-MM-DD.md
-│   ├── discussions/         # MkDocs page (renders from JSON)
-│   ├── brainstorms/         # MkDocs page (renders from JSON)
-│   ├── notes/               # Persistent markdown
-│   └── runbooks/            # Operational guides
-├── pyproject.toml
-├── mkdocs.yml
-└── CLAUDE.md
-```
-
-## Knowledge System (JSON)
-
-**Two types:**
-
-| Type | Folder | Purpose | Links |
-|------|--------|---------|-------|
-| **Discussions** | `discussions/` | Collaborative topics | GitHub Discussion URL |
-| **Brainstorms** | `brainstorms/` | Personal ideas | GitHub Gist URL |
-
-**JSON Schema:**
-```json
-{
-  "id": "topic-id",
-  "date": "YYYY-MM-DD",
-  "title": "Topic Title",
-  "url": "https://github.com/.../discussions/N",
-  "gist": "https://gist.github.com/.../...",
-  "summary": "Full detailed summary...",
-  "related": ["other-id"],
-  "tags": ["tag1", "tag2"]
-}
-```
-
-**Key fields:**
-- `date` - For sorting (newest first)
-- `summary` - Full content
-- `url` - GitHub Discussion link (discussions)
-- `gist` - GitHub Gist link (brainstorms, Mermaid)
-- `related` - Link to related topics
-
-**Claude reads:**
-1. `discussions/*.json` → Collaborative topics
-2. `brainstorms/*.json` → Personal ideas
-3. Follow `related` links if needed
-
-**Current:**
-- `discussions/gics.json` - S&P GICS pipeline
-- `discussions/dq.json` - Data quality framework
-- `brainstorms/pathseeker.json` - Path analysis tool
-- `brainstorms/investigation-db.json` - Reverse lookup DB
-
-## Session Naming
+## Layout
 
 ```
-sessions/claude/w-YYYY-MM-DD.md   # Windows (w- prefix)
-sessions/claude/l-YYYY-MM-DD.md   # Linux (l- prefix)
-sessions/gemini/YYYY-MM-DD.md     # Gemini sessions
+src/
+├── content/content.json   all public content, flat, imported at build time
+├── content/index.ts       typed accessors + the section list
+├── pages/public/          Layout, Home, Brainstorms, Discussions, Docs
+├── pages/Admin.tsx        the session dashboard (authenticated)
+├── pages/Published.tsx    a published page at /s/:slug
+├── store/                 Redux Toolkit: search, tag filter, theme
+├── data/                  DataSource interface; Firestore + local fixtures
+└── components/            Markdown renderer, SessionDetail, Login
 ```
 
-## Workflow
+There is no `web/` directory and no mkdocs. The site was migrated off mkdocs on
+2026-09-16: `discussions/*.json`, `brainstorms/*.json` and `docs/**/*.md` were
+flattened into `src/content/content.json`, which is now the source of truth.
 
-### Start of session
-```bash
-cd ~/AgentContext && git pull
-```
-1. **Read `discussions/*.json`** - instant topic context (IMPORTANT)
-2. Check `docs/sessions/claude/` for latest session
-3. Need deep dive? → Fetch GitHub Discussion via API
+## Adding content
 
-### End of session
-```bash
-cd ~/AgentContext && git add -A && git commit -m "docs: update session" && git push
-```
+Edit `src/content/content.json` directly. Four arrays:
 
-### Adding knowledge
-- Quick context → Add to `discussions/{topic}.json`
-- Detailed discussion → GitHub Discussion (link in JSON)
-- Daily log → `docs/sessions/claude/`
+| Key | Shape |
+|---|---|
+| `discussions` | id, title, date, summary, url, tags, comments[], optional body |
+| `brainstorms` | id, title, date, status, summary, gist, notion, tags, comments[] |
+| `notes` | id, title, body (markdown), headings[], source, bytes |
+| `kt` | same as notes, plus `project` |
 
-## Local Development
+Markdown in `body` renders through `components/Markdown.tsx`, which returns
+React elements rather than HTML — no `dangerouslySetInnerHTML` anywhere.
+
+## Anything public is genuinely public
+
+This repository is public and Firebase Hosting serves the bundle to anyone.
+`src/content/content.json` is shipped to every visitor, so treat it as
+published the moment it is committed. It currently contains internal hostnames
+(`ny5-predpalch01/02`), a service-account name (`svc_dat_alchemy`) and the
+internal GitLab host — carried over from the mkdocs site, which already
+published them.
+
+The private session archive is the opposite: `firestore.rules` denies every
+collection to anonymous readers except `public/`, and `src/data/fixtures.json`
+is git-ignored because it holds real commands and paths. `scripts/verify-bundle.mjs`
+fails the build if fixture data reaches the artifact.
+
+## Commands
 
 ```bash
-# Setup (first time)
-cd ~/AgentContext && uv sync
-
-# Start dev server
-uv run mkdocs serve
-
-# Build static site
-uv run mkdocs build
+npm run dev        # local, uses fixtures if present
+npm run build      # typecheck + bundle
+npm run verify     # assert no local session data in dist/
+npm run typecheck
+./scripts/export-fixtures.sh [path-to-AgentProbe]   # regenerate dev fixtures
 ```
 
-## Gists (Brainstorms & Ideas)
-
-**Use Gists for:** Ideas, brainstorms, diagrams, code snippets
-
-**Benefits:**
-- Mermaid diagrams render automatically
-- Shareable URL
-- Versioned (git history)
-- Claude can create/read via `gh gist`
-
-**Commands:**
-```bash
-# Create from file
-gh gist create --public -d "description" file.md
-
-# List gists
-gh gist list
-
-# View gist content
-gh gist view <id>
-
-# Edit gist
-gh gist edit <id>
-```
-
-**Current Gists:**
-- [PathSeeker](https://gist.github.com/ThanuMahee12/75938d6097425ee9c3d6690be29e6558) - Path analysis brainstorm
-
-**Workflow:** Create gist → Share URL → Link in discussions JSON if needed
-
-## Notion (Investigation DB)
-
-**Use Notion for:** Databases, relational data, Investigation DB
-
-**Credentials:** `~/.notion/credentials`
-
-**Current Databases:**
-- `alchemy_server` - Server infrastructure (ny5-predpalch02/04/06)
-- `alchemy_service` - Data-alchemy services (32 services)
-
-**API Usage:**
-```bash
-# Read credentials
-cat ~/.notion/credentials
-
-# Query database
-curl -X POST "https://api.notion.com/v1/databases/{db_id}/query" \
-  -H "Authorization: Bearer {API_KEY}" \
-  -H "Notion-Version: 2022-06-28"
-
-# Update page
-curl -X PATCH "https://api.notion.com/v1/pages/{page_id}" \
-  -H "Authorization: Bearer {API_KEY}" \
-  -H "Notion-Version: 2022-06-28" \
-  -d '{"properties": {...}}'
-```
-
-**Workflow:** Read ~/.notion/credentials → Use API via curl
-
-## Quick Reference
-
-| Action | Command |
-|--------|---------|
-| Sync repo | `cd ~/AgentContext && git pull` |
-| Save changes | `git add -A && git commit -m "docs: update" && git push` |
-| Dev server | `uv run mkdocs serve` |
-| List topics | `ls discussions/*.json` |
-| View sessions | `ls docs/sessions/claude/` |
-| Create gist | `gh gist create --public -d "desc" file.md` |
-| List gists | `gh gist list` |
-| Notion creds | `cat ~/.notion/credentials` |
+Deploys run from `.github/workflows/deploy-dashboard.yml` on push to `main`.

@@ -16,3 +16,20 @@ site/
 
 # Firebase CLI local deploy cache
 .firebase/
+
+# --- app ---
+node_modules/
+dist/
+.vite/
+
+# Real session data exported by AgentProbe. Contains commands, file paths,
+# internal hostnames and conversation previews - regenerate locally with
+#   ./scripts/export-fixtures.sh
+# and never commit it. This repository is public.
+src/data/fixtures.json
+
+# Firebase local state
+*.log
+
+# TypeScript incremental build state
+*.tsbuildinfo

@@ -1,3 +1,0 @@
-# RunBooks
-
-Operational guides.
