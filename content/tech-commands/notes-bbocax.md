@@ -1,0 +1,335 @@
+---
+title: "Bloomberg BBOCAX Mapping Notes"
+source: "docs/notes/bbocax.md"
+---
+
+## Overview
+
+Bloomberg Back Office Corporate Actions (BBOCAX) dataset mapping for data-alchemy pipeline.
+
+**Source:** `bloomberg/bbocax_cwiq_pipe/1.0`
+**Server:** ny5-predpalch01
+
+---
+
+## Grabber Maps
+
+| Map | Target Dataset | Status |
+|-----|----------------|--------|
+| `bloomberg_bbocax_cwiq_pipe_backoffice_1_0.json` | back_office | Main |
+| `bloomberg_bbocax_cwiq_pipe_backoffice_cax_1_0.json` | back_office | CAX v1 |
+| `bloomberg_bbocax_cwiq_pipe_backoffice_cax_2_0.json` | back_office | CAX v2 |
+| `bloomberg_bbocax_cwiq_pipe_backoffice_parquet_2_0.json` | back_office | Parquet |
+| `bloomberg_bbocax_cwiq_pipe_corporate_actions_1_0.json` | corporate_actions | Main |
+| `bloomberg_bbocax_cwiq_pipe_corporate_actions_cax_1_0.json` | corporate_actions | CAX v1 |
+| `bloomberg_bbocax_cwiq_pipe_corporate_actions_cax_2_0.json` | corporate_actions | CAX v2 |
+| `bloomberg_bbocax_cwiq_pipe_corporate_actions_parquet_2_0.json` | corporate_actions | Parquet |
+| `bloomberg_bbocax_cwiq_pipe_futures_2_0.json` | futures | Main |
+| `bloomberg_bbocax_cwiq_pipe_equities_1_0.json` | back_office_equities | **Branch** |
+| `bloomberg_bbocax_cwiq_pipe_equities_parquet_1_0.json` | back_office_equities | **Branch** |
+
+**Equities branch:** `feature/bbocax-equities`
+
+---
+
+## Bronze File Counts
+
+**Path:** `/sf/data/bloomberg/bbocax_cwiq_pipe/1.0/bronze/`
+
+### Daily Counts (2025-12 to 2026-01)
+
+| Date | Files | Type |
+|------|-------|------|
+| 2025/12/08 | 1,672 | Weekend |
+| 2025/12/09 | 8,226 | Full |
+| 2025/12/10 | 8,026 | Full |
+| 2025/12/11 | 1,832 | Partial |
+| 2025/12/12 | 2,139 | Partial |
+| 2025/12/18 | 1,656 | Partial |
+| 2025/12/23 | 4,042 | Holiday |
+| 2025/12/26 | 24 | Holiday |
+| 2025/12/30 | 4,188 | Holiday |
+| 2025/12/31 | 7,932 | Full |
+| 2026/01/01 | 7,944 | Full |
+| 2026/01/02 | 7,876 | Full |
+| 2026/01/03 | 4,632 | Partial |
+| 2026/01/04 | 7,926 | Full |
+| 2026/01/05 | 7,946 | Full |
+| 2026/01/06 | 7,969 | Full |
+| 2026/01/07 | 7,932 | Full |
+| 2026/01/08 | 7,924 | Full |
+| 2026/01/09 | 8,130 | Full |
+| 2026/01/10 | 4,634 | Partial |
+| 2026/01/11 | 7,920 | Full |
+| 2026/01/12 | 8,320 | Full |
+| 2026/01/13 | 7,662 | Full |
+| 2026/01/14 | 8,256 | Full |
+| 2026/01/15 | 5,510 | Partial |
+| 2026/01/16 | 5,604 | Partial |
+| 2026/01/17 | 5,112 | Partial |
+| 2026/01/18 | 7,830 | Full |
+| 2026/01/19 | 8,090 | Full |
+| 2026/01/20 | 8,412 | Full |
+| 2026/01/21 | 8,402 | Full |
+
+### Summary
+- **Full weekday:** ~7,900-8,400 files
+- **Weekends/holidays:** 1,600-4,600 files
+- **Best test date:** 2026/01/21 (8,402 files)
+
+---
+
+## Equity File Categories
+
+From tree analysis (`asserts/tree/crawler/bloomberg-bbocax_cwiq_pipe-1.0-tree.json`):
+
+| Category | Unique Files | Mapping Status |
+|----------|--------------|----------------|
+| equityOptions* | 260 | EXCLUDED (separate map) |
+| equityIndex* | 50 | EXCLUDED (separate map) |
+| equityWarrant* | 47 | Partial |
+| equitySec* | 10 | Partial |
+| equityIndia* | 5 | Partial |
+| equityMifid* | 8 | Partial |
+| Core equity | 135 | Covered |
+| **Total** | 548 | - |
+
+### Envs
+- **Total envs:** 100 (env0 - env99)
+
+---
+
+## Equities Grabber Map Coverage
+
+**File:** `bloomberg_bbocax_cwiq_pipe_equities_1_0.json`
+**Target:** `bloomberg/back_office_equities/1.0/raw/`
+
+### Covered File Types
+
+| Pattern | Extensions | Description |
+|---------|------------|-------------|
+| `equity*.csv` | .csv, .csv.gz | CSV files (excludes Options/Index) |
+| `equity_*.out` | .out | Binary output (decrypted) |
+| `equity_*.dif` | .dif | Diff files (decrypted) |
+| `equity_*.px` | .px | Pricing files |
+| `equity_*.rpx` | .rpx | Recap pricing |
+| `equity_*.px.hpc` | .px.hpc | HPC pricing |
+
+### Excluded (by negative lookahead)
+- `equityOptions*` - handled by separate options map
+- `equityIndex*` - handled by separate index map
+
+---
+
+## Commands Reference
+
+```bash
+# Count files per date in bronze
+find /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/bronze -mindepth 3 -maxdepth 3 -type d -exec sh -c 'echo "$(find "$1" -type f | wc -l) $1"' _ {} \; | sort -k2
+
+# Count equity files for a specific date
+find /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/bronze/2026/01/21 -type f -name "*equity*" -o -name "*Equity*" | wc -l
+
+# List unique equity filenames (strip timestamps)
+find /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/bronze/2026/01/21 -type f \( -name "*equity*" -o -name "*Equity*" \) | sed 's|.*/||' | sed 's/--.*$//' | sort -u
+
+# Count by file extension
+find /sf/data/bloomberg/bbocax_cwiq_pipe/1.0/bronze/2026/01/21 -type f | sed 's/.*\.//' | sort | uniq -c | sort -rn | head -20
+```
+
+---
+
+## Local vs Real Server Comparison
+
+**Checked:** 2026-01-22
+
+| Date | Local /sf/data | Real Server | Match |
+|------|----------------|-------------|-------|
+| 2025/12/01 | 7,976 | - | N/A |
+| 2025/12/02 | 7,974 | - | N/A |
+| 2025/12/03 | 7,987 | - | N/A |
+| 2025/12/04 | 9,533 | - | N/A |
+| 2025/12/05 | 7,914 | - | N/A |
+| 2025/12/06 | 4,733 | - | N/A |
+| 2025/12/07 | 7,968 | - | N/A |
+| 2025/12/08 | 5,536 | 1,672 | NO |
+| 2025/12/09 | 8,218 | 8,226 | ~YES |
+| 2025/12/10 | 10,518 | 8,026 | NO |
+| 2025/12/11 | 5,861 | 1,832 | NO |
+| 2025/12/12 | 9,985 | 2,139 | NO |
+| 2025/12/13 | 4,721 | - | N/A |
+| 2025/12/14 | 7,964 | - | N/A |
+| 2025/12/15 | 7,965 | - | N/A |
+| 2025/12/16 | 7,978 | - | N/A |
+| 2025/12/17 | 6,034 | - | N/A |
+| 2025/12/18 | 7,366 | 1,656 | NO |
+| 2025/12/19 | 11,525 | - | N/A |
+| 2025/12/20 | 4,721 | - | N/A |
+| 2025/12/21 | 8,023 | - | N/A |
+| 2025/12/22 | 8,028 | - | N/A |
+| 2025/12/23 | 8,012 | 4,042 | NO |
+| 2025/12/24 | 8,076 | - | N/A |
+| 2025/12/25 | 8,035 | - | N/A |
+| 2025/12/26 | 7,964 | 24 | NO |
+| 2025/12/27 | 4,729 | - | N/A |
+| 2025/12/28 | 8,044 | - | N/A |
+| 2025/12/29 | 8,027 | - | N/A |
+| 2025/12/30 | 7,983 | 4,188 | NO |
+| 2025/12/31 | 7,929 | 7,932 | ~YES |
+| 2026/01/01 | 7,938 | 7,944 | ~YES |
+| 2026/01/02 | 7,870 | 7,876 | ~YES |
+| 2026/01/03 | 4,629 | 4,632 | ~YES |
+| 2026/01/04 | 7,922 | 7,926 | ~YES |
+| 2026/01/05 | 7,942 | 7,946 | ~YES |
+| 2026/01/06 | 7,958 | 7,969 | ~YES |
+| 2026/01/07 | 7,929 | 7,932 | ~YES |
+| 2026/01/08 | 7,921 | 7,924 | ~YES |
+| 2026/01/09 | 8,120 | 8,130 | ~YES |
+| 2026/01/10 | 4,631 | 4,634 | ~YES |
+| 2026/01/11 | 7,917 | 7,920 | ~YES |
+| 2026/01/12 | 40 | 8,320 | NO |
+
+### Observations
+
+- **Dec 2025:** Local has more data than real server - OK for testing
+- **Jan 2026 (01-11):** Nearly match (~3-10 file difference) - OK for testing
+- **2026/01/12+:** Local incomplete - needs regeneration
+
+---
+
+## Equity Files Comparison
+
+**Checked:** 2026-01-22
+
+| Date | Local | Real Server | Status |
+|------|-------|-------------|--------|
+| 2025/12/08 | 1,676 | 636 | OK (more) |
+| 2025/12/09 | 2,428 | 2,428 | EXACT |
+| 2025/12/10 | 3,011 | 2,307 | OK (more) |
+| 2025/12/11 | 1,810 | 660 | OK (more) |
+| 2025/12/12 | 2,877 | 623 | OK (more) |
+| 2025/12/18 | - | 736 | - |
+| 2025/12/23 | - | 1,310 | - |
+| 2025/12/26 | - | 12 | - |
+| 2025/12/30 | - | 1,324 | - |
+| 2025/12/31 | 2,364 | 2,364 | EXACT |
+| 2026/01/01 | 2,364 | 2,364 | EXACT |
+| 2026/01/02 | 2,324 | 2,324 | EXACT |
+| 2026/01/03 | 1,684 | 1,684 | EXACT |
+| 2026/01/04 | 2,364 | 2,364 | EXACT |
+| 2026/01/05 | 2,384 | 2,384 | EXACT |
+| 2026/01/06 | 2,376 | 2,376 | EXACT |
+| 2026/01/07 | 2,364 | 2,364 | EXACT |
+| 2026/01/08 | 2,364 | 2,364 | EXACT |
+| 2026/01/09 | 2,360 | 2,360 | EXACT |
+| 2026/01/10 | 1,684 | 1,684 | EXACT |
+| 2026/01/11 | 2,364 | 2,364 | EXACT |
+| 2026/01/12 | 20 | 2,460 | NOT OK |
+| 2026/01/13 | - | 2,206 | - |
+| 2026/01/14 | - | 2,460 | - |
+| 2026/01/15 | - | 1,706 | - |
+| 2026/01/16 | - | 1,708 | - |
+| 2026/01/17 | - | 1,780 | - |
+| 2026/01/18 | - | 2,434 | - |
+| 2026/01/19 | - | 2,448 | - |
+| 2026/01/20 | - | 2,460 | - |
+| 2026/01/21 | - | 2,460 | - |
+| 2026/01/22 | - | 680 | - |
+
+### Equity Summary
+
+- **Full weekday:** ~2,360-2,460 equity files
+- **Weekends/partial:** ~1,680-1,780 equity files
+- **Valid test range:** Jan 01-11 (exact match)
+- **Needs regen:** Jan 12+ (local incomplete)
+
+---
+
+## Related Files
+
+- **Tree file:** `asserts/tree/crawler/bloomberg-bbocax_cwiq_pipe-1.0-tree.json`
+- **CDP reference:** `asserts/cdp/bbocax_cdp.csv`
+- **Env analyzer logs:** `asserts/logs/env_analyser/*/bloomberg_bbocax_cwiq_pipe.json`
+
+---
+
+---
+
+## Futures Mapping
+
+### Current Grabber Maps
+
+| Map | Target | Files Handled | Status |
+|-----|--------|---------------|--------|
+| `futures_2_0.json` | `back_office_futures/2.0` | `*FuturesBulk*` | ✅ CORRECT |
+
+### Missing - FuturesExtended
+
+**Production structure (ny5-predpalch01):**
+```
+/sf/data/bloomberg/back_office_futures_extended/
+├── 1.0/raw/{share,non_share}_futures_extended/YYYY/YYYYMMDD/
+├── 2.0/raw/{share,non_share}_futures_extended/YYYY/YYYYMMDD/
+└── 3.0/raw/{share,non_share}_futures_extended/YYYY/YYYYMMDD/
+```
+
+**Version mapping (from shovel `bbo.py`):**
+
+| Filename Pattern | Target Version | Regex |
+|------------------|----------------|-------|
+| `*FuturesExtended*` (no V suffix) | 1.0 | `^(share\|nonShare)FuturesExtended(?!.*V[23]).*$` |
+| `*FuturesExtended*V2*` | 2.0 | `^(share\|nonShare)FuturesExtended.*V2.*$` |
+| `*FuturesExtended*V3*` | 3.0 | `^(share\|nonShare)FuturesExtended.*V3.*$` |
+
+**Subdirectory mapping:**
+
+| Prefix | Target Subdirectory |
+|--------|---------------------|
+| `shareFuturesExtended*` | `share_futures_extended/` |
+| `nonShareFuturesExtended*` | `non_share_futures_extended/` |
+
+**Grabber maps to create:**
+1. `bloomberg_bbocax_cwiq_pipe_futures_extended_1_0.json`
+2. `bloomberg_bbocax_cwiq_pipe_futures_extended_2_0.json`
+3. `bloomberg_bbocax_cwiq_pipe_futures_extended_3_0.json`
+
+---
+
+## DQ Validation
+
+### Equities DQ (20260101-20260111)
+
+**Command:**
+```bash
+cd data-alchemy && source .env && uv run python -m data_alchemy.main \
+  --vendor bloomberg --dataset bbocax_cwiq_pipe --version 1.0 \
+  --dq --dq-date-range 20260101:20260111 --file-pattern ".*equity.*"
+```
+
+**Result:** `back_office_equities/1.0` **PASSED** (11 dates, 699 files)
+
+### File Counts - back_office_equities/1.0/raw
+
+| Period | Weekday | Weekend (Sat) |
+|--------|---------|---------------|
+| Oct 11 - Nov 16, 2025 | 68 | 28 |
+| Nov 17, 2025 | 157 | - |
+| Nov 18, 2025+ | **210** | **82** |
+
+**File extensions (weekday):**
+- .csv: 75, .parquet: 67, .out: 20, .dif: 20, .px: 11, .hpc: 11, .rpx: 6
+
+---
+
+## History
+
+| Date | Action |
+|------|--------|
+| 2026-01-22 | Created notes, analyzed bronze counts |
+| 2026-01-22 | Added local vs real server comparison chart |
+| 2026-01-22 | Added equity files comparison (Jan 01-11 exact match) |
+| 2026-01-22 | Verified equities mapping: 210 files/weekday, 82 files/weekend |
+| 2026-01-22 | Confirmed: equityOptions/Index NOT in reference, excluded correctly |
+| 2026-01-22 | DQ validation PASSED for back_office_equities/1.0 |
+| 2026-01-22 | Analyzed futures mapping: futures_2_0.json correct for FuturesBulk |
+| 2026-01-22 | Identified need for 3 futures_extended grabber maps (1.0, 2.0, 3.0) |

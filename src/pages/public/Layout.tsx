@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 
-import { sections } from '../../content'
+import { SECTION_KEY, sections } from '../../content'
 import { useAppDispatch, useAppSelector } from '../../store'
+import { hydrateContent } from '../../store/contentSlice'
 import { setNavOpen, setQuery, setTheme, type Theme } from '../../store/uiSlice'
 
 /** The public shell.
@@ -15,6 +16,13 @@ import { setNavOpen, setQuery, setTheme, type Theme } from '../../store/uiSlice'
 export default function PublicLayout() {
   const dispatch = useAppDispatch()
   const { query, theme, navOpen } = useAppSelector((s) => s.ui)
+  const content = useAppSelector((s) => s.content)
+
+  // Published content arrives over the bundled copy. Once per mount - the
+  // content does not change while someone is reading.
+  useEffect(() => {
+    dispatch(hydrateContent())
+  }, [dispatch])
   const location = useLocation()
 
   // Reading position belongs to the page; the drawer should not survive a move.
@@ -63,7 +71,9 @@ export default function PublicLayout() {
             >
               <span className="mark" aria-hidden />
               <span className="label">{s.label}</span>
-              {s.count > 0 && <span className="n">{s.count}</span>}
+              {s.id !== 'home' && (
+              <span className="n">{content[SECTION_KEY[s.id]].length}</span>
+            )}
             </NavLink>
           ))}
         </nav>

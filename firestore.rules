@@ -94,6 +94,17 @@ service cloud.firestore {
       allow read, write: if isOwner();
     }
 
+    // ---- public: the knowledge base ---------------------------------------
+    // The site's own content, published from markdown in content/. World
+    // readable by design - the same text ships inside the bundle, so keeping
+    // it private here would protect nothing while breaking the page.
+    // Named `docs`, not `content`: `context` already exists and two
+    // collections one letter apart is a mistake waiting to happen in a rules file.
+    match /docs/{docId} {
+      allow read: if true;
+      allow write: if isOwner();
+    }
+
     // ---- public: curated copies only --------------------------------------
     // Written by the publish flow after redaction review. Nothing here is a
     // reference to a private document - it is a copy of reviewed content.

@@ -1,4 +1,3 @@
-import { content } from '../../content'
 import { useAppDispatch, useAppSelector } from '../../store'
 import { toggleTag } from '../../store/uiSlice'
 import Markdown from '../../components/Markdown'
@@ -9,7 +8,7 @@ import { matches, TagRow, Empty } from './shared'
 export default function Discussions() {
   const dispatch = useAppDispatch()
   const { query, tag } = useAppSelector((s) => s.ui)
-  const items = content.discussions.filter((d) =>
+  const items = useAppSelector((st) => st.content.discussions).filter((d) =>
     matches(query, tag, [d.title, d.summary, d.body ?? '', ...d.tags], d.tags),
   )
 

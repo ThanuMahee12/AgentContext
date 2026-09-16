@@ -74,43 +74,43 @@ export interface Section {
   path: string
   /** One line saying what the section is for, used on the home index. */
   blurb: string
-  count: number
+}
+
+/** Which slice of content a section lists. `home` lists none. */
+export const SECTION_KEY: Record<Exclude<SectionId, 'home'>, 'brainstorms' | 'discussions' | 'kt' | 'notes'> = {
+  brainstorms: 'brainstorms',
+  kt: 'kt',
+  discussions: 'discussions',
+  notes: 'notes',
 }
 
 export const sections: Section[] = [
-  { id: 'home', label: 'Home', path: '/', blurb: 'Everything collected in one place.', count: 0 },
+  { id: 'home', label: 'Home', path: '/', blurb: 'Everything collected in one place.' },
   {
     id: 'brainstorms',
     label: 'Brainstorm',
     path: '/brainstorm',
     blurb: 'Half-formed ideas, with the thinking left in.',
-    count: content.brainstorms.length,
   },
   {
     id: 'kt',
     label: 'KT',
     path: '/kt',
     blurb: 'Handover material: how a project is set up and run.',
-    count: content.kt.length,
   },
   {
     id: 'discussions',
     label: 'Ideas',
     path: '/ideas',
     blurb: 'Proposals worked through with other people.',
-    count: content.discussions.length,
   },
   {
     id: 'notes',
     label: 'Tech Commands',
     path: '/tech-commands',
     blurb: 'Commands, patterns and reference worth not re-deriving.',
-    count: content.notes.length,
   },
 ]
-
-export const totalItems =
-  content.brainstorms.length + content.kt.length + content.discussions.length + content.notes.length
 
 export function findDoc(list: Doc[], id: string): Doc | undefined {
   return list.find((d) => d.id === id)

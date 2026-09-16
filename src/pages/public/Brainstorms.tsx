@@ -1,4 +1,3 @@
-import { content } from '../../content'
 import { useAppDispatch, useAppSelector } from '../../store'
 import { toggleTag } from '../../store/uiSlice'
 import Markdown from '../../components/Markdown'
@@ -9,7 +8,7 @@ import { matches, TagRow, Empty } from './shared'
 export default function Brainstorms() {
   const dispatch = useAppDispatch()
   const { query, tag } = useAppSelector((s) => s.ui)
-  const items = content.brainstorms.filter((b) =>
+  const items = useAppSelector((st) => st.content.brainstorms).filter((b) =>
     matches(query, tag, [b.title, b.summary, ...b.tags], b.tags),
   )
 

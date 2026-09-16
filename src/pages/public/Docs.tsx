@@ -1,6 +1,6 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
 
-import { content, findDoc, sections, type Doc, type SectionId } from '../../content'
+import { findDoc, sections, type Doc, type SectionId } from '../../content'
 import { useAppSelector } from '../../store'
 import Markdown, { slug } from '../../components/Markdown'
 import { matches, Empty } from './shared'
@@ -19,7 +19,7 @@ export default function Docs({ section, title, standfirst }: Props) {
   // links resolve through the section list rather than assuming they match.
   const basePath = sections.find((s) => s.id === section)?.path ?? `/${section}`
   const { query } = useAppSelector((s) => s.ui)
-  const docs = content[section]
+  const docs = useAppSelector((st) => st.content[section])
 
   if (id) {
     const doc = findDoc(docs, id)

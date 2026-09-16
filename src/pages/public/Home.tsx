@@ -1,10 +1,15 @@
 import { Link } from 'react-router-dom'
 
-import { content, sections, totalItems, type SectionId } from '../../content'
+import { SECTION_KEY, sections, type SectionId } from '../../content'
+import { useAppSelector } from '../../store'
 
 /** The index. Its job is to show what is here and get you into it, so it
  *  leads with the actual inventory rather than a statement about the site. */
 export default function Home() {
+  const content = useAppSelector((s) => s.content)
+  const totalItems =
+    content.brainstorms.length + content.kt.length + content.discussions.length + content.notes.length
+
   // Section ids and URLs diverged when the labels were renamed, so paths come
   // from the section list rather than being built from the id.
   const pathFor = (id: SectionId) => sections.find((s) => s.id === id)?.path ?? '/'
@@ -33,7 +38,7 @@ export default function Home() {
           .map((s) => (
             <li key={s.id} data-section={s.id}>
               <Link to={s.path}>
-                <span className="n">{s.count}</span>
+                <span className="n">{content[SECTION_KEY[s.id as Exclude<SectionId, 'home'>]].length}</span>
                 <span className="body">
                   <strong>{s.label}</strong>
                   <span>{s.blurb}</span>
