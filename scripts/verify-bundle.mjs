@@ -34,9 +34,11 @@ if (existsSync(fixtures)) {
       if (c.command && c.command.length > 24) needles.add(c.command.slice(0, 40))
     }
   }
-  for (const c of (data.context ?? []).slice(0, 25)) {
-    if (c.url && c.url.length > 20) needles.add(c.url)
-  }
+  // URLs extracted from transcripts are deliberately NOT needles. A link is
+  // public far more often than not - the site's own repository and a gist it
+  // cites both appear in captured sessions - so matching on them flags correct
+  // builds. What identifies a leak is session ids, working directories,
+  // checksums and command text, none of which belong in a public bundle.
 }
 
 // Always checked, fixtures or not.
@@ -54,6 +56,23 @@ for (const s of [
   'service_account', // only ever appears in a service-account key file
 ]) {
   needles.add(s)
+}
+
+// A needle that is already committed as public content cannot be a leak - the
+// site's own footer link and the gist referenced by a brainstorm both appear in
+// captured transcripts too. Subtracting published content keeps the check about
+// data that was never meant to ship.
+const publicContent = resolve(here, '../src/content/content.json')
+if (existsSync(publicContent)) {
+  const published = readFileSync(publicContent, 'utf8')
+  let dropped = 0
+  for (const needle of [...needles]) {
+    if (published.includes(needle)) {
+      needles.delete(needle)
+      dropped++
+    }
+  }
+  if (dropped) console.log(`verify-bundle: ${dropped} needle(s) are published content, not leaks`)
 }
 
 const walk = (dir) =>
