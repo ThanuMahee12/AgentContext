@@ -115,7 +115,6 @@ export default function Admin({ user }: { user: User | null }) {
             Sign out
           </button>
         )}
-        <ThemeToggle />
       </div>
 
       {source.name === 'fixtures' && (
@@ -293,30 +292,6 @@ function Facet({
         </label>
       ))}
     </div>
-  )
-}
-
-function ThemeToggle() {
-  const [theme, setTheme] = useState<string>(
-    () => document.documentElement.getAttribute('data-theme') ?? 'system',
-  )
-
-  const set = (next: string) => {
-    setTheme(next)
-    if (next === 'system') {
-      document.documentElement.removeAttribute('data-theme')
-      localStorage.removeItem('ac-theme')
-    } else {
-      document.documentElement.setAttribute('data-theme', next)
-      localStorage.setItem('ac-theme', next)
-    }
-  }
-
-  const next = theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system'
-  return (
-    <button className="iconbtn" onClick={() => set(next)} title={`Theme: ${theme}`}>
-      {theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}
-    </button>
   )
 }
 

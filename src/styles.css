@@ -1,85 +1,72 @@
-/* AgentContext — design tokens.
+/* AgentContext — one dark palette, deliberately.
  *
- * Light is defined on bare :root so the un-stamped "system" state resolves;
- * dark is redefined twice (media query for system preference, [data-theme] for
- * an explicit toggle) so neither can strand the other. Components only ever
- * read tokens — never a literal colour inside a media block, which is the
- * classic way a page ends up rendering one theme's text on the other's ground.
+ * This commits to a single visual world rather than supporting both themes:
+ * the subject is an archive of terminal work and pipeline internals, read
+ * mostly at night, and a design that only has to hold up in one light can be
+ * tuned properly instead of compromised twice. There is no media query and no
+ * [data-theme] stamp - every colour is stated once, and `body` paints its own
+ * ground so the page never borrows the host's.
+ *
+ * The ground is a deep blue-black, not the near-black-plus-one-acid-accent that
+ * dark interfaces default to. Four section hues carry the structure, because the
+ * content genuinely divides into kinds.
  */
 
 :root {
-  /* neutrals carry a slight blue-violet bias so they read as chosen, not default */
-  --ground:      #eef0f4;
-  --surface:     #ffffff;
-  --surface-2:   #f6f7fa;
-  --line:        #d9dde5;
-  --line-strong: #c2c8d4;
+  color-scheme: dark;
 
-  --text:        #1b1f28;
-  --text-2:      #545b6b;
-  --text-3:      #838b9c;
+  --ground:    #0b0f16;
+  --surface:   #131925;
+  --raised:    #1a2130;
+  --line:      #232c3d;
+  --line-lit:  #33405a;
 
-  /* accent: signal amber — instrumentation, not alarm */
-  --accent:      #b06f28;
-  --accent-soft: #f5e6d2;
-  --accent-line: #e0bf94;
+  --text:      #e8ecf4;
+  --text-2:    #9aa6bd;
+  --text-3:    #64718c;
 
-  /* semantic, deliberately separate from the accent hue */
-  --ok:          #3f7a4f;
-  --ok-soft:     #e2efe4;
-  --err:         #b04a45;
-  --err-soft:    #f6e2e1;
+  --s-brainstorms: #a78bfa;
+  --s-kt:          #5eead4;
+  --s-discussions: #fbbf24;
+  --s-notes:       #7dd3fc;
+  --s-dashboard:   #f472b6;
 
-  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
-  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ok:        #4ade80;
+  --ok-soft:   #10241a;
+  --err:       #fb7185;
+  --err-soft:  #2a1420;
+
+  /* the dashboard half still reads these names */
+  --paper:       var(--ground);
+  --card:        var(--surface);
+  --surface-2:   var(--raised);
+  --rule:        var(--line);
+  --line-strong: var(--line-lit);
+  --ink:         var(--text);
+  --ink-2:       var(--text-2);
+  --ink-3:       var(--text-3);
+  --accent:      #fbbf24;
+  --accent-soft: #2a2110;
+  --accent-line: #4a3a18;
+
+  --plex-sans:  "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --plex-serif: "IBM Plex Serif", Georgia, serif;
+  --plex-mono:  "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --sans: var(--plex-sans);
+  --mono: var(--plex-mono);
 
   --r:   6px;
   --r-s: 4px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --ground:      #101319;
-    --surface:     #171b23;
-    --surface-2:   #1d222c;
-    --line:        #272d39;
-    --line-strong: #39414f;
+[data-section="brainstorms"] { --hue: var(--s-brainstorms); }
+[data-section="kt"]          { --hue: var(--s-kt); }
+[data-section="discussions"] { --hue: var(--s-discussions); }
+[data-section="notes"]       { --hue: var(--s-notes); }
+[data-section="dashboard"]   { --hue: var(--s-dashboard); }
+[data-section="home"]        { --hue: var(--text-2); }
 
-    --text:        #e4e7ee;
-    --text-2:      #99a1b3;
-    --text-3:      #6d7587;
-
-    --accent:      #d9944a;
-    --accent-soft: #2e2317;
-    --accent-line: #5a4327;
-
-    --ok:          #63a978;
-    --ok-soft:     #1a2820;
-    --err:         #d4716b;
-    --err-soft:    #2c1c1c;
-  }
-}
-
-:root[data-theme="dark"] {
-  --ground:      #101319;
-  --surface:     #171b23;
-  --surface-2:   #1d222c;
-  --line:        #272d39;
-  --line-strong: #39414f;
-
-  --text:        #e4e7ee;
-  --text-2:      #99a1b3;
-  --text-3:      #6d7587;
-
-  --accent:      #d9944a;
-  --accent-soft: #2e2317;
-  --accent-line: #5a4327;
-
-  --ok:          #63a978;
-  --ok-soft:     #1a2820;
-  --err:         #d4716b;
-  --err-soft:    #2c1c1c;
-}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 * { box-sizing: border-box; }
 
@@ -570,96 +557,24 @@ body {
 
 /* ==========================================================================
    Public site
-   --------------------------------------------------------------------------
-   A knowledge base about data pipelines, not a product page. The IBM Plex
-   family carries it: Sans for interface, Serif for reading, Mono for the code
-   and paths that appear throughout. One type system designed for engineering
-   documentation, three voices.
-
-   Each section owns a hue. The content genuinely divides into kinds - an idea
-   in progress is not a runbook - so colour encodes that division rather than
-   decorating it. The hue drives the rail marker, the page rule and nothing
-   else, so it stays a signal.
    ========================================================================== */
-
-:root {
-  --plex-sans:  "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --plex-serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
-  --plex-mono:  "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
-
-  --s-brainstorms: #6d5bc4;
-  --s-kt:          #2c8079;
-  --s-discussions: #b07327;
-  --s-notes:       #3f6fae;
-
-  --paper:   #f3f5f8;
-  --card:    #ffffff;
-  --rule:    #dde1e9;
-  --ink:     #171b24;
-  --ink-2:   #4c5464;
-  --ink-3:   #7b8496;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --s-brainstorms: #9a8ae0;
-    --s-kt:          #4fb3a8;
-    --s-discussions: #d79a4c;
-    --s-notes:       #6f9fd8;
-
-    --paper: #0f131b;
-    --card:  #161b25;
-    --rule:  #262d3a;
-    --ink:   #e6e9f0;
-    --ink-2: #9aa3b4;
-    --ink-3: #6b7486;
-  }
-}
-:root[data-theme="dark"] {
-  --s-brainstorms: #9a8ae0;
-  --s-kt:          #4fb3a8;
-  --s-discussions: #d79a4c;
-  --s-notes:       #6f9fd8;
-
-  --paper: #0f131b;
-  --card:  #161b25;
-  --rule:  #262d3a;
-  --ink:   #e6e9f0;
-  --ink-2: #9aa3b4;
-  --ink-3: #6b7486;
-}
-
-/* section hue resolution: one variable, set per subtree */
-[data-section="brainstorms"] { --hue: var(--s-brainstorms); }
-[data-section="kt"]          { --hue: var(--s-kt); }
-[data-section="discussions"] { --hue: var(--s-discussions); }
-[data-section="notes"]       { --hue: var(--s-notes); }
-[data-section="home"]        { --hue: var(--ink-2); }
-
-.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-
-/* ------------------------------------------------------------------ shell */
-
-/* One vertical sidebar carries all navigation: wordmark, sections, search and
-   theme. The reading column sits beside it and is the only thing that scrolls,
-   so the sections stay put while you move through a long note. */
 
 .site {
   min-height: 100%;
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--ground);
+  color: var(--text);
   font-family: var(--plex-sans);
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
+  grid-template-columns: 236px minmax(0, 1fr);
 }
 
 .sidenav {
   display: flex;
   flex-direction: column;
-  gap: 26px;
-  padding: 26px 20px;
-  border-right: 1px solid var(--rule);
-  background: var(--paper);
+  gap: 28px;
+  padding: 26px 16px 22px 24px;
+  border-right: 1px solid var(--line);
+  background: var(--ground);
   position: sticky;
   top: 0;
   height: 100vh;
@@ -667,97 +582,323 @@ body {
 }
 
 .wordmark {
-  font-family: var(--plex-serif);
-  font-size: 19px;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.sidenav nav { display: flex; flex-direction: column; gap: 1px; }
-
-.navitem {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 8px 10px 8px 0;
-  color: var(--ink-2);
+  gap: 10px;
+  font-family: var(--plex-serif);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  text-decoration: none;
+}
+/* Four strata, one per section hue - the pipeline layers this content is about. */
+.wordmark .glyph {
+  width: 13px; height: 17px; flex: none;
+  background:
+    linear-gradient(var(--s-brainstorms) 0 0) 0 0    / 100% 3px no-repeat,
+    linear-gradient(var(--s-kt)          0 0) 0 5px  / 100% 3px no-repeat,
+    linear-gradient(var(--s-discussions) 0 0) 0 10px / 100% 3px no-repeat,
+    linear-gradient(var(--s-notes)       0 0) 0 15px / 100% 2px no-repeat;
+}
+
+.sidenav nav { display: flex; flex-direction: column; }
+
+.navitem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  color: var(--text-2);
   text-decoration: none;
   font-size: 14px;
+  border-radius: var(--r-s);
 }
-.navitem .mark {
-  width: 3px;
-  height: 18px;
-  border-radius: 2px;
-  background: var(--rule);
-  flex: none;
+.navitem:hover { color: var(--text); }
+.navitem.on { color: var(--text); font-weight: 600; }
+
+/* One shared marker slides between entries; it shows which section you came from. */
+.navmark {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-s);
+  background: color-mix(in srgb, var(--hue) 15%, transparent);
+  box-shadow: inset 2px 0 0 var(--hue);
 }
-.navitem.on { color: var(--ink); font-weight: 600; }
-.navitem.on .mark { background: var(--hue, var(--ink-2)); }
-.navitem:hover { color: var(--ink); }
+.navitem .label, .navitem .n, .navitem .lock { position: relative; }
 .navitem .n {
   margin-left: auto;
   font: 400 12px/1 var(--plex-mono);
-  color: var(--ink-3);
+  color: var(--text-3);
   font-variant-numeric: tabular-nums;
 }
 
-.navfoot { margin-top: auto; display: flex; flex-direction: column; gap: 12px; }
+.navfoot { margin-top: auto; display: flex; flex-direction: column; gap: 14px; }
+
+/* The dashboard leaves the public site, so it sits under a rule rather than
+   reading as a sixth section. */
+.navitem.dash {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+}
+.navitem.dash:hover { color: var(--s-dashboard); }
+.navitem.dash .lock {
+  margin-left: auto;
+  font: 400 10px/1.8 var(--plex-mono);
+  color: var(--text-3);
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
 
 .find input {
-  width: 100%;
-  height: 32px;
-  padding: 0 10px;
+  width: 100%; height: 32px; padding: 0 10px;
   font: 400 13px/1 var(--plex-sans);
-  color: var(--ink);
-  background: var(--card);
-  border: 1px solid var(--rule);
-  border-radius: 3px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
   outline: none;
 }
-.find input:focus-visible { border-color: var(--ink-3); }
+.find input::placeholder { color: var(--text-3); }
+.find input:focus-visible { border-color: var(--line-lit); }
 
-.navmeta { display: flex; align-items: center; gap: 12px; }
-.navmeta a { font-size: 12px; color: var(--ink-3); text-decoration: none; }
-.navmeta a:hover { color: var(--ink); }
+.src { font-size: 12px; color: var(--text-3); text-decoration: none; }
+.src:hover { color: var(--text-2); }
 
-.ghost {
-  height: 28px;
-  padding: 0 10px;
-  font: 500 12px/1 var(--plex-sans);
-  color: var(--ink-2);
-  background: transparent;
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-  cursor: pointer;
-}
-.ghost:hover { color: var(--ink); border-color: var(--ink-3); }
-
-/* The drawer controls exist only on narrow screens. */
 .drawertoggle, .scrim { display: none; }
 
 /* ------------------------------------------------------------------- sheet */
 
-.sheet { padding: 40px 40px 80px; min-width: 0; }
+.sheet { padding: 44px 44px 84px; min-width: 0; }
+.page { max-width: 68ch; }
+
+.pagetitle {
+  font-family: var(--plex-serif);
+  font-size: clamp(27px, 4.2vw, 38px);
+  font-weight: 600;
+  line-height: 1.14;
+  letter-spacing: -0.022em;
+  margin: 0 0 10px;
+  text-wrap: balance;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.pagetitle::after {
+  content: "";
+  position: absolute; left: 0; bottom: -1px;
+  width: 54px; height: 2px;
+  background: var(--hue, var(--text-2));
+}
+
+.standfirst { margin: 0 0 36px; font-size: 16px; color: var(--text-2); max-width: 56ch; }
+
+.crumb { margin: 0 0 16px; font-size: 13px; }
+.crumb a { color: var(--text-3); text-decoration: none; }
+.crumb a:hover { color: var(--text); }
+
+/* -------------------------------------------------------------- home index */
+
+.index {
+  list-style: none;
+  margin: 0 0 48px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.index a {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 20px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--hue);
+  border-radius: var(--r-s);
+}
+.index a:hover { background: var(--raised); border-color: var(--line-lit); border-left-color: var(--hue); }
+.index .n {
+  font-family: var(--plex-mono);
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+  color: var(--hue);
+  min-width: 2.2ch;
+  text-align: right;
+}
+.index .body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.index .body strong { font-size: 15px; font-weight: 600; }
+.index .body span { color: var(--text-2); font-size: 14px; }
+
+.recent h2 {
+  font-family: var(--plex-sans);
+  font-size: 13px; font-weight: 600;
+  color: var(--text-3);
+  margin: 0 0 14px;
+}
+.recent ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; }
+.recent li { border-left: 2px solid var(--hue); padding-left: 16px; }
+.recent a { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; text-decoration: none; color: inherit; }
+.recent a strong { font-size: 15px; }
+.recent a:hover strong { color: var(--hue); }
+.recent time { font: 400 12px/1 var(--plex-mono); color: var(--text-3); font-variant-numeric: tabular-nums; }
+.recent p { margin: 6px 0 0; font-size: 14px; color: var(--text-2); }
+
+/* ----------------------------------------------------------------- entries */
+
+.stack { display: grid; gap: 44px; }
+.entry { scroll-margin-top: 30px; }
+.entry > header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.entry h2 {
+  font-family: var(--plex-serif);
+  font-size: 22px; font-weight: 600;
+  letter-spacing: -0.012em;
+  margin: 0;
+  text-wrap: balance;
+}
+.entry time { font: 400 12px/1 var(--plex-mono); color: var(--text-3); font-variant-numeric: tabular-nums; }
+
+.status {
+  font: 500 11px/1.8 var(--plex-sans);
+  padding: 0 9px;
+  border-radius: 999px;
+  color: var(--hue);
+  background: color-mix(in srgb, var(--hue) 16%, transparent);
+}
+
+.lede { font-family: var(--plex-serif); font-size: 16px; line-height: 1.65; margin: 0 0 14px; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; }
+.tag {
+  font: 400 12px/1 var(--plex-mono);
+  padding: 5px 9px;
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.tag:hover { color: var(--text); border-color: var(--line-lit); }
+.tag.on { color: var(--ground); background: var(--hue); border-color: var(--hue); }
+
+.out { margin: 14px 0 0; display: flex; gap: 18px; font-size: 14px; }
+.out a { color: var(--hue); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--hue) 35%, transparent); }
+.out a:hover { border-bottom-color: var(--hue); }
+
+.thread { list-style: none; margin: 20px 0 0; padding: 0 0 0 18px; border-left: 1px solid var(--line); display: grid; gap: 18px; }
+.thread > li > header { display: flex; gap: 10px; align-items: baseline; margin-bottom: 4px; }
+.thread strong { font-size: 13px; font-weight: 600; color: var(--hue); }
+.thread time { font: 400 11px/1 var(--plex-mono); color: var(--text-3); }
+
+.nothing { color: var(--text-2); font-size: 15px; }
+
+/* ---------------------------------------------------------------- doc list */
+
+.doclist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.doclist li {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 16px 18px;
+}
+.doclist li:hover { border-color: var(--line-lit); background: var(--raised); }
+.doclist a { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; text-decoration: none; color: inherit; }
+.doclist a strong { font-family: var(--plex-serif); font-size: 17px; font-weight: 600; }
+.doclist a:hover strong { color: var(--hue); }
+.doclist .project {
+  font: 400 11px/1.8 var(--plex-mono);
+  padding: 0 8px;
+  color: var(--hue);
+  background: color-mix(in srgb, var(--hue) 14%, transparent);
+  border-radius: 999px;
+}
+.doclist .size { margin-left: auto; font: 400 12px/1 var(--plex-mono); color: var(--text-3); }
+.doclist .contents { margin: 7px 0 0; font-size: 13px; color: var(--text-3); }
+
+.toc {
+  display: flex; flex-wrap: wrap; gap: 8px 20px;
+  padding: 16px 0; margin-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.toc a { font-size: 13px; color: var(--text-2); text-decoration: none; }
+.toc a:hover { color: var(--hue); }
+
+/* ----------------------------------------------------------- markdown body */
+
+.md { font-family: var(--plex-serif); font-size: 16px; line-height: 1.7; color: var(--text); }
+.md > *:first-child { margin-top: 0; }
+.md h2, .md h3, .md h4 {
+  font-family: var(--plex-sans);
+  letter-spacing: -0.012em;
+  margin: 1.9em 0 0.5em;
+  scroll-margin-top: 24px;
+  text-wrap: balance;
+}
+.md h2 { font-size: 19px; font-weight: 600; }
+.md h3 { font-size: 16px; font-weight: 600; }
+.md h4 { font-size: 15px; font-weight: 600; color: var(--text-2); }
+.md p { margin: 0 0 1.05em; }
+.md ul, .md ol { margin: 0 0 1.05em; padding-left: 1.3em; }
+.md li { margin-bottom: 0.38em; }
+.md li::marker { color: var(--text-3); }
+.md a { color: var(--hue); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--hue) 35%, transparent); }
+.md a:hover { border-bottom-color: var(--hue); }
+.md strong { font-weight: 600; }
+.md hr { border: 0; border-top: 1px solid var(--line); margin: 2em 0; }
+
+.md code {
+  font-family: var(--plex-mono);
+  font-size: 0.85em;
+  padding: 2px 6px;
+  color: var(--text);
+  background: var(--raised);
+  border-radius: 3px;
+}
+.md-code {
+  font-family: var(--plex-mono);
+  font-size: 13px;
+  line-height: 1.62;
+  padding: 15px 17px;
+  margin: 0 0 1.25em;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--hue);
+  border-radius: var(--r-s);
+  overflow-x: auto;
+}
+.md-code code { background: none; padding: 0; font-size: inherit; }
+
+.md blockquote { margin: 0 0 1.25em; padding-left: 18px; border-left: 2px solid var(--line-lit); color: var(--text-2); }
+
+.md-tablewrap { overflow-x: auto; margin: 0 0 1.35em; }
+.md table { border-collapse: collapse; font-family: var(--plex-sans); font-size: 14px; min-width: 100%; }
+.md th, .md td { text-align: left; padding: 8px 16px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.md th { font-weight: 600; font-size: 12px; color: var(--text-3); }
+.md td code { white-space: nowrap; }
 
 /* ------------------------------------------------------------------ motion */
 
-/* One reveal when a page arrives. Nothing on hover, nothing per-card. */
-@keyframes rise {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: none; }
-}
-.reveal { animation: rise 260ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
-
-@media (prefers-reduced-motion: reduce) {
-  .reveal { animation: none; }
-  * { transition: none !important; }
-}
+/* Framer Motion drives page transitions and the nav marker. CSS keeps only the
+   staggered arrival of the home index, which needs no state. */
+@keyframes rise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+.index li { animation: rise 320ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.index li:nth-child(1) { animation-delay: 30ms; }
+.index li:nth-child(2) { animation-delay: 70ms; }
+.index li:nth-child(3) { animation-delay: 110ms; }
+.index li:nth-child(4) { animation-delay: 150ms; }
 
 :where(a, button, input, [tabindex]):focus-visible {
-  outline: 2px solid var(--hue, var(--ink));
+  outline: 2px solid var(--hue, var(--text));
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .index li { animation: none; }
+  * { transition: none !important; }
 }
 
 /* ------------------------------------------------------------------ mobile */
@@ -765,17 +906,13 @@ body {
 @media (max-width: 860px) {
   .site { grid-template-columns: minmax(0, 1fr); }
 
-  /* The sidebar keeps its shape and becomes a drawer, so the section list
-     reads the same on a phone as on a desktop rather than reflowing into a
-     different component. */
   .sidenav {
     position: fixed;
     inset: 0 auto 0 0;
     width: min(78vw, 290px);
     z-index: 20;
     transform: translateX(-100%);
-    transition: transform 200ms cubic-bezier(0.2, 0.7, 0.3, 1);
-    box-shadow: 0 0 0 1px var(--rule);
+    transition: transform 220ms cubic-bezier(0.2, 0.7, 0.3, 1);
   }
   .navopen .sidenav { transform: none; }
 
@@ -784,21 +921,19 @@ body {
     align-items: center;
     gap: 9px;
     position: fixed;
-    top: 12px;
-    left: 12px;
+    top: 12px; left: 12px;
     z-index: 21;
     height: 38px;
     padding: 0 14px;
     font: 500 13px/1 var(--plex-sans);
-    color: var(--ink);
-    background: var(--card);
-    border: 1px solid var(--rule);
-    border-radius: 3px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-s);
     cursor: pointer;
   }
   .drawertoggle .bars {
-    width: 15px;
-    height: 9px;
+    width: 15px; height: 9px;
     border-top: 2px solid currentColor;
     border-bottom: 2px solid currentColor;
   }
@@ -806,26 +941,18 @@ body {
 
   .scrim {
     display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 19;
-    border: 0;
-    padding: 0;
-    background: color-mix(in srgb, var(--ink) 42%, transparent);
-    opacity: 0;
-    pointer-events: none;
+    position: fixed; inset: 0; z-index: 19;
+    border: 0; padding: 0;
+    background: rgba(2, 5, 10, 0.66);
+    opacity: 0; pointer-events: none;
     transition: opacity 200ms ease;
   }
   .navopen .scrim { opacity: 1; pointer-events: auto; }
 
-  .sheet { padding: 62px 18px 56px; }
+  .sheet { padding: 64px 18px 60px; }
   .page { max-width: none; }
-  .index a { gap: 14px; padding: 15px 16px; }
-  .index .n { font-size: 22px; }
+  .index a { gap: 16px; padding: 16px; }
+  .index .n { font-size: 23px; }
   .doclist li { padding: 14px 16px; }
   .doclist .size { margin-left: 0; flex-basis: 100%; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sidenav, .scrim { transition: none; }
 }

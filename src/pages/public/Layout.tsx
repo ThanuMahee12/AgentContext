@@ -1,47 +1,45 @@
 import { useEffect } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
 import { SECTION_KEY, sections } from '../../content'
 import { useAppDispatch, useAppSelector } from '../../store'
 import { hydrateContent } from '../../store/contentSlice'
-import { setNavOpen, setQuery, setTheme, type Theme } from '../../store/uiSlice'
+import { setNavOpen, setQuery } from '../../store/uiSlice'
 
 /** The public shell.
  *
- *  Navigation is one vertical sidebar holding everything: the wordmark, the
- *  sections, search and the theme control. On narrow screens it becomes a
- *  drawer rather than collapsing into a row, so the section list keeps the
- *  same shape and order wherever you are.
+ *  One vertical sidebar: wordmark, sections, then the dashboard, kept below a
+ *  rule because it leaves the public site for an authenticated one and should
+ *  not read as a sixth section.
+ *
+ *  The active marker is a single shared element that slides between entries
+ *  rather than one marker per link fading in. That is the one thing worth
+ *  spending motion on here - it shows which section you came from, which a
+ *  static highlight cannot.
  */
 export default function PublicLayout() {
   const dispatch = useAppDispatch()
-  const { query, theme, navOpen } = useAppSelector((s) => s.ui)
+  const { query, navOpen } = useAppSelector((s) => s.ui)
   const content = useAppSelector((s) => s.content)
+  const location = useLocation()
+  const still = useReducedMotion()
 
-  // Published content arrives over the bundled copy. Once per mount - the
-  // content does not change while someone is reading.
   useEffect(() => {
     dispatch(hydrateContent())
   }, [dispatch])
-  const location = useLocation()
 
-  // Reading position belongs to the page; the drawer should not survive a move.
   useEffect(() => {
     window.scrollTo(0, 0)
     dispatch(setNavOpen(false))
   }, [location.pathname, dispatch])
 
-  // Escape closes the drawer - a full-screen overlay with no keyboard exit is a trap.
   useEffect(() => {
     if (!navOpen) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') dispatch(setNavOpen(false))
-    }
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && dispatch(setNavOpen(false))
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [navOpen, dispatch])
-
-  const cycle: Record<Theme, Theme> = { system: 'light', light: 'dark', dark: 'system' }
 
   return (
     <div className={'site' + (navOpen ? ' navopen' : '')}>
@@ -57,6 +55,7 @@ export default function PublicLayout() {
 
       <aside className="sidenav" id="sidenav">
         <Link to="/" className="wordmark">
+          <span className="glyph" aria-hidden />
           AgentContext
         </Link>
 
@@ -69,16 +68,31 @@ export default function PublicLayout() {
               className={({ isActive }) => 'navitem' + (isActive ? ' on' : '')}
               data-section={s.id}
             >
-              <span className="mark" aria-hidden />
-              <span className="label">{s.label}</span>
-              {s.id !== 'home' && (
-              <span className="n">{content[SECTION_KEY[s.id]].length}</span>
-            )}
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      className="navmark"
+                      layoutId="navmark"
+                      transition={still ? { duration: 0 } : { type: 'spring', stiffness: 520, damping: 42 }}
+                    />
+                  )}
+                  <span className="label">{s.label}</span>
+                  {s.id !== 'home' && (
+                    <span className="n">{content[SECTION_KEY[s.id]].length}</span>
+                  )}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
 
         <div className="navfoot">
+          <a className="navitem dash" href="/admin" data-section="dashboard">
+            <span className="label">Dashboard</span>
+            <span className="lock" aria-hidden>sign in</span>
+          </a>
+
           <label className="find">
             <span className="sr">Search</span>
             <input
@@ -89,35 +103,31 @@ export default function PublicLayout() {
             />
           </label>
 
-          <div className="navmeta">
-            <button
-              className="ghost"
-              onClick={() => dispatch(setTheme(cycle[theme]))}
-              aria-label={`Theme: ${theme}. Change theme.`}
-            >
-              {theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}
-            </button>
-            <a
-              href="https://github.com/ThanuMahee12/AgentContext"
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              Source
-            </a>
-          </div>
+          <a
+            className="src"
+            href="https://github.com/ThanuMahee12/AgentContext"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            Source
+          </a>
         </div>
       </aside>
 
-      {/* Clicking away from an open drawer closes it. */}
-      <button
-        className="scrim"
-        onClick={() => dispatch(setNavOpen(false))}
-        tabIndex={-1}
-        aria-hidden
-      />
+      <button className="scrim" onClick={() => dispatch(setNavOpen(false))} tabIndex={-1} aria-hidden />
 
       <main className="sheet">
-        <Outlet />
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={location.pathname}
+            initial={still ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={still ? undefined : { opacity: 0, y: -6 }}
+            transition={{ duration: still ? 0 : 0.22, ease: [0.2, 0.7, 0.3, 1] }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   )
