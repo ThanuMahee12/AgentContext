@@ -640,32 +640,30 @@ body {
 
 /* ------------------------------------------------------------------ shell */
 
+/* One vertical sidebar carries all navigation: wordmark, sections, search and
+   theme. The reading column sits beside it and is the only thing that scrolls,
+   so the sections stay put while you move through a long note. */
+
 .site {
   min-height: 100%;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--plex-sans);
   display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
-  grid-template-rows: auto 1fr auto;
-  grid-template-areas:
-    "head head"
-    "rail sheet"
-    "foot foot";
-  column-gap: 40px;
+  grid-template-columns: 232px minmax(0, 1fr);
 }
 
-.sitehead {
-  grid-area: head;
+.sidenav {
   display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 18px 28px;
-  border-bottom: 1px solid var(--rule);
+  flex-direction: column;
+  gap: 26px;
+  padding: 26px 20px;
+  border-right: 1px solid var(--rule);
   background: var(--paper);
   position: sticky;
   top: 0;
-  z-index: 5;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .wordmark {
@@ -677,12 +675,41 @@ body {
   text-decoration: none;
 }
 
-.find { flex: 1 1 auto; max-width: 380px; }
+.sidenav nav { display: flex; flex-direction: column; gap: 1px; }
+
+.navitem {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 10px 8px 0;
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 14px;
+}
+.navitem .mark {
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--rule);
+  flex: none;
+}
+.navitem.on { color: var(--ink); font-weight: 600; }
+.navitem.on .mark { background: var(--hue, var(--ink-2)); }
+.navitem:hover { color: var(--ink); }
+.navitem .n {
+  margin-left: auto;
+  font: 400 12px/1 var(--plex-mono);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.navfoot { margin-top: auto; display: flex; flex-direction: column; gap: 12px; }
+
 .find input {
   width: 100%;
-  height: 34px;
-  padding: 0 12px;
-  font: 400 14px/1 var(--plex-sans);
+  height: 32px;
+  padding: 0 10px;
+  font: 400 13px/1 var(--plex-sans);
   color: var(--ink);
   background: var(--card);
   border: 1px solid var(--rule);
@@ -691,11 +718,14 @@ body {
 }
 .find input:focus-visible { border-color: var(--ink-3); }
 
+.navmeta { display: flex; align-items: center; gap: 12px; }
+.navmeta a { font-size: 12px; color: var(--ink-3); text-decoration: none; }
+.navmeta a:hover { color: var(--ink); }
+
 .ghost {
-  margin-left: auto;
-  height: 34px;
-  padding: 0 12px;
-  font: 500 13px/1 var(--plex-sans);
+  height: 28px;
+  padding: 0 10px;
+  font: 500 12px/1 var(--plex-sans);
   color: var(--ink-2);
   background: transparent;
   border: 1px solid var(--rule);
@@ -704,269 +734,12 @@ body {
 }
 .ghost:hover { color: var(--ink); border-color: var(--ink-3); }
 
-/* -------------------------------------------------------------------- rail */
-
-.rail {
-  grid-area: rail;
-  padding: 28px 0 28px 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  align-self: start;
-  position: sticky;
-  top: 71px;
-}
-
-.railitem {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 10px 7px 0;
-  color: var(--ink-2);
-  text-decoration: none;
-  font-size: 14px;
-  border-radius: 3px;
-}
-.railitem .mark {
-  width: 3px;
-  height: 17px;
-  border-radius: 2px;
-  background: var(--rule);
-  flex: none;
-}
-.railitem.on { color: var(--ink); font-weight: 600; }
-.railitem.on .mark { background: var(--hue, var(--ink-2)); }
-.railitem:hover { color: var(--ink); }
-.railitem .n {
-  margin-left: auto;
-  font: 400 12px/1 var(--plex-mono);
-  color: var(--ink-3);
-  font-variant-numeric: tabular-nums;
-}
+/* The drawer controls exist only on narrow screens. */
+.drawertoggle, .scrim { display: none; }
 
 /* ------------------------------------------------------------------- sheet */
 
-.sheet { grid-area: sheet; padding: 32px 28px 72px 0; min-width: 0; }
-
-.page { max-width: 68ch; }
-
-.pagetitle {
-  font-family: var(--plex-serif);
-  font-size: clamp(26px, 4.2vw, 36px);
-  font-weight: 600;
-  line-height: 1.16;
-  letter-spacing: -0.02em;
-  margin: 0 0 10px;
-  text-wrap: balance;
-  padding-bottom: 14px;
-  border-bottom: 2px solid var(--hue, var(--ink));
-}
-
-.standfirst {
-  margin: 0 0 34px;
-  font-size: 16px;
-  color: var(--ink-2);
-  max-width: 56ch;
-}
-
-.crumb { margin: 0 0 14px; font-size: 13px; }
-.crumb a { color: var(--ink-2); text-decoration: none; }
-.crumb a:hover { color: var(--ink); }
-
-/* ------------------------------------------------------------- home index */
-
-.index { list-style: none; margin: 0 0 46px; padding: 0; display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
-.index li { background: var(--card); }
-.index a {
-  display: flex;
-  align-items: baseline;
-  gap: 18px;
-  padding: 18px 20px;
-  text-decoration: none;
-  color: inherit;
-}
-.index a:hover { background: color-mix(in srgb, var(--hue) 7%, var(--card)); }
-.index .n {
-  font-family: var(--plex-mono);
-  font-size: 26px;
-  font-variant-numeric: tabular-nums;
-  color: var(--hue);
-  min-width: 2.2ch;
-  text-align: right;
-}
-.index .body { display: flex; flex-direction: column; gap: 3px; }
-.index .body strong { font-size: 15px; font-weight: 600; }
-.index .body span { color: var(--ink-2); font-size: 14px; }
-
-.recent h2 {
-  font-family: var(--plex-sans);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-3);
-  margin: 0 0 12px;
-}
-.recent ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
-.recent li { border-left: 2px solid var(--hue); padding-left: 14px; }
-.recent a { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; text-decoration: none; color: inherit; }
-.recent a strong { font-size: 15px; }
-.recent a:hover strong { color: var(--hue); }
-.recent time { font: 400 12px/1 var(--plex-mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.recent p { margin: 5px 0 0; font-size: 14px; color: var(--ink-2); }
-
-/* ----------------------------------------------------------------- entries */
-
-.stack { display: grid; gap: 42px; }
-
-.entry { scroll-margin-top: 88px; }
-.entry > header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; margin-bottom: 10px; }
-.entry h2 {
-  font-family: var(--plex-serif);
-  font-size: 21px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  margin: 0;
-  text-wrap: balance;
-}
-.entry time { font: 400 12px/1 var(--plex-mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
-
-.status {
-  font: 500 11px/1.7 var(--plex-sans);
-  padding: 1px 8px;
-  border-radius: 2px;
-  color: var(--hue);
-  background: color-mix(in srgb, var(--hue) 14%, transparent);
-}
-
-.lede {
-  font-family: var(--plex-serif);
-  font-size: 16px;
-  line-height: 1.62;
-  color: var(--ink);
-  margin: 0 0 14px;
-}
-
-.tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
-.tag {
-  font: 400 12px/1 var(--plex-mono);
-  padding: 4px 8px;
-  color: var(--ink-2);
-  background: transparent;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  cursor: pointer;
-}
-.tag:hover { color: var(--ink); border-color: var(--ink-3); }
-.tag.on { color: var(--card); background: var(--hue); border-color: var(--hue); }
-
-.out { margin: 12px 0 0; display: flex; gap: 16px; font-size: 14px; }
-.out a { color: var(--hue); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--hue) 40%, transparent); }
-.out a:hover { border-bottom-color: var(--hue); }
-
-.thread { list-style: none; margin: 18px 0 0; padding: 0 0 0 16px; border-left: 1px solid var(--rule); display: grid; gap: 16px; }
-.thread > li > header { display: flex; gap: 10px; align-items: baseline; margin-bottom: 4px; }
-.thread strong { font-size: 13px; font-weight: 600; color: var(--hue); }
-.thread time { font: 400 11px/1 var(--plex-mono); color: var(--ink-3); }
-
-.nothing { color: var(--ink-2); font-size: 15px; }
-
-/* ---------------------------------------------------------------- doc list */
-
-.doclist { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; background: var(--rule); border-block: 1px solid var(--rule); }
-.doclist li { background: var(--card); padding: 16px 18px; }
-.doclist a { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; text-decoration: none; color: inherit; }
-.doclist a strong { font-family: var(--plex-serif); font-size: 17px; font-weight: 600; }
-.doclist a:hover strong { color: var(--hue); }
-.doclist .project {
-  font: 400 11px/1.7 var(--plex-mono);
-  padding: 0 7px;
-  color: var(--hue);
-  background: color-mix(in srgb, var(--hue) 13%, transparent);
-  border-radius: 2px;
-}
-.doclist .size { margin-left: auto; font: 400 12px/1 var(--plex-mono); color: var(--ink-3); }
-.doclist .contents { margin: 6px 0 0; font-size: 13px; color: var(--ink-3); }
-
-.toc {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 18px;
-  padding: 14px 0;
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--rule);
-}
-.toc a { font-size: 13px; color: var(--ink-2); text-decoration: none; }
-.toc a:hover { color: var(--hue); }
-
-/* ----------------------------------------------------------- markdown body */
-
-.md { font-family: var(--plex-serif); font-size: 16px; line-height: 1.68; color: var(--ink); }
-.md > *:first-child { margin-top: 0; }
-.md h2, .md h3, .md h4 {
-  font-family: var(--plex-sans);
-  letter-spacing: -0.01em;
-  margin: 1.9em 0 0.5em;
-  scroll-margin-top: 88px;
-  text-wrap: balance;
-}
-.md h2 { font-size: 19px; font-weight: 600; }
-.md h3 { font-size: 16px; font-weight: 600; }
-.md h4 { font-size: 15px; font-weight: 600; color: var(--ink-2); }
-.md p { margin: 0 0 1.05em; }
-.md ul, .md ol { margin: 0 0 1.05em; padding-left: 1.3em; }
-.md li { margin-bottom: 0.35em; }
-.md a { color: var(--hue); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--hue) 35%, transparent); }
-.md a:hover { border-bottom-color: var(--hue); }
-.md strong { font-weight: 600; }
-.md hr { border: 0; border-top: 1px solid var(--rule); margin: 2em 0; }
-
-.md code {
-  font-family: var(--plex-mono);
-  font-size: 0.86em;
-  padding: 1px 5px;
-  background: color-mix(in srgb, var(--ink) 7%, transparent);
-  border-radius: 2px;
-}
-.md-code {
-  font-family: var(--plex-mono);
-  font-size: 13px;
-  line-height: 1.6;
-  padding: 14px 16px;
-  margin: 0 0 1.2em;
-  background: var(--card);
-  border: 1px solid var(--rule);
-  border-left: 2px solid var(--hue);
-  border-radius: 2px;
-  overflow-x: auto;
-}
-.md-code code { background: none; padding: 0; font-size: inherit; }
-
-.md blockquote {
-  margin: 0 0 1.2em;
-  padding-left: 16px;
-  border-left: 2px solid var(--rule);
-  color: var(--ink-2);
-}
-
-.md-tablewrap { overflow-x: auto; margin: 0 0 1.3em; }
-.md table { border-collapse: collapse; font-family: var(--plex-sans); font-size: 14px; min-width: 100%; }
-.md th, .md td { text-align: left; padding: 7px 14px 7px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
-.md th { font-weight: 600; font-size: 12px; color: var(--ink-3); }
-.md td code { white-space: nowrap; }
-
-/* ------------------------------------------------------------------ footer */
-
-.sitefoot {
-  grid-area: foot;
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 20px 28px;
-  border-top: 1px solid var(--rule);
-  font-size: 13px;
-  color: var(--ink-3);
-}
-.sitefoot a { color: var(--ink-2); text-decoration: none; }
-.sitefoot a:hover { color: var(--ink); }
+.sheet { padding: 40px 40px 80px; min-width: 0; }
 
 /* ------------------------------------------------------------------ motion */
 
@@ -990,48 +763,69 @@ body {
 /* ------------------------------------------------------------------ mobile */
 
 @media (max-width: 860px) {
-  .site {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "head" "rail" "sheet" "foot";
-    column-gap: 0;
-  }
+  .site { grid-template-columns: minmax(0, 1fr); }
 
-  .sitehead { flex-wrap: wrap; padding: 14px 18px; gap: 12px; }
-  .find { order: 3; flex-basis: 100%; max-width: none; }
-  .ghost { margin-left: auto; }
-
-  /* Five sections do not fit, and a hamburger would hide the site's whole
-     structure behind a tap. They scroll instead. */
-  .rail {
-    position: sticky;
-    top: 60px;
-    z-index: 4;
-    flex-direction: row;
-    gap: 4px;
-    padding: 0 18px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    background: var(--paper);
-    border-bottom: 1px solid var(--rule);
+  /* The sidebar keeps its shape and becomes a drawer, so the section list
+     reads the same on a phone as on a desktop rather than reflowing into a
+     different component. */
+  .sidenav {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(78vw, 290px);
+    z-index: 20;
+    transform: translateX(-100%);
+    transition: transform 200ms cubic-bezier(0.2, 0.7, 0.3, 1);
+    box-shadow: 0 0 0 1px var(--rule);
   }
-  .rail::-webkit-scrollbar { display: none; }
-  .railitem {
-    padding: 11px 2px;
-    gap: 7px;
-    white-space: nowrap;
-    border-radius: 0;
-    border-bottom: 2px solid transparent;
-    margin-right: 14px;
-  }
-  .railitem .mark { display: none; }
-  .railitem.on { border-bottom-color: var(--hue, var(--ink)); }
-  .railitem .n { margin-left: 0; }
+  .navopen .sidenav { transform: none; }
 
-  .sheet { padding: 24px 18px 56px; }
+  .drawertoggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 21;
+    height: 38px;
+    padding: 0 14px;
+    font: 500 13px/1 var(--plex-sans);
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .drawertoggle .bars {
+    width: 15px;
+    height: 9px;
+    border-top: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+  }
+  .navopen .drawertoggle .bars { border-bottom-color: transparent; }
+
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    border: 0;
+    padding: 0;
+    background: color-mix(in srgb, var(--ink) 42%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+  .navopen .scrim { opacity: 1; pointer-events: auto; }
+
+  .sheet { padding: 62px 18px 56px; }
   .page { max-width: none; }
   .index a { gap: 14px; padding: 15px 16px; }
   .index .n { font-size: 22px; }
   .doclist li { padding: 14px 16px; }
   .doclist .size { margin-left: 0; flex-basis: 100%; }
-  .sitefoot { flex-direction: column; gap: 6px; padding: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidenav, .scrim { transition: none; }
 }
