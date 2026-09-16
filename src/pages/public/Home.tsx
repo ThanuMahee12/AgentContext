@@ -1,10 +1,14 @@
 import { Link } from 'react-router-dom'
 
-import { content, sections, totalItems } from '../../content'
+import { content, sections, totalItems, type SectionId } from '../../content'
 
 /** The index. Its job is to show what is here and get you into it, so it
  *  leads with the actual inventory rather than a statement about the site. */
 export default function Home() {
+  // Section ids and URLs diverged when the labels were renamed, so paths come
+  // from the section list rather than being built from the id.
+  const pathFor = (id: SectionId) => sections.find((s) => s.id === id)?.path ?? '/'
+
   const recent = [
     ...content.discussions.map((d) => ({ kind: 'discussions' as const, id: d.id, title: d.title, date: d.date, note: d.summary })),
     ...content.brainstorms.map((b) => ({ kind: 'brainstorms' as const, id: b.id, title: b.title, date: b.date, note: b.summary })),
@@ -45,7 +49,7 @@ export default function Home() {
           <ul>
             {recent.map((r) => (
               <li key={`${r.kind}-${r.id}`} data-section={r.kind}>
-                <Link to={`/${r.kind}#${r.id}`}>
+                <Link to={`${pathFor(r.kind)}#${r.id}`}>
                   <time dateTime={r.date}>{r.date}</time>
                   <strong>{r.title}</strong>
                 </Link>

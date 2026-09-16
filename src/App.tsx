@@ -36,24 +36,33 @@ export default function App() {
       <Routes>
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/brainstorms" element={<Brainstorms />} />
-          <Route path="/discussions" element={<Discussions />} />
+          <Route path="/brainstorm" element={<Brainstorms />} />
+          <Route path="/ideas" element={<Discussions />} />
           <Route
             path="/kt"
-            element={<Docs section="kt" title="KT" standfirst="How to run things: commands, deployment, mappings." />}
+            element={<Docs section="kt" title="KT" standfirst="Handover material: how a project is set up and run." />}
+          />
+          <Route path="/kt/:id" element={<Docs section="kt" title="KT" standfirst="" />} />
+          <Route
+            path="/tech-commands"
+            element={
+              <Docs
+                section="notes"
+                title="Tech Commands"
+                standfirst="Commands, patterns and reference worth not re-deriving."
+              />
+            }
           />
           <Route
-            path="/kt/:id"
-            element={<Docs section="kt" title="KT" standfirst="" />}
+            path="/tech-commands/:id"
+            element={<Docs section="notes" title="Tech Commands" standfirst="" />}
           />
-          <Route
-            path="/notes"
-            element={<Docs section="notes" title="Notes" standfirst="Reference material worth not re-deriving." />}
-          />
-          <Route
-            path="/notes/:id"
-            element={<Docs section="notes" title="Notes" standfirst="" />}
-          />
+
+          {/* The old paths are already linked from elsewhere; keep them working. */}
+          <Route path="/brainstorms" element={<Navigate to="/brainstorm" replace />} />
+          <Route path="/discussions" element={<Navigate to="/ideas" replace />} />
+          <Route path="/notes" element={<Navigate to="/tech-commands" replace />} />
+          <Route path="/notes/:id" element={<Navigate to="/tech-commands" replace />} />
         </Route>
 
         <Route path="/s/:slug" element={<Published />} />
