@@ -1,0 +1,41 @@
+name: Replace the GitHub Pages site
+
+# The old mkdocs site is still served from a build made before its session notes
+# were removed, so those pages remain reachable even though the source is gone
+# and its workflow was deleted. Deleting a workflow does not unpublish anything.
+#
+# This replaces the published site with a single redirect page, which is what
+# actually takes the old URLs down. Disabling Pages entirely in repository
+# settings would also work and needs no workflow.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pages/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages
+      - id: deployment
+        uses: actions/deploy-pages@v4
