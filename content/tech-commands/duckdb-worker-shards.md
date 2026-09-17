@@ -1,6 +1,7 @@
 ---
 title: "DuckDB Worker Shards - Implementation Notes"
-description: "silver/YYYY/MM/DD/\u2026"
+project: "data-alchemy"
+description: "Per-worker SQLite shards under the silver layer, and how they merge back."
 source: "docs/notes/duckdb-worker-shards.md"
 ---
 

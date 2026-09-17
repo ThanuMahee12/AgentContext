@@ -1,5 +1,6 @@
 ---
 title: "Bloomberg BBOCAX File Patterns Reference"
+project: "data-alchemy"
 description: "All patterns for splitting bbocaxcwiqpipe into separate platinum datasets."
 source: "docs/notes/bbocax-file-patterns.md"
 ---

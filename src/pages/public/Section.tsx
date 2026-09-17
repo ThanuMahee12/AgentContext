@@ -37,6 +37,53 @@ function List({ id, items, meta }: { id: Key; items: any[]; meta: any }) {
     matches(query, tag, [i.title, i.description ?? '', i.body ?? '', ...(i.tags ?? [])], i.tags ?? []),
   )
 
+  // Where every item names a project, the list groups by it. Seven commands in
+  // a flat list is a list; the same seven under the project they belong to is a
+  // place to look something up.
+  const grouped = shown.length > 0 && shown.every((i) => i.project)
+  if (grouped) {
+    const projects = new Map<string, any[]>()
+    for (const i of shown) {
+      const list = projects.get(i.project) ?? []
+      list.push(i)
+      projects.set(i.project, list)
+    }
+    return (
+      <div className="page" data-section={id}>
+        <h1 className="pagetitle">{meta.label}</h1>
+        <p className="standfirst">{meta.blurb}</p>
+
+        {[...projects.entries()]
+          .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
+          .map(([project, list]) => (
+            <section className="group" key={project}>
+              <h2>
+                <span className="proj">{project}</span>
+                <span className="count">{list.length}</span>
+              </h2>
+              <ul className="cards">
+                {list.map((i) => (
+                  <li key={i.id}>
+                    <Link to={`${meta.path}/${i.id}`}>
+                      <span className="head">
+                        <span className="t">{i.title}</span>
+                      </span>
+                      {(i.description || firstLine(i.body)) && (
+                        <span className="d">{i.description || firstLine(i.body)}</span>
+                      )}
+                      <span className="foot">
+                        <span className="mins">{readingTime(i)}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+      </div>
+    )
+  }
+
   return (
     <div className="page" data-section={id}>
       <h1 className="pagetitle">{meta.label}</h1>

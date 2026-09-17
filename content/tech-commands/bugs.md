@@ -1,5 +1,6 @@
 ---
 title: "Data Alchemy Bugs"
+project: "data-alchemy"
 description: "Tracking bugs found in data-alchemy for future fixes."
 source: "docs/notes/data-alchemy-bugs.md"
 ---

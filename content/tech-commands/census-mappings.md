@@ -1,5 +1,6 @@
 ---
 title: "Data Census: Pattern Mappings"
+project: "data-census"
 description: "Data Census scans /sf/data/ directories to extract file metadata and maps files to delta tables via lineage mappings."
 source: "docs/notes/data-census-mappings.md"
 ---
