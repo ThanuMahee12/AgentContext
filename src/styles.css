@@ -89,18 +89,7 @@ body {
 
 /* ---------------------------------------------------------------- shell -- */
 
-.app { display: flex; flex-direction: column; height: 100%; }
 
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 0 16px;
-  height: 52px;
-  flex: 0 0 auto;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-}
 
 .brand {
   display: flex;
@@ -150,9 +139,7 @@ body {
   padding: 3px 5px;
 }
 
-.spacer { flex: 1; }
 
-.body { display: flex; flex: 1 1 auto; min-height: 0; }
 
 /* ----------------------------------------------------------------- rail -- */
 
@@ -195,7 +182,6 @@ body {
 
 /* ------------------------------------------------------------- timeline -- */
 
-.main { flex: 1 1 auto; overflow-y: auto; padding: 20px 24px 64px; }
 
 .daygroup + .daygroup { margin-top: 28px; }
 
@@ -246,12 +232,21 @@ body {
 .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .card[aria-selected="true"] { border-color: var(--accent-line); }
 
-/* the stripe encodes provider — state readable before any text is parsed */
-.card .stripe { background: var(--accent); }
-.card .stripe[data-provider="gemini"]      { background: #5b8dd6; }
-.card .stripe[data-provider="copilot"]     { background: #6f8f6f; }
-.card .stripe[data-provider="cursor"]      { background: #8b7fc4; }
-.card .stripe[data-provider="antigravity"] { background: #c47f9a; }
+/* The stripe encodes STATE, not provider.
+ *
+ * It used to carry provider identity in five hand-picked hues. Checked across
+ * every pair rather than adjacent ones, that palette failed: violet and blue
+ * sit at deltaE 9.8 for normal vision, below the floor where full-colour
+ * readers can separate them at all. Five arbitrary-adjacency categories cannot
+ * be done in colour alone, and the guidance there is to cut the series rather
+ * than dress it up.
+ *
+ * It was also encoding nothing: every session in the archive is claude. So
+ * provider is text now, and the stripe shows whether a session had failing
+ * commands - a status, which is reserved, separate from any categorical hue,
+ * and always shipped beside its own label. */
+.card .stripe { background: var(--line-lit); }
+.card .stripe[data-state="failed"] { background: var(--err); }
 
 .card .inner { padding: 10px 12px; min-width: 0; }
 
@@ -1329,3 +1324,38 @@ body {
   border-left-width: 1px;
   border-left-color: var(--line);
 }
+
+/* ==========================================================================
+   Session archive — the same shell as the public site, with filters in place
+   of the section list. Sharing the shell means the two halves read as one
+   product rather than two applications behind one URL.
+   ========================================================================== */
+
+.site.admin { grid-template-columns: 250px minmax(0, 1fr); }
+
+.admin .here {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin: -14px 0 0;
+  font: 500 12px/1 var(--plex-sans);
+  color: var(--text-2);
+}
+.admin .here .src {
+  font: 400 10px/1.8 var(--plex-mono);
+  color: var(--text-3);
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.admin .facets { display: grid; gap: 22px; }
+.admin .sheet { padding: 28px 28px 72px; }
+
+/* The dashboard has no section hue of its own; its accent is the archive's. */
+.site.admin { --hue: var(--s-dashboard); }
+
+.admin .navitem.dash { color: var(--text-2); }
+.admin .navitem.dash:hover { color: var(--s-dashboard); }
+.admin .navfoot { gap: 10px; }
+.admin .navfoot .ghost { align-self: start; }

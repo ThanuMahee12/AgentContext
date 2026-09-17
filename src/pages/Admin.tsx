@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { signOut, type User } from 'firebase/auth'
+import { Link } from 'react-router-dom'
 import SessionDetail from '../components/SessionDetail'
 import { auth } from '../firebase'
 import { FirestoreSource } from '../data/firestore'
@@ -89,47 +90,30 @@ export default function Admin({ user }: { user: User | null }) {
   const shown = days.reduce((n, d) => n + d.sessions.length, 0)
 
   return (
-    <div className="app">
-      <div className="topbar">
-        <div className="brand">
-          <span className="dot" />
+    <div className="site admin">
+      <aside className="sidenav">
+        <Link to="/" className="wordmark">
+          <span className="glyph" aria-hidden />
           AgentContext
-          <small>{source.name}</small>
-        </div>
+        </Link>
 
-        <div className="search">
-          <span aria-hidden style={{ color: 'var(--text-3)' }}>⌕</span>
+        <p className="here">
+          Session archive
+          <span className="src">{source.name}</span>
+        </p>
+
+        <label className="find">
+          <span className="sr">Search</span>
           <input
             ref={searchRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search sessions, commands, files, links…"
-            aria-label="Search"
+            placeholder="Search commands, files…"
+            aria-label="Search sessions"
           />
-          <kbd>/</kbd>
-        </div>
+        </label>
 
-        <div className="spacer" />
-        {user && (
-          <button className="iconbtn" onClick={() => signOut(auth)} title={user.email ?? undefined}>
-            Sign out
-          </button>
-        )}
-      </div>
-
-      {source.name === 'fixtures' && (
-        <div className="banner">
-          Local fixtures from AgentProbe — development only, never shipped to a build.
-        </div>
-      )}
-      {source.name === 'not-connected' && (
-        <div className="banner">
-          No data source configured. Firestore is not wired up yet, so this dashboard is empty.
-        </div>
-      )}
-
-      <div className="body">
-        <nav className="rail" aria-label="Filters">
+        <nav aria-label="Filters" className="facets">
           <Facet title="Project" options={f.projects} selected={projects} onChange={setProjects}
             counts={countBy(sessions, (s) => s.project)} />
           <Facet title="Provider" options={f.providers} selected={providers} onChange={setProviders}
@@ -138,7 +122,26 @@ export default function Admin({ user }: { user: User | null }) {
             counts={countBy(sessions, (s) => s.os_user)} />
         </nav>
 
-        <main className="main">
+        <div className="navfoot">
+          {/* A dashboard with no way back to the site it belongs to is a dead end. */}
+          <Link className="navitem dash" to="/">
+            <span className="label">Public site</span>
+          </Link>
+          {user && (
+            <button className="ghost" onClick={() => signOut(auth)} title={user.email ?? undefined}>
+              Sign out
+            </button>
+          )}
+        </div>
+      </aside>
+
+      <main className="sheet">
+        {source.name === 'not-connected' && (
+          <div className="banner">
+            No data source configured. Firestore is not wired up yet, so this dashboard is empty.
+          </div>
+        )}
+
           {loading ? (
             <p className="empty">Loading…</p>
           ) : error ? (
@@ -190,10 +193,9 @@ export default function Admin({ user }: { user: User | null }) {
               ))}
             </>
           )}
-        </main>
+      </main>
 
-        {selected && <SessionDetail session={selected} onClose={() => setSelected(null)} />}
-      </div>
+      {selected && <SessionDetail session={selected} onClose={() => setSelected(null)} />}
     </div>
   )
 }
@@ -220,6 +222,8 @@ function SessionCard({
           <time dateTime={session.started}>{formatTime(session.started)}</time>
           <span className="project">{session.project}</span>
           <span className="who">
+            {session.provider}
+            {' · '}
             {session.os_user}
             {session.git_branch && session.git_branch !== 'HEAD' ? ` · ${session.git_branch}` : ''}
           </span>
