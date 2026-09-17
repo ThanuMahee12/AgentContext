@@ -7,9 +7,7 @@ import Admin from './pages/Admin'
 import Published from './pages/Published'
 import PublicLayout from './pages/public/Layout'
 import Home from './pages/public/Home'
-import Brainstorms from './pages/public/Brainstorms'
-import Discussions from './pages/public/Discussions'
-import Docs from './pages/public/Docs'
+import Section from './pages/public/Section'
 import { auth } from './firebase'
 import { getSource } from './data/source'
 
@@ -36,33 +34,20 @@ export default function App() {
       <Routes>
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/brainstorm" element={<Brainstorms />} />
-          <Route path="/ideas" element={<Discussions />} />
-          <Route
-            path="/kt"
-            element={<Docs section="kt" title="KT" standfirst="Handover material: how a project is set up and run." />}
-          />
-          <Route path="/kt/:id" element={<Docs section="kt" title="KT" standfirst="" />} />
-          <Route
-            path="/tech-commands"
-            element={
-              <Docs
-                section="notes"
-                title="Tech Commands"
-                standfirst="Commands, patterns and reference worth not re-deriving."
-              />
-            }
-          />
-          <Route
-            path="/tech-commands/:id"
-            element={<Docs section="notes" title="Tech Commands" standfirst="" />}
-          />
+          <Route path="/brainstorm" element={<Section id="brainstorms" />} />
+          <Route path="/brainstorm/:docId" element={<Section id="brainstorms" />} />
+          <Route path="/kt" element={<Section id="kt" />} />
+          <Route path="/kt/:docId" element={<Section id="kt" />} />
+          <Route path="/ideas" element={<Section id="discussions" />} />
+          <Route path="/ideas/:docId" element={<Section id="discussions" />} />
+          <Route path="/tech-commands" element={<Section id="notes" />} />
+          <Route path="/tech-commands/:docId" element={<Section id="notes" />} />
 
-          {/* The old paths are already linked from elsewhere; keep them working. */}
+          {/* Older paths stay working; they are linked from the repository. */}
           <Route path="/brainstorms" element={<Navigate to="/brainstorm" replace />} />
           <Route path="/discussions" element={<Navigate to="/ideas" replace />} />
           <Route path="/notes" element={<Navigate to="/tech-commands" replace />} />
-          <Route path="/notes/:id" element={<Navigate to="/tech-commands" replace />} />
+          <Route path="/notes/:docId" element={<Navigate to="/tech-commands" replace />} />
         </Route>
 
         <Route path="/s/:slug" element={<Published />} />

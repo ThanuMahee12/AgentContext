@@ -93,7 +93,7 @@ export default function Home() {
           <ol className="ranked">
             {longest.map((d) => (
               <li key={d.id} data-section={sectionOf(content, d.id)}>
-                <Link to={`${pathOf(sectionOf(content, d.id))}${isDoc(content, d.id) ? '/' + d.id : '#' + d.id}`}>
+                <Link to={`${pathOf(sectionOf(content, d.id))}/${d.id}`}>
                   <span className="t">{d.title}</span>
                   <span className="mins">{Math.max(1, Math.round(d.words / 220))} min</span>
                 </Link>
@@ -146,8 +146,5 @@ function sectionOf(content: any, id: string): SectionId {
   return 'home'
 }
 
-/** kt and notes are documents with their own page; the others are listed inline. */
-const isDoc = (content: any, id: string) =>
-  content.kt.some((i: any) => i.id === id) || content.notes.some((i: any) => i.id === id)
 
 const pathOf = (id: SectionId) => sections.find((s) => s.id === id)?.path ?? '/'

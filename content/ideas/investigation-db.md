@@ -1,5 +1,6 @@
 ---
 title: "Investigation DB: Pattern-Based Reverse Lookup + Notion"
+description: "Pattern-based reverse lookup for data pipelines + Notion service tracking."
 date: "2026-01-17"
 url: "https://git.codewilling.com/-/snippets/4"
 tags: ["notion", "infrastructure", "patterns", "reverse-lookup"]

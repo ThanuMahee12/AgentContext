@@ -1,5 +1,6 @@
 ---
 title: "Mapping"
+description: "Bloomberg Back Office Corporate Actions (bbocax) files from bbocaxcwiqpipe need to be mapped to multiple target datasets."
 project: "data-alchemy"
 source: "docs/notes/projects/data-alchemy/mapping.md"
 ---

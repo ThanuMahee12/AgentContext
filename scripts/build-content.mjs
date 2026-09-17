@@ -43,6 +43,7 @@ function load(folder) {
       return {
         id: f.replace(/\.md$/, ''),
         title: meta.title || f.replace(/\.md$/, ''),
+        description: meta.description || '',
         date: meta.date || '',
         status: meta.status || '',
         url: meta.url || '',

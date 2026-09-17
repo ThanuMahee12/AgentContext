@@ -25,6 +25,7 @@ export interface Heading {
 export interface Discussion {
   id: string
   title: string
+  description?: string
   date: string
   summary: string
   url: string
@@ -37,6 +38,7 @@ export interface Discussion {
 export interface Brainstorm {
   id: string
   title: string
+  description?: string
   date: string
   status: string
   summary: string
@@ -49,6 +51,8 @@ export interface Brainstorm {
 export interface Doc {
   id: string
   title: string
+  /** One line under the heading. Optional; the list falls back to headings. */
+  description?: string
   body: string
   headings: Heading[]
   source: string

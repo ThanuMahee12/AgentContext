@@ -1,5 +1,7 @@
 import { Fragment, type ReactNode } from 'react'
 
+import { Figure, classify } from './Media'
+
 /** Render markdown as React elements.
  *
  *  Deliberately not a markdown-to-HTML library plus dangerouslySetInnerHTML.
@@ -11,6 +13,11 @@ import { Fragment, type ReactNode } from 'react'
  *  inline code, bullet and numbered lists, tables, blockquotes, rules, links,
  *  bold and italic. Anything unrecognised renders as its literal text rather
  *  than disappearing.
+ *
+ *  Media is block-level: a line holding only an image, a video, or a bare URL
+ *  on an allowlisted embed host becomes a figure. Inline `![]()` inside a
+ *  sentence stays inline, because that is what the author meant by putting it
+ *  there.
  */
 export default function Markdown({ source }: { source: string }) {
   return <div className="md">{renderBlocks(source)}</div>
@@ -39,6 +46,22 @@ function renderBlocks(src: string): ReactNode[] {
           <code>{body.join('\n')}</code>
         </pre>,
       )
+      continue
+    }
+
+    // a line holding only an image or video: ![alt](url)
+    const media = line.trim().match(/^!\[([^\]]*)\]\(([^)\s]+)\)$/)
+    if (media) {
+      out.push(<Figure key={key++} url={media[2]} alt={media[1]} />)
+      i++
+      continue
+    }
+
+    // a bare URL alone on a line, if it is something we can embed or show
+    const bare = line.trim()
+    if (/^https:\/\/\S+$/.test(bare) && classify(bare) !== 'link') {
+      out.push(<Figure key={key++} url={bare} alt="" />)
+      i++
       continue
     }
 
@@ -131,7 +154,7 @@ export function slug(s: string): string {
  *  inside a code span is left alone. */
 function inline(text: string): ReactNode {
   const parts: ReactNode[] = []
-  const re = /(`[^`]+`)|(\[[^\]]+\]\([^)]+\))|(\*\*[^*]+\*\*)|(\*[^*]+\*|_[^_]+_)|(https?:\/\/[^\s<>()]+)/g
+  const re = /(`[^`]+`)|(!\[[^\]]*\]\([^)]+\))|(\[[^\]]+\]\([^)]+\))|(\*\*[^*]+\*\*)|(\*[^*]+\*|_[^_]+_)|(https?:\/\/[^\s<>()]+)/g
   let last = 0
   let m: RegExpExecArray | null
   let key = 0
@@ -141,6 +164,9 @@ function inline(text: string): ReactNode {
     const tok = m[0]
     if (tok.startsWith('`')) {
       parts.push(<code key={key++}>{tok.slice(1, -1)}</code>)
+    } else if (tok.startsWith('![')) {
+      const img = tok.match(/^!\[([^\]]*)\]\(([^)]+)\)$/)!
+      parts.push(<img className="inline-img" key={key++} src={img[2]} alt={img[1]} loading="lazy" />)
     } else if (tok.startsWith('[')) {
       const link = tok.match(/^\[([^\]]+)\]\(([^)]+)\)$/)!
       parts.push(<a key={key++} href={link[2]} target="_blank" rel="noreferrer noopener">{link[1]}</a>)

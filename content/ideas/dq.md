@@ -1,5 +1,6 @@
 ---
 title: "Data Quality (DQ): Pipeline Validation"
+description: "Data quality framework across entire data-alchemy pipeline."
 date: "2026-01-17"
 url: "https://git.codewilling.com/alchmy/inverstigations/-/issues/2"
 tags: ["validation", "data-quality", "data-alchemy"]

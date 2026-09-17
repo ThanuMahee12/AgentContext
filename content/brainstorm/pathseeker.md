@@ -1,5 +1,6 @@
 ---
 title: "PathSeeker: Path Analysis & Pattern Extraction"
+description: "CLI tool for path analysis and pattern extraction."
 date: "2026-01-16"
 gist: "https://gist.github.com/ThanuMahee12/75938d6097425ee9c3d6690be29e6558"
 tags: ["cli", "path-analysis", "pattern-extraction", "tool"]

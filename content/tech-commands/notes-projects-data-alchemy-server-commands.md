@@ -1,5 +1,6 @@
 ---
 title: "Server Commands Reference"
+description: "Useful commands for production server operations."
 source: "docs/notes/projects/data-alchemy/server-commands.md"
 ---
 

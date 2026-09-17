@@ -1,5 +1,6 @@
 ---
 title: "Parallelism Testing Notes"
+description: "Non-parquet files (.dif, .out, .dlt) show Map[-1] (unknown) in sequential mode but correct Map[68]/Map[69] in parallel mode."
 source: "docs/notes/parallelism-testing.md"
 ---
 

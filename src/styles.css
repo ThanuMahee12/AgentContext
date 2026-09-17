@@ -1027,4 +1027,106 @@ body {
   .split { grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .bars a { grid-template-columns: 92px minmax(0, 1fr); row-gap: 6px; }
   .barvalue { grid-column: 2; justify-self: start; }
+
+  .cards a { padding: 15px 16px; }
+}
+
+/* ------------------------------------------------------------- section list */
+
+.cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.cards li { background: var(--surface); border-radius: var(--r-s); }
+.cards li:hover { background: var(--raised); }
+.cards a {
+  display: grid;
+  gap: 7px;
+  padding: 17px 19px;
+  text-decoration: none;
+  color: inherit;
+  border-left: 2px solid transparent;
+  border-radius: var(--r-s);
+}
+.cards a:hover { border-left-color: var(--hue); }
+.cards .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+.cards .t {
+  font-family: var(--plex-serif);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.cards a:hover .t { color: var(--hue); }
+.cards .d { color: var(--text-2); font-size: 14px; line-height: 1.55; }
+.cards .foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font: 400 12px/1 var(--plex-mono);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------- doc header */
+
+.reading .meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 20px;
+  font: 400 12px/1 var(--plex-mono);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.project {
+  font-size: 11px;
+  padding: 0 8px;
+  line-height: 1.8;
+  color: var(--hue);
+  background: color-mix(in srgb, var(--hue) 14%, transparent);
+  border-radius: 999px;
+}
+
+/* -------------------------------------------------------------------- media */
+
+.fig { margin: 0 0 1.4em; }
+.fig img, .fig video {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--surface);
+}
+.fig figcaption {
+  margin-top: 8px;
+  font: 400 12px/1.55 var(--plex-sans);
+  color: var(--text-3);
+}
+
+/* 16:9 without letting the iframe dictate layout */
+.fig .frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  overflow: hidden;
+  background: var(--surface);
+}
+.fig .frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* An embed host we do not allow still shows its link rather than vanishing. */
+.fig-fallback { margin: 0 0 1.2em; font-size: 14px; }
+.fig-fallback a { color: var(--hue); }
+
+.inline-img {
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+  border-radius: 3px;
 }

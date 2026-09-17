@@ -1,5 +1,6 @@
 ---
 title: "data-alchemy-staging: Sample File Generation"
+description: "Complete design for staging/sampling from bronze layer."
 date: "2026-01-18"
 url: "https://git.codewilling.com/-/snippets/6"
 tags: ["staging", "sampling", "bronze", "manifest", "data-alchemy"]

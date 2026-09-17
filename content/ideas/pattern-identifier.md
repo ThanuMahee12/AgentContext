@@ -1,5 +1,6 @@
 ---
 title: "Pattern Identifier: Auto Regex Suggestion"
+description: "Tool to identify patterns and suggest regex for unknown file paths."
 date: "2026-01-18"
 url: "https://git.codewilling.com/-/snippets/7"
 tags: ["regex", "patterns", "sf-storage-migration", "automation"]

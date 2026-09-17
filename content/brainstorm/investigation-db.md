@@ -1,5 +1,6 @@
 ---
 title: "Investigation DB: Pattern-Based Reverse Lookup"
+description: "Pattern-based reverse lookup for data pipelines."
 date: "2026-01-16"
 status: "implementing"
 gist: "https://gist.github.com/ThanuMahee12/10ca4add500e93626342da06475966eb"

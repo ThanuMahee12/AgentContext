@@ -1,5 +1,6 @@
 ---
 title: "GICS Pipeline: S&P Data Processing"
+description: "S&P Global Industry Classification Standard (GICS) data pipeline."
 date: "2026-01-17"
 url: "https://git.codewilling.com/alchmy/inverstigations/-/issues/1"
 tags: ["pipeline", "sp", "data-alchemy"]

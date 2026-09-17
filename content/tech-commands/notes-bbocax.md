@@ -1,5 +1,6 @@
 ---
 title: "Bloomberg BBOCAX Mapping Notes"
+description: "Bloomberg Back Office Corporate Actions (BBOCAX) dataset mapping for data-alchemy pipeline."
 source: "docs/notes/bbocax.md"
 ---
 

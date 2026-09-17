@@ -1,5 +1,6 @@
 ---
 title: "DuckDB Worker Shards - Implementation Notes"
+description: "silver/YYYY/MM/DD/\u2026"
 source: "docs/notes/duckdb-worker-shards.md"
 ---
 

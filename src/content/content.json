@@ -1,9 +1,10 @@
 {
-  "generated_at": "2026-09-17T09:13:15.484Z",
+  "generated_at": "2026-09-17T09:20:43.454Z",
   "brainstorms": [
     {
       "id": "investigation-db",
       "title": "Investigation DB: Pattern-Based Reverse Lookup",
+      "description": "Pattern-based reverse lookup for data pipelines.",
       "date": "2026-01-16",
       "status": "implementing",
       "url": "",
@@ -43,6 +44,7 @@
     {
       "id": "pathseeker",
       "title": "PathSeeker: Path Analysis & Pattern Extraction",
+      "description": "CLI tool for path analysis and pattern extraction.",
       "date": "2026-01-16",
       "status": "",
       "url": "",
@@ -75,6 +77,7 @@
     {
       "id": "pattern-identifier",
       "title": "Pattern Identifier: Auto Regex Suggestion",
+      "description": "Tool to identify patterns and suggest regex for unknown file paths.",
       "date": "2026-01-18",
       "status": "",
       "url": "https://git.codewilling.com/-/snippets/7",
@@ -96,6 +99,7 @@
     {
       "id": "staging",
       "title": "data-alchemy-staging: Sample File Generation",
+      "description": "Complete design for staging/sampling from bronze layer.",
       "date": "2026-01-18",
       "status": "",
       "url": "https://git.codewilling.com/-/snippets/6",
@@ -118,6 +122,7 @@
     {
       "id": "dq",
       "title": "Data Quality (DQ): Pipeline Validation",
+      "description": "Data quality framework across entire data-alchemy pipeline.",
       "date": "2026-01-17",
       "status": "",
       "url": "https://git.codewilling.com/alchmy/inverstigations/-/issues/2",
@@ -138,6 +143,7 @@
     {
       "id": "gics",
       "title": "GICS Pipeline: S&P Data Processing",
+      "description": "S&P Global Industry Classification Standard (GICS) data pipeline.",
       "date": "2026-01-17",
       "status": "",
       "url": "https://git.codewilling.com/alchmy/inverstigations/-/issues/1",
@@ -167,6 +173,7 @@
     {
       "id": "investigation-db",
       "title": "Investigation DB: Pattern-Based Reverse Lookup + Notion",
+      "description": "Pattern-based reverse lookup for data pipelines + Notion service tracking.",
       "date": "2026-01-17",
       "status": "",
       "url": "https://git.codewilling.com/-/snippets/4",
@@ -188,6 +195,7 @@
     {
       "id": "discussions-sqlite-parallelism-bottleneck",
       "title": "SQLite Parallelism Bottleneck: Per-Worker SQLite + DuckDB Read Layer",
+      "description": "Current SQLite architecture has write lock contention when running parallel workers (-p…",
       "date": "",
       "status": "",
       "url": "",
@@ -451,6 +459,7 @@
     {
       "id": "notes-projects-data-alchemy-devops",
       "title": "DevOps - data-alchemy",
+      "description": "uv run acl -p…",
       "date": "",
       "status": "",
       "url": "",
@@ -544,6 +553,7 @@
     {
       "id": "notes-projects-data-alchemy-mapping",
       "title": "Mapping",
+      "description": "Bloomberg Back Office Corporate Actions (bbocax) files from bbocaxcwiqpipe need to be mapped to multiple target datasets.",
       "date": "",
       "status": "",
       "url": "",
@@ -679,6 +689,7 @@
     {
       "id": "notes-bbocax-file-patterns",
       "title": "Bloomberg BBOCAX File Patterns Reference",
+      "description": "All patterns for splitting bbocaxcwiqpipe into separate platinum datasets.",
       "date": "",
       "status": "",
       "url": "",
@@ -740,6 +751,7 @@
     {
       "id": "notes-bbocax",
       "title": "Bloomberg BBOCAX Mapping Notes",
+      "description": "Bloomberg Back Office Corporate Actions (BBOCAX) dataset mapping for data-alchemy pipeline.",
       "date": "",
       "status": "",
       "url": "",
@@ -849,6 +861,7 @@
     {
       "id": "notes-data-alchemy-bugs",
       "title": "Data Alchemy Bugs",
+      "description": "Tracking bugs found in data-alchemy for future fixes.",
       "date": "",
       "status": "",
       "url": "",
@@ -870,6 +883,7 @@
     {
       "id": "notes-data-census-mappings",
       "title": "Data Census: Pattern Mappings",
+      "description": "Data Census scans /sf/data/ directories to extract file metadata and maps files to delta tables via lineage mappings.",
       "date": "",
       "status": "",
       "url": "",
@@ -971,6 +985,7 @@
     {
       "id": "notes-duckdb-worker-shards",
       "title": "DuckDB Worker Shards - Implementation Notes",
+      "description": "silver/YYYY/MM/DD/…",
       "date": "",
       "status": "",
       "url": "",
@@ -1096,6 +1111,7 @@
     {
       "id": "notes-parallelism-testing",
       "title": "Parallelism Testing Notes",
+      "description": "Non-parquet files (.dif, .out, .dlt) show Map[-1] (unknown) in sequential mode but correct Map[68]/Map[69] in parallel mode.",
       "date": "",
       "status": "",
       "url": "",
@@ -1157,6 +1173,7 @@
     {
       "id": "notes-projects-data-alchemy-server-commands",
       "title": "Server Commands Reference",
+      "description": "Useful commands for production server operations.",
       "date": "",
       "status": "",
       "url": "",

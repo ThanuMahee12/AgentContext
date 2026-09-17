@@ -1,5 +1,6 @@
 ---
 title: "DevOps - data-alchemy"
+description: "uv run acl -p\u2026"
 project: "data-alchemy"
 source: "docs/notes/projects/data-alchemy/Devops.md"
 ---
