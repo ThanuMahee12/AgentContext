@@ -3,72 +3,151 @@ import { Link } from 'react-router-dom'
 import { SECTION_KEY, sections, type SectionId } from '../../content'
 import { useAppSelector } from '../../store'
 
-/** The index. Its job is to show what is here and get you into it, so it
- *  leads with the actual inventory rather than a statement about the site. */
+/** The public overview.
+ *
+ *  An index of four links does not need a page; what a reader wants first is a
+ *  sense of how much is here and where the weight sits. So this leads with the
+ *  totals, then the split by volume, then the things actually worth opening.
+ *
+ *  Two things are deliberately NOT charted. Every dated item falls inside a
+ *  three-day window, so a timeline would draw a trend that does not exist. And
+ *  the most-used tag appears three times - encoding that as bar length is noise,
+ *  so tags are entry points rather than a chart.
+ */
 export default function Home() {
   const content = useAppSelector((s) => s.content)
-  const totalItems =
-    content.brainstorms.length + content.kt.length + content.discussions.length + content.notes.length
 
-  // Section ids and URLs diverged when the labels were renamed, so paths come
-  // from the section list rather than being built from the id.
-  const pathFor = (id: SectionId) => sections.find((s) => s.id === id)?.path ?? '/'
+  const keys = ['brainstorms', 'kt', 'discussions', 'notes'] as const
+  const rows = sections
+    .filter((s) => s.id !== 'home')
+    .map((s) => {
+      const items = content[SECTION_KEY[s.id as Exclude<SectionId, 'home'>]]
+      const words = items.reduce((n, i: any) => n + countWords(i.body ?? i.summary ?? ''), 0)
+      return { ...s, count: items.length, words }
+    })
 
-  const recent = [
-    ...content.discussions.map((d) => ({ kind: 'discussions' as const, id: d.id, title: d.title, date: d.date, note: d.summary })),
-    ...content.brainstorms.map((b) => ({ kind: 'brainstorms' as const, id: b.id, title: b.title, date: b.date, note: b.summary })),
-  ]
-    .filter((x) => x.date)
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 4)
+  const totalItems = rows.reduce((n, r) => n + r.count, 0)
+  const totalWords = rows.reduce((n, r) => n + r.words, 0)
+  const widest = Math.max(...rows.map((r) => r.words), 1)
+
+  const longest = keys
+    .flatMap((k) => content[k] as any[])
+    .map((d) => ({ ...d, words: countWords(d.body ?? d.summary ?? '') }))
+    .filter((d) => d.body)
+    .sort((a, b) => b.words - a.words)
+    .slice(0, 5)
+
+  const topics = tagCounts(content)
 
   return (
-    <div className="page reveal">
-      <h1 className="pagetitle">
-        {totalItems} pieces of working knowledge
-      </h1>
+    <div className="page dash">
+      <h1 className="pagetitle">Working knowledge</h1>
       <p className="standfirst">
-        Data-pipeline notes, reference material and half-finished ideas, kept where they can be
-        found again.
+        Notes, reference and half-finished ideas from building data pipelines — kept where they
+        can be found again.
       </p>
 
-      <ul className="index">
-        {sections
-          .filter((s) => s.id !== 'home')
-          .map((s) => (
-            <li key={s.id} data-section={s.id}>
-              <Link to={s.path}>
-                <span className="n">{content[SECTION_KEY[s.id as Exclude<SectionId, 'home'>]].length}</span>
-                <span className="body">
-                  <strong>{s.label}</strong>
-                  <span>{s.blurb}</span>
+      <dl className="figures">
+        <div>
+          <dt>Documents</dt>
+          <dd>{totalItems}</dd>
+        </div>
+        <div>
+          <dt>Words</dt>
+          <dd>{formatK(totalWords)}</dd>
+        </div>
+        <div>
+          <dt>Topics</dt>
+          <dd>{topics.length}</dd>
+        </div>
+        <div>
+          <dt>Reading</dt>
+          <dd>{Math.round(totalWords / 220)}<span className="unit">min</span></dd>
+        </div>
+      </dl>
+
+      {/* Magnitude across four named categories: a horizontal bar, direct
+          labelled. Four series with their names beside them need no legend. */}
+      <section className="panel">
+        <h2>Where the weight sits</h2>
+        <ul className="bars">
+          {rows.map((r) => (
+            <li key={r.id} data-section={r.id}>
+              <Link to={r.path}>
+                <span className="barlabel">{r.label}</span>
+                <span className="track">
+                  <span className="fill" style={{ width: `${Math.max(2, (r.words / widest) * 100)}%` }} />
+                </span>
+                <span className="barvalue">
+                  {r.count}<span className="sep">·</span>{formatK(r.words)}w
                 </span>
               </Link>
             </li>
           ))}
-      </ul>
+        </ul>
+      </section>
 
-      {recent.length > 0 && (
-        <section className="recent">
-          <h2>Most recent</h2>
-          <ul>
-            {recent.map((r) => (
-              <li key={`${r.kind}-${r.id}`} data-section={r.kind}>
-                <Link to={`${pathFor(r.kind)}#${r.id}`}>
-                  <time dateTime={r.date}>{r.date}</time>
-                  <strong>{r.title}</strong>
+      <div className="split">
+        <section className="panel">
+          <h2>Longest reads</h2>
+          <ol className="ranked">
+            {longest.map((d) => (
+              <li key={d.id} data-section={sectionOf(content, d.id)}>
+                <Link to={`${pathOf(sectionOf(content, d.id))}${isDoc(content, d.id) ? '/' + d.id : '#' + d.id}`}>
+                  <span className="t">{d.title}</span>
+                  <span className="mins">{Math.max(1, Math.round(d.words / 220))} min</span>
                 </Link>
-                <p>{clamp(r.note, 150)}</p>
               </li>
             ))}
-          </ul>
+          </ol>
         </section>
-      )}
+
+        <section className="panel">
+          <h2>Topics</h2>
+          <p className="topics">
+            {topics.slice(0, 14).map((t) => (
+              <span className="topic" key={t.tag}>
+                {t.tag}
+                {t.count > 1 && <span className="c">{t.count}</span>}
+              </span>
+            ))}
+          </p>
+        </section>
+      </div>
     </div>
   )
 }
 
-function clamp(s: string, n: number): string {
-  if (!s) return ''
-  return s.length > n ? s.slice(0, n).replace(/\s+\S*$/, '') + '…' : s
+// ---------------------------------------------------------------------------
+
+const countWords = (s: string) => (s ? s.trim().split(/\s+/).length : 0)
+const formatK = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
+
+function tagCounts(content: any) {
+  const counts = new Map<string, number>()
+  for (const item of [...content.discussions, ...content.brainstorms]) {
+    for (const t of item.tags ?? []) counts.set(t, (counts.get(t) ?? 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
 }
+
+/** Which section a document id belongs to, so a link can be built for it. */
+function sectionOf(content: any, id: string): SectionId {
+  for (const [key, section] of [
+    ['brainstorms', 'brainstorms'],
+    ['kt', 'kt'],
+    ['discussions', 'discussions'],
+    ['notes', 'notes'],
+  ] as const) {
+    if (content[key].some((i: any) => i.id === id)) return section as SectionId
+  }
+  return 'home'
+}
+
+/** kt and notes are documents with their own page; the others are listed inline. */
+const isDoc = (content: any, id: string) =>
+  content.kt.some((i: any) => i.id === id) || content.notes.some((i: any) => i.id === id)
+
+const pathOf = (id: SectionId) => sections.find((s) => s.id === id)?.path ?? '/'

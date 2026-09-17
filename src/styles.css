@@ -25,11 +25,16 @@
   --text-2:    #9aa6bd;
   --text-3:    #64718c;
 
-  --s-brainstorms: #a78bfa;
-  --s-kt:          #5eead4;
-  --s-discussions: #fbbf24;
-  --s-notes:       #7dd3fc;
-  --s-dashboard:   #f472b6;
+  /* Categorical identity, validated for the dark band rather than chosen by eye:
+     OKLCH L inside 0.48-0.67, chroma >= 0.10, worst adjacent CVD deltaE 8.4,
+     and every hue >= 4.5:1 against this ground so it can carry link text too.
+     Sections are always named beside their colour, so identity never rests on
+     hue alone. */
+  --s-brainstorms: #9085e9;  /* violet  6.14:1 */
+  --s-kt:          #199e70;  /* aqua    5.64:1 */
+  --s-discussions: #c98500;  /* yellow  6.25:1 */
+  --s-notes:       #3987e5;  /* blue    5.27:1 */
+  --s-dashboard:   #d55181;  /* magenta 4.87:1 */
 
   --ok:        #4ade80;
   --ok-soft:   #10241a;
@@ -700,53 +705,119 @@ body {
 .crumb a { color: var(--text-3); text-decoration: none; }
 .crumb a:hover { color: var(--text); }
 
-/* -------------------------------------------------------------- home index */
+/* ---------------------------------------------------------------- overview */
 
-.index {
-  list-style: none;
-  margin: 0 0 48px;
-  padding: 0;
+.dash .standfirst { margin-bottom: 30px; }
+
+/* Figures, not tiles. No boxes, no shadows - a rule and the number carries it. */
+.figures {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 0 34px;
+  padding: 0;
+  background: var(--line);
+  border-block: 1px solid var(--line);
 }
-.index a {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 18px 20px;
-  text-decoration: none;
-  color: inherit;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-left: 2px solid var(--hue);
-  border-radius: var(--r-s);
+.figures > div { background: var(--ground); padding: 16px 18px 15px; }
+.figures dt {
+  font: 500 11px/1 var(--plex-sans);
+  color: var(--text-3);
+  margin-bottom: 9px;
 }
-.index a:hover { background: var(--raised); border-color: var(--line-lit); border-left-color: var(--hue); }
-.index .n {
-  font-family: var(--plex-mono);
-  font-size: 28px;
+.figures dd {
+  margin: 0;
+  font: 400 27px/1 var(--plex-mono);
+  color: var(--text);
   font-variant-numeric: tabular-nums;
-  color: var(--hue);
-  min-width: 2.2ch;
-  text-align: right;
+  letter-spacing: -0.02em;
 }
-.index .body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.index .body strong { font-size: 15px; font-weight: 600; }
-.index .body span { color: var(--text-2); font-size: 14px; }
+.figures .unit { font-size: 14px; color: var(--text-3); margin-left: 3px; }
 
-.recent h2 {
-  font-family: var(--plex-sans);
-  font-size: 13px; font-weight: 600;
+.panel { margin-bottom: 34px; }
+.panel h2 {
+  font: 600 13px/1 var(--plex-sans);
   color: var(--text-3);
   margin: 0 0 14px;
 }
-.recent ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; }
-.recent li { border-left: 2px solid var(--hue); padding-left: 16px; }
-.recent a { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; text-decoration: none; color: inherit; }
-.recent a strong { font-size: 15px; }
-.recent a:hover strong { color: var(--hue); }
-.recent time { font: 400 12px/1 var(--plex-mono); color: var(--text-3); font-variant-numeric: tabular-nums; }
-.recent p { margin: 6px 0 0; font-size: 14px; color: var(--text-2); }
+
+/* ---- magnitude bars ---- */
+
+.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.bars a {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 10px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--r-s);
+}
+.bars a:hover { background: var(--surface); }
+.barlabel { font-size: 14px; font-weight: 500; }
+.track { height: 9px; background: var(--surface); border-radius: 2px; overflow: hidden; }
+/* 4px rounded data-end, anchored flat to the baseline it grows from */
+.fill {
+  display: block;
+  height: 100%;
+  background: var(--hue);
+  border-radius: 2px 4px 4px 2px;
+}
+.barvalue {
+  font: 400 12px/1 var(--plex-mono);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.barvalue .sep { color: var(--text-3); margin: 0 5px; }
+
+/* ---- ranked list + topics ---- */
+
+.split { display: grid; grid-template-columns: 1.35fr 1fr; gap: 34px; align-items: start; }
+
+.ranked { list-style: none; margin: 0; padding: 0; counter-reset: r; display: grid; gap: 1px; }
+.ranked li { counter-increment: r; }
+.ranked a {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 10px 9px 0;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid var(--line);
+}
+.ranked a::before {
+  content: counter(r);
+  font: 400 11px/1 var(--plex-mono);
+  color: var(--text-3);
+  min-width: 14px;
+}
+.ranked a:hover .t { color: var(--hue); }
+.ranked .t { font-size: 14px; }
+.ranked .mins {
+  margin-left: auto;
+  font: 400 12px/1 var(--plex-mono);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.topics { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.topic {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 400 12px/1 var(--plex-mono);
+  padding: 6px 9px;
+  color: var(--text-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.topic .c {
+  font-size: 10px;
+  color: var(--text-3);
+  padding-left: 6px;
+  border-left: 1px solid var(--line);
+}
 
 /* ----------------------------------------------------------------- entries */
 
@@ -885,11 +956,6 @@ body {
 /* Framer Motion drives page transitions and the nav marker. CSS keeps only the
    staggered arrival of the home index, which needs no state. */
 @keyframes rise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
-.index li { animation: rise 320ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
-.index li:nth-child(1) { animation-delay: 30ms; }
-.index li:nth-child(2) { animation-delay: 70ms; }
-.index li:nth-child(3) { animation-delay: 110ms; }
-.index li:nth-child(4) { animation-delay: 150ms; }
 
 :where(a, button, input, [tabindex]):focus-visible {
   outline: 2px solid var(--hue, var(--text));
@@ -955,4 +1021,10 @@ body {
   .index .n { font-size: 23px; }
   .doclist li { padding: 14px 16px; }
   .doclist .size { margin-left: 0; flex-basis: 100%; }
+
+  .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .figures dd { font-size: 23px; }
+  .split { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .bars a { grid-template-columns: 92px minmax(0, 1fr); row-gap: 6px; }
+  .barvalue { grid-column: 2; justify-self: start; }
 }
