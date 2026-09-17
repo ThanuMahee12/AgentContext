@@ -50,6 +50,14 @@ export interface Brainstorm {
 
 export interface Doc {
   id: string
+  /** Folder path within the section, e.g. "data-alchemy/bbocax/mapping".
+   *  Stored as a string, not modelled as nested collections - see the note in
+   *  scripts/build-content.mjs for why. */
+  path: string
+  segments: string[]
+  /** The folder this document sits in; '' at the section root. */
+  parent: string
+  depth: number
   title: string
   /** One line under the heading. Optional; the list falls back to headings. */
   description?: string

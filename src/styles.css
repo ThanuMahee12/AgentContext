@@ -1160,3 +1160,53 @@ body {
   color: var(--text-3);
   font-variant-numeric: tabular-nums;
 }
+
+/* --------------------------------------------------------------- hierarchy */
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 14px;
+  font: 400 12px/1 var(--plex-mono);
+  color: var(--text-3);
+}
+.crumbs a { color: var(--text-2); text-decoration: none; }
+.crumbs a:hover { color: var(--hue); }
+.crumbs span { display: inline-flex; align-items: center; gap: 7px; }
+.crumbs .sep { color: var(--text-3); }
+
+/* Folders read as containers, documents as pages - different shapes so the
+   distinction survives a glance. */
+.folders {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.folders a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--hue);
+  border-radius: var(--r-s);
+  font-size: 14px;
+}
+.folders a:hover { background: var(--raised); border-color: var(--line-lit); border-left-color: var(--hue); }
+.folders .fname { font-family: var(--plex-mono); font-size: 13px; }
+.folders .fcount {
+  font: 400 11px/1.7 var(--plex-mono);
+  color: var(--text-3);
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}

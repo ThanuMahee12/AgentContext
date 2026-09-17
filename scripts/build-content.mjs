@@ -33,15 +33,38 @@ function parse(raw) {
 const headings = (body) =>
   [...body.matchAll(/^(#{2,3})\s+(.+)$/gm)].map((m) => ({ depth: m[1].length, text: m[2].trim() }))
 
+/** Walk a section directory, keeping the folder path as the document's path.
+ *
+ *  Directories ARE the hierarchy: content/tech-commands/data-alchemy/bbocax/
+ *  mapping.md becomes path "data-alchemy/bbocax/mapping". The path is stored as
+ *  a plain string rather than modelled as nested collections - the legacy tree
+ *  in this same database put varying values on collection segments and listing
+ *  documents returned nothing while 225 sat inside it. A string sorts, prefixes
+ *  and queries; nesting does none of that better.
+ */
+function walkMd(dir, base = '') {
+  if (!existsSync(dir)) return []
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const rel = base ? `${base}/${e.name}` : e.name
+    if (e.isDirectory()) return walkMd(join(dir, e.name), rel)
+    return e.name.endsWith('.md') ? [{ file: join(dir, e.name), rel }] : []
+  })
+}
+
 function load(folder) {
   const dir = join(src, folder)
-  if (!existsSync(dir)) return []
-  return readdirSync(dir)
-    .filter((f) => f.endsWith('.md'))
-    .map((f) => {
-      const { meta, body } = parse(readFileSync(join(dir, f), 'utf8'))
+  return walkMd(dir)
+    .map(({ file, rel }) => {
+      const { meta, body } = parse(readFileSync(file, 'utf8'))
+      const path = rel.replace(/\.md$/, '')
+      const segments = path.split('/')
       return {
-        id: f.replace(/\.md$/, ''),
+        id: segments[segments.length - 1],
+        path,
+        segments,
+        /** Folder the document sits in, '' at the section root. */
+        parent: segments.slice(0, -1).join('/'),
+        depth: segments.length - 1,
         title: meta.title || f.replace(/\.md$/, ''),
         description: meta.description || '',
         date: meta.date || '',
@@ -49,11 +72,11 @@ function load(folder) {
         url: meta.url || '',
         gist: meta.gist || '',
         notion: meta.notion || '',
-        project: meta.project || '',
+        project: meta.project || (rel.includes('/') ? rel.split('/')[0] : ''),
         tags: Array.isArray(meta.tags) ? meta.tags : [],
         body,
         headings: headings(body),
-        source: `content/${folder}/${f}`,
+        source: `content/${folder}/${rel}`,
         bytes: Buffer.byteLength(body, 'utf8'),
         comments: [],
       }

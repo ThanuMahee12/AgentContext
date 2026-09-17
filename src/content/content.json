@@ -1,8 +1,14 @@
 {
-  "generated_at": "2026-09-17T17:26:29.753Z",
+  "generated_at": "2026-09-17T17:52:33.268Z",
   "brainstorms": [
     {
       "id": "investigation-db",
+      "path": "investigation-db",
+      "segments": [
+        "investigation-db"
+      ],
+      "parent": "",
+      "depth": 0,
       "title": "Investigation DB: Pattern-Based Reverse Lookup",
       "description": "Pattern-based reverse lookup for data pipelines.",
       "date": "2026-01-16",
@@ -43,6 +49,12 @@
     },
     {
       "id": "pathseeker",
+      "path": "pathseeker",
+      "segments": [
+        "pathseeker"
+      ],
+      "parent": "",
+      "depth": 0,
       "title": "PathSeeker: Path Analysis & Pattern Extraction",
       "description": "CLI tool for path analysis and pattern extraction.",
       "date": "2026-01-16",
@@ -76,6 +88,12 @@
   "discussions": [
     {
       "id": "pattern-identifier",
+      "path": "pattern-identifier",
+      "segments": [
+        "pattern-identifier"
+      ],
+      "parent": "",
+      "depth": 0,
       "title": "Pattern Identifier: Auto Regex Suggestion",
       "description": "Tool to identify patterns and suggest regex for unknown file paths.",
       "date": "2026-01-18",
@@ -98,6 +116,12 @@
     },
     {
       "id": "staging",
+      "path": "staging",
+      "segments": [
+        "staging"
+      ],
+      "parent": "",
+      "depth": 0,
       "title": "data-alchemy-staging: Sample File Generation",
       "description": "Complete design for staging/sampling from bronze layer.",
       "date": "2026-01-18",
@@ -121,6 +145,12 @@
     },
     {
       "id": "dq",
+      "path": "dq",
+      "segments": [
+        "dq"
+      ],
+      "parent": "",
+      "depth": 0,
       "title": "Data Quality (DQ): Pipeline Validation",
       "description": "Data quality framework across entire data-alchemy pipeline.",
       "date": "2026-01-17",
@@ -142,6 +172,12 @@
     },
     {
       "id": "gics",
+      "path": "gics",
+      "segments": [
+        "gics"
+      ],
+      "parent": "",
+      "depth": 0,
       "title": "GICS Pipeline: S&P Data Processing",
       "description": "S&P Global Industry Classification Standard (GICS) data pipeline.",
       "date": "2026-01-17",
@@ -172,6 +208,12 @@
     },
     {
       "id": "investigation-db",
+      "path": "investigation-db",
+      "segments": [
+        "investigation-db"
+      ],
+      "parent": "",
+      "depth": 0,
       "title": "Investigation DB: Pattern-Based Reverse Lookup + Notion",
       "description": "Pattern-based reverse lookup for data pipelines + Notion service tracking.",
       "date": "2026-01-17",
@@ -194,6 +236,12 @@
     },
     {
       "id": "discussions-sqlite-parallelism-bottleneck",
+      "path": "discussions-sqlite-parallelism-bottleneck",
+      "segments": [
+        "discussions-sqlite-parallelism-bottleneck"
+      ],
+      "parent": "",
+      "depth": 0,
       "title": "SQLite Parallelism Bottleneck: Per-Worker SQLite + DuckDB Read Layer",
       "description": "Current SQLite architecture has write lock contention when running parallel workers (-p…",
       "date": "",
@@ -458,6 +506,13 @@
   "kt": [
     {
       "id": "devops",
+      "path": "data-alchemy/devops",
+      "segments": [
+        "data-alchemy",
+        "devops"
+      ],
+      "parent": "data-alchemy",
+      "depth": 1,
       "title": "DevOps - data-alchemy",
       "description": "uv run acl -p…",
       "date": "",
@@ -546,12 +601,19 @@
           "text": "Reference"
         }
       ],
-      "source": "content/kt/devops.md",
+      "source": "content/kt/data-alchemy/devops.md",
       "bytes": 5953,
       "comments": []
     },
     {
       "id": "mapping",
+      "path": "data-alchemy/mapping",
+      "segments": [
+        "data-alchemy",
+        "mapping"
+      ],
+      "parent": "data-alchemy",
+      "depth": 1,
       "title": "Mapping",
       "description": "Bloomberg Back Office Corporate Actions (bbocax) files from bbocaxcwiqpipe need to be mapped to multiple target datasets.",
       "date": "",
@@ -680,14 +742,22 @@
           "text": "Key Files"
         }
       ],
-      "source": "content/kt/mapping.md",
+      "source": "content/kt/data-alchemy/mapping.md",
       "bytes": 10045,
       "comments": []
     }
   ],
   "notes": [
     {
-      "id": "bbocax-file-patterns",
+      "id": "file-patterns",
+      "path": "data-alchemy/bbocax/file-patterns",
+      "segments": [
+        "data-alchemy",
+        "bbocax",
+        "file-patterns"
+      ],
+      "parent": "data-alchemy/bbocax",
+      "depth": 2,
       "title": "Bloomberg BBOCAX File Patterns Reference",
       "description": "All patterns for splitting bbocaxcwiqpipe into separate platinum datasets.",
       "date": "",
@@ -744,12 +814,20 @@
           "text": "Service File Template"
         }
       ],
-      "source": "content/tech-commands/bbocax-file-patterns.md",
+      "source": "content/tech-commands/data-alchemy/bbocax/file-patterns.md",
       "bytes": 4388,
       "comments": []
     },
     {
-      "id": "bbocax-mapping",
+      "id": "mapping",
+      "path": "data-alchemy/bbocax/mapping",
+      "segments": [
+        "data-alchemy",
+        "bbocax",
+        "mapping"
+      ],
+      "parent": "data-alchemy/bbocax",
+      "depth": 2,
       "title": "Bloomberg BBOCAX Mapping Notes",
       "description": "Bloomberg Back Office Corporate Actions (BBOCAX) dataset mapping for data-alchemy pipeline.",
       "date": "",
@@ -854,12 +932,19 @@
           "text": "History"
         }
       ],
-      "source": "content/tech-commands/bbocax-mapping.md",
+      "source": "content/tech-commands/data-alchemy/bbocax/mapping.md",
       "bytes": 10848,
       "comments": []
     },
     {
       "id": "bugs",
+      "path": "data-alchemy/bugs",
+      "segments": [
+        "data-alchemy",
+        "bugs"
+      ],
+      "parent": "data-alchemy",
+      "depth": 1,
       "title": "Data Alchemy Bugs",
       "description": "Tracking bugs found in data-alchemy for future fixes.",
       "date": "",
@@ -876,12 +961,19 @@
           "text": "1. `--file-pattern` and `--file-patterns` Silent Overwrite"
         }
       ],
-      "source": "content/tech-commands/bugs.md",
+      "source": "content/tech-commands/data-alchemy/bugs.md",
       "bytes": 1211,
       "comments": []
     },
     {
-      "id": "census-mappings",
+      "id": "pattern-mappings",
+      "path": "data-census/pattern-mappings",
+      "segments": [
+        "data-census",
+        "pattern-mappings"
+      ],
+      "parent": "data-census",
+      "depth": 1,
       "title": "Data Census: Pattern Mappings",
       "description": "Data Census scans /sf/data/ directories to extract file metadata and maps files to delta tables via lineage mappings.",
       "date": "",
@@ -978,12 +1070,19 @@
           "text": "S3 Report"
         }
       ],
-      "source": "content/tech-commands/census-mappings.md",
+      "source": "content/tech-commands/data-census/pattern-mappings.md",
       "bytes": 6891,
       "comments": []
     },
     {
       "id": "duckdb-worker-shards",
+      "path": "data-alchemy/duckdb-worker-shards",
+      "segments": [
+        "data-alchemy",
+        "duckdb-worker-shards"
+      ],
+      "parent": "data-alchemy",
+      "depth": 1,
       "title": "DuckDB Worker Shards - Implementation Notes",
       "description": "Per-worker SQLite shards under the silver layer, and how they merge back.",
       "date": "",
@@ -1104,12 +1203,19 @@
           "text": "Why No Caching"
         }
       ],
-      "source": "content/tech-commands/duckdb-worker-shards.md",
+      "source": "content/tech-commands/data-alchemy/duckdb-worker-shards.md",
       "bytes": 5391,
       "comments": []
     },
     {
       "id": "parallelism-testing",
+      "path": "data-alchemy/parallelism-testing",
+      "segments": [
+        "data-alchemy",
+        "parallelism-testing"
+      ],
+      "parent": "data-alchemy",
+      "depth": 1,
       "title": "Parallelism Testing Notes",
       "description": "Non-parquet files (.dif, .out, .dlt) show Map[-1] (unknown) in sequential mode but correct Map[68]/Map[69] in parallel mode.",
       "date": "",
@@ -1166,12 +1272,19 @@
           "text": "Next Steps"
         }
       ],
-      "source": "content/tech-commands/parallelism-testing.md",
+      "source": "content/tech-commands/data-alchemy/parallelism-testing.md",
       "bytes": 2397,
       "comments": []
     },
     {
       "id": "server-commands",
+      "path": "data-alchemy/server-commands",
+      "segments": [
+        "data-alchemy",
+        "server-commands"
+      ],
+      "parent": "data-alchemy",
+      "depth": 1,
       "title": "Server Commands Reference",
       "description": "Useful commands for production server operations.",
       "date": "",
@@ -1264,7 +1377,7 @@
           "text": "Quick Reference"
         }
       ],
-      "source": "content/tech-commands/server-commands.md",
+      "source": "content/tech-commands/data-alchemy/server-commands.md",
       "bytes": 3847,
       "comments": []
     }

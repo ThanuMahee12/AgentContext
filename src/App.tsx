@@ -35,19 +35,19 @@ export default function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/brainstorm" element={<Section id="brainstorms" />} />
-          <Route path="/brainstorm/:docId" element={<Section id="brainstorms" />} />
+          <Route path="/brainstorm/*" element={<Section id="brainstorms" />} />
           <Route path="/kt" element={<Section id="kt" />} />
-          <Route path="/kt/:docId" element={<Section id="kt" />} />
+          <Route path="/kt/*" element={<Section id="kt" />} />
           <Route path="/ideas" element={<Section id="discussions" />} />
-          <Route path="/ideas/:docId" element={<Section id="discussions" />} />
+          <Route path="/ideas/*" element={<Section id="discussions" />} />
           <Route path="/tech-commands" element={<Section id="notes" />} />
-          <Route path="/tech-commands/:docId" element={<Section id="notes" />} />
+          <Route path="/tech-commands/*" element={<Section id="notes" />} />
 
           {/* Older paths stay working; they are linked from the repository. */}
           <Route path="/brainstorms" element={<Navigate to="/brainstorm" replace />} />
           <Route path="/discussions" element={<Navigate to="/ideas" replace />} />
           <Route path="/notes" element={<Navigate to="/tech-commands" replace />} />
-          <Route path="/notes/:docId" element={<Navigate to="/tech-commands" replace />} />
+          <Route path="/notes/*" element={<Navigate to="/tech-commands" replace />} />
         </Route>
 
         <Route path="/s/:slug" element={<Published />} />

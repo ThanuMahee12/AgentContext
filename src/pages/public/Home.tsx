@@ -93,7 +93,7 @@ export default function Home() {
           <ol className="ranked">
             {longest.map((d) => (
               <li key={d.id} data-section={sectionOf(content, d.id)}>
-                <Link to={`${pathOf(sectionOf(content, d.id))}/${d.id}`}>
+                <Link to={`${pathOf(sectionOf(content, d.id))}/${d.path ?? d.id}`}>
                   <span className="t">{d.title}</span>
                   <span className="mins">{Math.max(1, Math.round(d.words / 220))} min</span>
                 </Link>

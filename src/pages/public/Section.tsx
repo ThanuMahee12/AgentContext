@@ -1,4 +1,4 @@
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 
 import { SECTION_KEY, sections, type SectionId } from '../../content'
 import { useAppDispatch, useAppSelector } from '../../store'
@@ -8,125 +8,121 @@ import { matches, TagRow, Empty } from './shared'
 
 type Key = Exclude<SectionId, 'home'>
 
-/** One component for every section, in two views.
+/** One component for every section, resolving a path of any depth.
  *
- *  Sections used to diverge: brainstorms and ideas rendered every item inline
- *  on one page, while KT and commands had their own document pages. That made
- *  an idea impossible to link to and impossible to read on its own. Every item
- *  now has a page, and every section lists the same way.
+ *  /tech-commands                      the section
+ *  /tech-commands/data-alchemy         a folder
+ *  /tech-commands/data-alchemy/bbocax  a deeper folder
+ *  /tech-commands/data-alchemy/bbocax/mapping   a document
+ *
+ *  Folder and document share a URL space, so a path is resolved by looking for
+ *  a document first and treating it as a folder otherwise. That keeps
+ *  /a/b meaningful whether b is a document or a directory, without encoding the
+ *  distinction into the URL.
  */
 export default function Section({ id }: { id: Key }) {
-  const { docId } = useParams()
+  const params = useParams()
+  const location = useLocation()
   const meta = sections.find((s) => s.id === id)!
   const items = useAppSelector((s) => s.content[SECTION_KEY[id]]) as any[]
 
-  if (docId) {
-    const item = items.find((i) => i.id === docId)
-    if (!item) return <Navigate to={meta.path} replace />
-    return <Detail item={item} section={id} back={meta} />
-  }
+  // react-router gives the wildcard tail in `*`; older single-segment routes
+  // still pass docId, so both are accepted.
+  const rest = (params['*'] ?? params.docId ?? '').replace(/^\/+|\/+$/g, '')
 
-  return <List id={id} items={items} meta={meta} />
+  if (!rest) return <Browse id={id} meta={meta} items={items} at="" />
+
+  const doc = items.find((i) => (i.path ?? i.id) === rest)
+  if (doc) return <Detail item={doc} section={id} meta={meta} />
+
+  const inFolder = items.filter((i) => (i.path ?? '').startsWith(rest + '/'))
+  if (inFolder.length) return <Browse id={id} meta={meta} items={items} at={rest} />
+
+  return <Navigate to={meta.path} replace state={{ from: location.pathname }} />
 }
 
 // ---------------------------------------------------------------------------
 
-function List({ id, items, meta }: { id: Key; items: any[]; meta: any }) {
+/** A folder view: the sub-folders directly beneath, then the documents in it. */
+function Browse({ id, meta, items, at }: { id: Key; meta: any; items: any[]; at: string }) {
   const { query, tag } = useAppSelector((s) => s.ui)
-  const shown = items.filter((i) =>
+
+  const scope = at ? items.filter((i) => (i.path ?? '').startsWith(at + '/')) : items
+  const shown = scope.filter((i) =>
     matches(query, tag, [i.title, i.description ?? '', i.body ?? '', ...(i.tags ?? [])], i.tags ?? []),
   )
 
-  // Where every item names a project, the list groups by it. Seven commands in
-  // a flat list is a list; the same seven under the project they belong to is a
-  // place to look something up.
-  const grouped = shown.length > 0 && shown.every((i) => i.project)
-  if (grouped) {
-    const projects = new Map<string, any[]>()
-    for (const i of shown) {
-      const list = projects.get(i.project) ?? []
-      list.push(i)
-      projects.set(i.project, list)
+  const depth = at ? at.split('/').length : 0
+  const folders = new Map<string, number>()
+  const here: any[] = []
+  for (const i of shown) {
+    const segs: string[] = i.segments ?? [i.id]
+    if (segs.length > depth + 1) {
+      const name = segs[depth]
+      folders.set(name, (folders.get(name) ?? 0) + 1)
+    } else {
+      here.push(i)
     }
-    return (
-      <div className="page" data-section={id}>
-        <h1 className="pagetitle">{meta.label}</h1>
-        <p className="standfirst">{meta.blurb}</p>
-
-        {[...projects.entries()]
-          .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
-          .map(([project, list]) => (
-            <section className="group" key={project}>
-              <h2>
-                <span className="proj">{project}</span>
-                <span className="count">{list.length}</span>
-              </h2>
-              <ul className="cards">
-                {list.map((i) => (
-                  <li key={i.id}>
-                    <Link to={`${meta.path}/${i.id}`}>
-                      <span className="head">
-                        <span className="t">{i.title}</span>
-                      </span>
-                      {(i.description || firstLine(i.body)) && (
-                        <span className="d">{i.description || firstLine(i.body)}</span>
-                      )}
-                      <span className="foot">
-                        <span className="mins">{readingTime(i)}</span>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-      </div>
-    )
   }
 
   return (
     <div className="page" data-section={id}>
-      <h1 className="pagetitle">{meta.label}</h1>
-      <p className="standfirst">{meta.blurb}</p>
+      <Crumbs meta={meta} at={at} />
+      <h1 className="pagetitle">{at ? at.split('/').pop() : meta.label}</h1>
+      <p className="standfirst">{at ? `${shown.length} in ${at}` : meta.blurb}</p>
 
       {shown.length === 0 ? (
         <Empty query={query} tag={tag} />
       ) : (
-        <ul className="cards">
-          {shown.map((i) => (
-            <li key={i.id}>
-              <Link to={`${meta.path}/${i.id}`}>
-                <span className="head">
-                  <span className="t">{i.title}</span>
-                  {i.status && <span className="status">{i.status}</span>}
-                </span>
-                {(i.description || firstLine(i.body)) && (
-                  <span className="d">{i.description || firstLine(i.body)}</span>
-                )}
-                <span className="foot">
-                  {i.date && <time dateTime={i.date}>{i.date}</time>}
-                  {i.project && <span className="project">{i.project}</span>}
-                  <span className="mins">{readingTime(i)}</span>
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <>
+          {folders.size > 0 && (
+            <ul className="folders">
+              {[...folders.entries()].sort().map(([name, n]) => (
+                <li key={name}>
+                  <Link to={`${meta.path}/${at ? at + '/' : ''}${name}`}>
+                    <span className="fname">{name}</span>
+                    <span className="fcount">{n}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {here.length > 0 && (
+            <ul className="cards">
+              {here.map((i) => (
+                <li key={i.path ?? i.id}>
+                  <Link to={`${meta.path}/${i.path ?? i.id}`}>
+                    <span className="head">
+                      <span className="t">{i.title}</span>
+                      {i.status && <span className="status">{i.status}</span>}
+                    </span>
+                    {(i.description || firstLine(i.body)) && (
+                      <span className="d">{i.description || firstLine(i.body)}</span>
+                    )}
+                    <span className="foot">
+                      {i.date && <time dateTime={i.date}>{i.date}</time>}
+                      <span className="mins">{readingTime(i)}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   )
 }
 
-function Detail({ item, section, back }: { item: any; section: Key; back: any }) {
+function Detail({ item, section, meta }: { item: any; section: Key; meta: any }) {
   const dispatch = useAppDispatch()
   const { tag } = useAppSelector((s) => s.ui)
   const toc = (item.headings ?? []).filter((h: any) => h.depth === 2)
 
   return (
     <article className="page reading" data-section={section}>
-      <p className="crumb">
-        <Link to={back.path}>{back.label}</Link>
-      </p>
+      <Crumbs meta={meta} at={item.parent ?? ''} />
 
       <h1 className="pagetitle">{item.title}</h1>
       {item.description && <p className="standfirst">{item.description}</p>}
@@ -134,7 +130,6 @@ function Detail({ item, section, back }: { item: any; section: Key; back: any })
       <div className="meta">
         {item.date && <time dateTime={item.date}>{item.date}</time>}
         {item.status && <span className="status">{item.status}</span>}
-        {item.project && <span className="project">{item.project}</span>}
         <span className="mins">{readingTime(item)}</span>
       </div>
 
@@ -161,17 +156,31 @@ function Detail({ item, section, back }: { item: any; section: Key; back: any })
   )
 }
 
+/** Section › folder › folder — every segment is a real destination. */
+function Crumbs({ meta, at }: { meta: any; at: string }) {
+  const parts = at ? at.split('/') : []
+  return (
+    <nav className="crumbs" aria-label="Breadcrumb">
+      <Link to={meta.path}>{meta.label}</Link>
+      {parts.map((p, n) => (
+        <span key={p}>
+          <span className="sep" aria-hidden>›</span>
+          <Link to={`${meta.path}/${parts.slice(0, n + 1).join('/')}`}>{p}</Link>
+        </span>
+      ))}
+    </nav>
+  )
+}
+
 // ---------------------------------------------------------------------------
 
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
-/** First prose line, skipping frontmatter leftovers, headings and media. */
 function firstLine(body?: string): string {
   if (!body) return ''
   for (const raw of body.split('\n')) {
     const line = raw.trim()
-    if (!line || line.startsWith('#') || line.startsWith('!') || line.startsWith('|')) continue
-    if (line.startsWith('```') || line.startsWith('>')) continue
+    if (!line || /^[#!|>*-]|^```/.test(line)) continue
     return line.replace(/[*_`]/g, '').slice(0, 160)
   }
   return ''
