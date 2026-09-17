@@ -60,7 +60,11 @@ export default function PublicLayout() {
         </Link>
 
         <nav aria-label="Sections">
-          {sections.map((s) => (
+          {/* A section with nothing in it is a link to an empty page. Hide it
+              until it has content, so the nav describes what is actually here. */}
+          {sections
+            .filter((s) => s.id === 'home' || content[SECTION_KEY[s.id]].length > 0)
+            .map((s) => (
             <NavLink
               key={s.id}
               to={s.path}
@@ -83,8 +87,8 @@ export default function PublicLayout() {
                   )}
                 </>
               )}
-            </NavLink>
-          ))}
+              </NavLink>
+            ))}
         </nav>
 
         <div className="navfoot">

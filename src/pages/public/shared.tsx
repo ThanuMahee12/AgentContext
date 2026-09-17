@@ -35,9 +35,16 @@ export function TagRow({
   )
 }
 
-/** An empty result is a dead end unless it says how to get out of it. */
+/** An empty result is a dead end unless it says how to get out of it.
+ *
+ *  A section with no content at all is a different thing from a filter that
+ *  matched nothing, and telling someone to clear a search they did not type is
+ *  worse than saying nothing. */
 export function Empty({ query, tag }: { query: string; tag: string | null }) {
   const bits = [query && `“${query}”`, tag && `tag ${tag}`].filter(Boolean)
+  if (!bits.length) {
+    return <p className="nothing">Nothing here yet.</p>
+  }
   return (
     <p className="nothing">
       Nothing here matches {bits.join(' and ')}. Clear the search or pick a different tag.
