@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from 'react'
 
+import CodeBlock from './CodeBlock'
 import { Figure, classify } from './Media'
 
 /** Render markdown as React elements.
@@ -41,11 +42,7 @@ function renderBlocks(src: string): ReactNode[] {
       i++
       while (i < lines.length && !lines[i].trimStart().startsWith('```')) body.push(lines[i++])
       i++ // closing fence
-      out.push(
-        <pre className="md-code" key={key++} data-lang={lang || undefined}>
-          <code>{body.join('\n')}</code>
-        </pre>,
-      )
+      out.push(<CodeBlock key={key++} code={body.join('\n')} lang={lang} />)
       continue
     }
 

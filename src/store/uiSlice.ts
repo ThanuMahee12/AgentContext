@@ -12,12 +12,19 @@ interface UiState {
   query: string
   tag: string | null
   navOpen: boolean
+  /** Folder paths currently open in the command tree.
+   *
+   *  Lives here rather than in the tree component so it survives navigating
+   *  into a command and back - collapsing everything you had opened is the
+   *  fastest way to make a tree annoying. */
+  expanded: string[]
 }
 
 const initialState: UiState = {
   query: '',
   tag: null,
   navOpen: false,
+  expanded: [],
 }
 
 const uiSlice = createSlice({
@@ -37,8 +44,17 @@ const uiSlice = createSlice({
     setNavOpen(state, action: PayloadAction<boolean>) {
       state.navOpen = action.payload
     },
+    toggleFolder(state, action: PayloadAction<string>) {
+      const at = state.expanded.indexOf(action.payload)
+      if (at >= 0) state.expanded.splice(at, 1)
+      else state.expanded.push(action.payload)
+    },
+    setExpanded(state, action: PayloadAction<string[]>) {
+      state.expanded = action.payload
+    },
   },
 })
 
-export const { setQuery, toggleTag, clearFilters, setNavOpen } = uiSlice.actions
+export const { setQuery, toggleTag, clearFilters, setNavOpen, toggleFolder, setExpanded } =
+  uiSlice.actions
 export default uiSlice.reducer

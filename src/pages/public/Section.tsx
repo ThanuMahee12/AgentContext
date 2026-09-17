@@ -4,6 +4,7 @@ import { SECTION_KEY, sections, type SectionId } from '../../content'
 import { useAppDispatch, useAppSelector } from '../../store'
 import { toggleTag } from '../../store/uiSlice'
 import Markdown from '../../components/Markdown'
+import Tree from './Tree'
 import { matches, TagRow, Empty } from './shared'
 
 type Key = Exclude<SectionId, 'home'>
@@ -52,6 +53,12 @@ function Browse({ id, meta, items, at }: { id: Key; meta: any; items: any[]; at:
     matches(query, tag, [i.title, i.description ?? '', i.body ?? '', ...(i.tags ?? [])], i.tags ?? []),
   )
 
+  // At the section root, where the content has folders, show the whole tree
+  // rather than one level of them. Finding a command should not take three
+  // navigations through pages that each show a single row.
+  const hasFolders = shown.some((i) => (i.segments?.length ?? 1) > 1)
+  const asTree = !at && hasFolders
+
   const depth = at ? at.split('/').length : 0
   const folders = new Map<string, number>()
   const here: any[] = []
@@ -73,6 +80,8 @@ function Browse({ id, meta, items, at }: { id: Key; meta: any; items: any[]; at:
 
       {shown.length === 0 ? (
         <Empty query={query} tag={tag} />
+      ) : asTree ? (
+        <Tree items={shown} basePath={meta.path} searching={Boolean(query.trim())} />
       ) : (
         <>
           {folders.size > 0 && (

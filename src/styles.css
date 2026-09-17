@@ -1210,3 +1210,122 @@ body {
   border-radius: 999px;
   font-variant-numeric: tabular-nums;
 }
+
+/* --------------------------------------------------------------------- tree */
+
+.tree { display: grid; gap: 1px; }
+
+.branch { display: grid; }
+.kids { display: grid; gap: 1px; }
+
+.twig {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 10px 12px;
+  padding-left: calc(12px + var(--depth, 0) * 18px);
+  background: var(--surface);
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: var(--r-s);
+  color: var(--text);
+  font: 500 13px/1 var(--plex-mono);
+  text-align: left;
+  cursor: pointer;
+}
+.twig:hover { background: var(--raised); }
+.twig.open { border-left-color: var(--hue); }
+
+.twig .caret {
+  width: 0; height: 0;
+  border-left: 5px solid var(--text-3);
+  border-block: 4px solid transparent;
+  transition: transform 140ms ease;
+  flex: none;
+}
+.twig.open .caret { transform: rotate(90deg) translateX(-1px); }
+.twig .name { letter-spacing: -0.01em; }
+.twig .num {
+  margin-left: auto;
+  font: 400 11px/1.7 var(--plex-mono);
+  color: var(--text-3);
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaf {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  padding: 10px 12px;
+  padding-left: calc(14px + var(--depth, 0) * 18px);
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--r-s);
+}
+.leaf:hover { background: var(--surface); }
+.leaf .t { font-size: 14px; }
+.leaf:hover .t { color: var(--hue); }
+.leaf .d {
+  grid-column: 1;
+  font-size: 12px;
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.leaf .mins {
+  grid-row: 1;
+  grid-column: 2;
+  font: 400 12px/1.4 var(--plex-mono);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) { .twig .caret { transition: none; } }
+
+/* --------------------------------------------------------------- code block */
+
+.codeblock { margin: 0 0 1.3em; }
+.codeblock .bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 12px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: var(--r-s) var(--r-s) 0 0;
+}
+.codeblock .lang {
+  font: 500 11px/1 var(--plex-mono);
+  color: var(--hue);
+}
+.codeblock .lines {
+  font: 400 11px/1 var(--plex-mono);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.codeblock .copy {
+  margin-left: auto;
+  font: 500 11px/1 var(--plex-sans);
+  padding: 5px 10px;
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.codeblock .copy:hover { color: var(--text); border-color: var(--line-lit); }
+.codeblock .copy[data-state="copied"] { color: var(--ok); border-color: var(--ok); }
+.codeblock .copy[data-state="failed"] { color: var(--err); border-color: var(--err); }
+
+.codeblock .md-code {
+  margin: 0;
+  border-radius: 0 0 var(--r-s) var(--r-s);
+  border-left-width: 1px;
+  border-left-color: var(--line);
+}
