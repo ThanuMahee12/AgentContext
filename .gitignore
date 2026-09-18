@@ -33,3 +33,6 @@ src/data/fixtures.json
 
 # TypeScript incremental build state
 *.tsbuildinfo
+
+# internal design notes - never commit to this public repo
+content/ideas/centralized-agent-memory-store.md
