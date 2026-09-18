@@ -118,6 +118,15 @@ service cloud.firestore {
     // ---- public: curated copies only --------------------------------------
     // Written by the publish flow after redaction review. Nothing here is a
     // reference to a private document - it is a copy of reviewed content.
+    // Per-day activity totals. Public on purpose and safe to be: the document
+    // holds counts and a date, nothing else. It is written by an allowlist in
+    // agentprobe/daily.py rather than derived from a session at read time, so a
+    // missing filter here cannot expose anything the document never carried.
+    match /daily/{day} {
+      allow read: if true;
+      allow write: if isOwner();
+    }
+
     match /public/{slug} {
       allow read: if true;
       allow write: if isOwner();

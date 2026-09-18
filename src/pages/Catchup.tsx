@@ -1,161 +1,190 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { User } from 'firebase/auth'
+import { onAuthStateChanged, type User } from 'firebase/auth'
+import { collection, getDocs } from 'firebase/firestore'
+import Calendar from 'react-calendar'
+import 'react-calendar/dist/Calendar.css'
 
+import { auth, db } from '../firebase'
 import { FirestoreSource } from '../data/firestore'
 import { getSource, groupByDay } from '../data/source'
 import type { ContextItem, Day, Session } from '../types'
 
 const source = getSource()
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December']
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+/** Public per-day totals. Counts only — the private collection holding what
+ *  actually happened is denied to anonymous readers by firestore.rules. */
+type Totals = {
+  date: string
+  sessions: number
+  messages: number
+  commands: number
+  files: number
+  failed: number
+}
 
-/** YYYY-MM-DD in local time. `toISOString` would shift the date across the
- *  dateline for anyone west of UTC, filing a session under the wrong day. */
+/** YYYY-MM-DD in local time. `toISOString` shifts the date across the dateline
+ *  for anyone west of UTC and files a day under the wrong square. */
 const key = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
-/** Monday-first weekday index, because the calendar reads Mon..Sun. */
-const weekday = (d: Date) => (d.getDay() + 6) % 7
-
 /**
- * Daily Catchup — what happened, day by day.
+ * Daily Catchup.
  *
- * The archive is already filed by date; this is the view that admits it. A
- * month of squares shows at a glance which days had work on them, and a day
- * opens the conversations recorded against it.
+ * Two tiers on one page, and the split is enforced by the database rather than
+ * by what this component chooses to render:
  *
- * Sign-in required, and not merely by convention: `firestore.rules` denies
- * anonymous reads of every session, so an unauthenticated visitor gets nothing
- * from the database rather than a page that merely declines to render.
+ *   signed out  counts per day, from the public `daily` collection
+ *   signed in   the conversations themselves, from the private archive
+ *
+ * A signed-out visitor could read this component's source and learn nothing
+ * they could act on — the queries behind the private half return 403.
  */
-export default function Catchup({ user }: { user: User | null }) {
-  const [sessions, setSessions] = useState<Session[]>([])
-  const [context, setContext] = useState<ContextItem[]>([])
+export default function Catchup() {
+  const [user, setUser] = useState<User | null>(null)
+  const [authReady, setAuthReady] = useState(false)
+  const [totals, setTotals] = useState<Record<string, Totals>>({})
+  const [days, setDays] = useState<Day[]>([])
+  const [picked, setPicked] = useState<Date | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [cursor, setCursor] = useState(() => new Date())
-  const [picked, setPicked] = useState('')
+  const [note, setNote] = useState('')
 
+  useEffect(() => onAuthStateChanged(auth, (u) => { setUser(u); setAuthReady(true) }), [])
+
+  // Public half — always loaded, for everyone.
   useEffect(() => {
-    // Settled rather than all: a failure in one query must not blank the other
-    // and look identical to an empty archive.
-    Promise.allSettled([source.sessions(), source.context()])
-      .then(([s, c]) => {
-        const problems: string[] = []
-        if (s.status === 'fulfilled') setSessions(s.value)
-        else problems.push(`sessions: ${String((s.reason as Error)?.message ?? s.reason)}`)
-        if (c.status === 'fulfilled') setContext(c.value)
-        else problems.push(`links: ${String((c.reason as Error)?.message ?? c.reason)}`)
-        setError(problems.join(' · '))
+    getDocs(collection(db, 'daily'))
+      .then((snap) => {
+        const out: Record<string, Totals> = {}
+        snap.docs.forEach((d) => {
+          const v = d.data() as Partial<Totals>
+          out[d.id] = {
+            date: d.id,
+            sessions: Number(v.sessions ?? 0),
+            messages: Number(v.messages ?? 0),
+            commands: Number(v.commands ?? 0),
+            files: Number(v.files ?? 0),
+            failed: Number(v.failed ?? 0),
+          }
+        })
+        setTotals(out)
       })
+      .catch((e) => setNote(String((e as Error)?.message ?? e)))
       .finally(() => setLoading(false))
   }, [])
 
-  const days = useMemo(() => groupByDay(sessions, context), [sessions, context])
+  // Private half — only attempted when signed in. The rules would refuse it
+  // anyway; not asking keeps a guaranteed 403 out of everyone's console.
+  useEffect(() => {
+    if (!authReady || !user) return
+    Promise.allSettled([source.sessions(), source.context()]).then(([s, c]) => {
+      const sessions = s.status === 'fulfilled' ? (s.value as Session[]) : []
+      const context = c.status === 'fulfilled' ? (c.value as ContextItem[]) : []
+      setDays(groupByDay(sessions, context))
+    })
+  }, [authReady, user])
+
   const byDate = useMemo(() => new Map(days.map((d) => [d.date, d])), [days])
 
-  // Land on the most recent day that actually has something on it, rather than
-  // on today — which is usually empty first thing in the morning.
+  // Land on the most recent day with activity rather than today, which is
+  // usually empty first thing.
   useEffect(() => {
-    if (picked || !days.length) return
-    setPicked(days[0].date)
-    const [y, m] = days[0].date.split('-').map(Number)
-    setCursor(new Date(y, m - 1, 1))
-  }, [days, picked])
+    if (picked) return
+    const dates = Object.keys(totals).sort().reverse()
+    if (dates.length) {
+      const [y, m, d] = dates[0].split('-').map(Number)
+      setPicked(new Date(y, m - 1, d))
+    }
+  }, [totals, picked])
 
-  const year = cursor.getFullYear()
-  const month = cursor.getMonth()
-  const first = new Date(year, month, 1)
-  const total = new Date(year, month + 1, 0).getDate()
-  const lead = weekday(first)
+  const busiest = useMemo(
+    () => Math.max(1, ...Object.values(totals).map((t) => t.sessions)), [totals])
 
-  const cells: (string | null)[] = [
-    ...Array<null>(lead).fill(null),
-    ...Array.from({ length: total }, (_, i) => key(new Date(year, month, i + 1))),
-  ]
+  const selected = picked ? key(picked) : ''
+  const dayTotals = selected ? totals[selected] : undefined
+  const dayDetail = selected ? byDate.get(selected) : undefined
 
-  const monthTotal = cells.reduce(
-    (n, c) => n + (c ? (byDate.get(c)?.sessions.length ?? 0) : 0), 0)
-
-  const day = picked ? byDate.get(picked) : undefined
-
-  if (loading) return <p className="empty" style={{ paddingTop: 80 }}>Loading the archive…</p>
+  if (loading) return <p className="empty" style={{ paddingTop: 80 }}>Loading…</p>
 
   return (
-    <div className="admin">
-      <header className="dayhead" style={{ marginBottom: 18 }}>
-        <div>
-          <h1 style={{ margin: 0 }}>Daily Catchup</h1>
-          <p className="lede" style={{ margin: '4px 0 0' }}>
-            {sessions.length} conversation{sessions.length === 1 ? '' : 's'} recorded
-            across {days.length} day{days.length === 1 ? '' : 's'}
-            {user?.email ? ` · ${user.email}` : ''}
-          </p>
-        </div>
+    <div className="catchup">
+      <header>
+        <h1>Daily Catchup</h1>
+        <p className="lede">
+          {Object.keys(totals).length} day{Object.keys(totals).length === 1 ? '' : 's'} of
+          recorded activity
+          {user ? ` · signed in as ${user.email}` : ' · sign in to open a day'}
+        </p>
       </header>
 
-      {error && <p className="banner failure">{error}</p>}
+      {note && <p className="banner failure">{note}</p>}
 
-      <div className="cal-nav">
-        <button className="iconbtn" onClick={() => setCursor(new Date(year, month - 1, 1))}
-                aria-label="Previous month">←</button>
-        <strong>{MONTHS[month]} {year}</strong>
-        <button className="iconbtn" onClick={() => setCursor(new Date(year, month + 1, 1))}
-                aria-label="Next month">→</button>
-        <span className="chip">{monthTotal} this month</span>
-        <button className="iconbtn" onClick={() => setCursor(new Date())}>Today</button>
+      <div className="catchup-grid">
+        <Calendar
+          onChange={(v) => setPicked(v as Date)}
+          value={picked}
+          maxDate={new Date()}
+          tileContent={({ date, view }) => {
+            if (view !== 'month') return null
+            const t = totals[key(date)]
+            if (!t?.sessions) return null
+            // Four steps rather than a continuous ramp: a reader is comparing
+            // days at a glance, not reading a value off a scale.
+            const step = Math.min(4, Math.ceil((t.sessions / busiest) * 4))
+            return <span className={`heat heat-${step}`} aria-hidden />
+          }}
+          tileClassName={({ date, view }) =>
+            view === 'month' && totals[key(date)]?.sessions ? 'has-work' : null
+          }
+        />
+
+        <section className="catchup-day">
+          {!selected && <p className="empty">Pick a day.</p>}
+
+          {selected && (
+            <>
+              <h2>{selected}</h2>
+              {dayTotals ? (
+                <ul className="totals">
+                  <li><strong>{dayTotals.sessions}</strong> conversations</li>
+                  <li><strong>{dayTotals.messages}</strong> messages</li>
+                  <li><strong>{dayTotals.commands}</strong> commands</li>
+                  <li><strong>{dayTotals.files}</strong> files</li>
+                  {dayTotals.failed > 0 && (
+                    <li className="failure"><strong>{dayTotals.failed}</strong> failed</li>
+                  )}
+                </ul>
+              ) : <p className="empty">Nothing recorded.</p>}
+
+              {!user && dayTotals && (
+                <p className="lede signin-hint">
+                  <a href="/admin">Sign in</a> to read the conversations from this day.
+                </p>
+              )}
+
+              {user && dayDetail && <DayHistory day={dayDetail} />}
+              {user && !dayDetail && dayTotals && (
+                <p className="empty">No conversation detail for this day.</p>
+              )}
+            </>
+          )}
+        </section>
       </div>
-
-      <div className="cal" role="grid" aria-label={`${MONTHS[month]} ${year}`}>
-        {WEEKDAYS.map((w) => <div key={w} className="cal-wd">{w}</div>)}
-        {cells.map((date, i) => {
-          if (!date) return <div key={`pad-${i}`} className="cal-day is-pad" />
-          const d = byDate.get(date)
-          const n = d?.sessions.length ?? 0
-          return (
-            <button
-              key={date}
-              className={`cal-day${n ? ' has-work' : ''}${picked === date ? ' is-picked' : ''}`}
-              onClick={() => setPicked(date)}
-              aria-label={`${date}, ${n} conversation${n === 1 ? '' : 's'}`}
-            >
-              <span className="cal-num">{Number(date.slice(8))}</span>
-              {n > 0 && <span className="cal-count">{n}</span>}
-            </button>
-          )
-        })}
-      </div>
-
-      {day ? <DayDetail day={day} /> : (
-        <p className="empty">
-          {picked ? `Nothing recorded on ${picked}.` : 'Pick a day.'}
-        </p>
-      )}
     </div>
   )
 }
 
-/** One day's conversations, newest first. */
-function DayDetail({ day }: { day: Day }) {
+/** The signed-in half: what actually happened that day. */
+function DayHistory({ day }: { day: Day }) {
   return (
-    <section style={{ marginTop: 26 }}>
-      <h2 style={{ marginBottom: 2 }}>{day.date}</h2>
-      <p className="lede" style={{ marginTop: 0 }}>
-        {day.sessions.length} conversation{day.sessions.length === 1 ? '' : 's'}
-        {day.context.length ? ` · ${day.context.length} link${day.context.length === 1 ? '' : 's'}` : ''}
-      </p>
-
-      {day.sessions.length === 0 && <p className="empty">No conversations recorded.</p>}
-
+    <div style={{ marginTop: 18 }}>
+      <h3>Conversations</h3>
       <div className="cards">
         {day.sessions.map((s) => <Conversation key={s.session_id} session={s} />)}
       </div>
 
       {day.context.length > 0 && (
-        <div className="links" style={{ marginTop: 18 }}>
-          <h3>Links that day</h3>
+        <div className="links" style={{ marginTop: 16 }}>
+          <h3>Links</h3>
           <ul>
             {day.context.map((c) => (
               <li key={c.doc_id}>
@@ -166,12 +195,10 @@ function DayDetail({ day }: { day: Day }) {
           </ul>
         </div>
       )}
-    </section>
+    </div>
   )
 }
 
-/** A single recorded conversation. Commands live in a subcollection and are
- *  fetched only when opened — one real session carries 141 of them. */
 function Conversation({ session }: { session: Session }) {
   const [open, setOpen] = useState(false)
   const [full, setFull] = useState<Session>(session)
@@ -181,18 +208,11 @@ function Conversation({ session }: { session: Session }) {
     const next = !open
     setOpen(next)
     if (!next || full.commands?.length) return
-    // Narrowed explicitly: `commands` is not on the DataSource interface, only
-    // the Firestore implementation keeps them in a subcollection.
     if (!(source instanceof FirestoreSource)) return
     setBusy(true)
     try {
-      const commands = await source.commands(session)
-      setFull((cur) => ({ ...cur, commands }))
-    } catch {
-      /* metadata is still worth showing */
-    } finally {
-      setBusy(false)
-    }
+      setFull({ ...full, commands: await source.commands(session) })
+    } catch { /* metadata is still worth showing */ } finally { setBusy(false) }
   }
 
   return (
@@ -211,7 +231,6 @@ function Conversation({ session }: { session: Session }) {
           <span>{(session.started || '').slice(11, 16)}</span>
         </div>
       </button>
-
       {open && (
         <div className="detail">
           {busy && <p className="empty">Fetching commands…</p>}
@@ -220,7 +239,6 @@ function Conversation({ session }: { session: Session }) {
               {full.commands.map((c, i) => (
                 <li key={c.tool_id || i}>
                   <code className="cmd">{c.command}</code>
-                  {c.description && <span className="lede"> {c.description}</span>}
                   {c.exit_status === 1 && <span className="failure"> failed</span>}
                 </li>
               ))}

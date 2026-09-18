@@ -24,7 +24,8 @@ const NEEDS_AUTH = getSource().name === 'firestore'
  *                          discussions, notes. Content ships in the bundle.
  *   /s/:slug     public  - a published page from Firestore
  *   /admin       private - the session archive, sign-in required
- *   /catchup     private - the same archive as a calendar, day by day
+ *   /catchup     public  - a calendar of activity; counts for anyone, the
+ *                          conversations themselves only once signed in
  *   /content     private - promote a document to the public page, or pull it back
  *
  * The public routes read no private collection at all. Sessions, notes,
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="/kt/*" element={<Section id="kt" />} />
           <Route path="/ideas" element={<Section id="discussions" />} />
           <Route path="/ideas/*" element={<Section id="discussions" />} />
+          <Route path="/catchup" element={<Catchup />} />
           <Route path="/tech-commands" element={<Section id="notes" />} />
           <Route path="/tech-commands/*" element={<Section id="notes" />} />
 
@@ -56,7 +58,6 @@ export default function App() {
 
         <Route path="/s/:slug" element={<Published />} />
         <Route path="/admin" element={<RequireAuth render={(u) => <Admin user={u} />} />} />
-        <Route path="/catchup" element={<RequireAuth render={(u) => <Catchup user={u} />} />} />
         <Route path="/content" element={<RequireAuth render={() => <ContentAdmin />} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -1361,37 +1361,59 @@ body {
 .admin .navfoot .ghost { align-self: start; }
 
 /* Daily Catchup ---------------------------------------------------------- */
-/* A month of squares. Density is the point: which days had work on them
-   should be readable without counting anything. */
-.cal-nav {
-  display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+/* react-calendar ships a white-background default that fights the theme, so
+   its variables are overridden rather than its markup fought with. */
+.catchup { max-width: 1100px; margin: 0 auto; padding: 0 16px 60px; }
+.catchup header { margin-bottom: 18px; }
+.catchup h1 { margin: 0; }
+
+.catchup-grid {
+  display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 28px;
+  align-items: start;
 }
-.cal {
-  display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+@media (max-width: 860px) { .catchup-grid { grid-template-columns: 1fr; } }
+
+.catchup .react-calendar {
+  width: 100%; background: var(--card); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+  font-family: inherit; line-height: 1.4;
 }
-.cal-wd {
-  font: 600 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase;
-  color: var(--ink); opacity: .45; padding: 2px 0 6px; text-align: center;
+.catchup .react-calendar__navigation button {
+  background: none; color: var(--ink); font: 600 14px/1 inherit; min-width: 36px;
 }
-.cal-day {
-  position: relative; aspect-ratio: 1 / 1; min-height: 44px;
-  border: 1px solid var(--line); border-radius: 8px; background: var(--card);
-  color: var(--ink); cursor: pointer; padding: 6px;
-  display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between;
+.catchup .react-calendar__navigation button:enabled:hover,
+.catchup .react-calendar__navigation button:enabled:focus { background: var(--ground); border-radius: 8px; }
+.catchup .react-calendar__navigation button:disabled { opacity: .35; background: none; }
+.catchup .react-calendar__month-view__weekdays__weekday {
+  font: 600 10px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink); opacity: .45; padding: 6px 0;
 }
-.cal-day.is-pad { border: none; background: none; cursor: default; }
-.cal-day:hover:not(.is-pad) { border-color: var(--line-strong); }
-/* A day with work is filled, not merely outlined - an empty day should read as
-   absence at a glance rather than as a slightly different border. */
-.cal-day.has-work { background: var(--accent-soft); border-color: var(--accent-line); }
-.cal-day.is-picked { outline: 2px solid var(--accent); outline-offset: -1px; }
-.cal-num { font: 500 12px/1 var(--mono); opacity: .7; }
-.cal-count {
-  align-self: flex-end; font: 600 11px/1 var(--mono);
-  color: var(--accent); background: var(--ground);
-  border-radius: 999px; padding: 3px 6px;
+.catchup .react-calendar__month-view__weekdays__weekday abbr { text-decoration: none; }
+.catchup .react-calendar__tile {
+  position: relative; padding: 10px 4px 16px; border-radius: 8px;
+  background: none; color: var(--ink); font: 500 12px/1 var(--mono);
 }
-@media (max-width: 640px) {
-  .cal-day { min-height: 36px; padding: 4px; }
-  .cal-count { padding: 2px 4px; }
+.catchup .react-calendar__tile:enabled:hover { background: var(--ground); }
+.catchup .react-calendar__month-view__days__day--neighboringMonth { opacity: .3; }
+.catchup .react-calendar__tile--active,
+.catchup .react-calendar__tile--active:enabled:hover {
+  background: var(--accent-soft); outline: 2px solid var(--accent); outline-offset: -2px;
 }
+.catchup .react-calendar__tile--now { font-weight: 700; }
+
+/* Activity, as a bar under the number. Four steps rather than a gradient - the
+   reader is comparing days at a glance, not reading a value off a scale. */
+.catchup .heat {
+  position: absolute; left: 50%; transform: translateX(-50%); bottom: 5px;
+  height: 3px; border-radius: 2px; background: var(--accent);
+}
+.catchup .heat-1 { width: 20%; opacity: .35; }
+.catchup .heat-2 { width: 40%; opacity: .55; }
+.catchup .heat-3 { width: 60%; opacity: .75; }
+.catchup .heat-4 { width: 80%; opacity: 1; }
+
+.catchup-day h2 { margin: 0 0 4px; }
+.catchup .totals { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 16px; }
+.catchup .totals li { font: 400 13px/1.3 inherit; opacity: .8; }
+.catchup .totals strong { font: 600 18px/1 var(--mono); display: block; opacity: 1; }
+.catchup .signin-hint { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }

@@ -89,17 +89,20 @@ export default function PublicLayout() {
               )}
               </NavLink>
             ))}
+
+          {/* Not a content section - it reads the activity archive rather than
+              markdown - but it belongs beside them in the nav, because to a
+              reader it is simply another thing the site has. */}
+          <NavLink
+            to="/catchup"
+            className={({ isActive }) => 'navitem' + (isActive ? ' on' : '')}
+            data-section="catchup"
+          >
+            <span className="label">Daily Catchup</span>
+          </NavLink>
         </nav>
 
         <div className="navfoot">
-          {/* Both read the private archive, so both are shown with the sign-in
-              hint rather than hidden - a link that asks you to sign in is more
-              use than a page you did not know existed. */}
-          <a className="navitem dash" href="/catchup" data-section="catchup">
-            <span className="label">Daily Catchup</span>
-            <span className="lock" aria-hidden>sign in</span>
-          </a>
-
           <a className="navitem dash" href="/admin" data-section="dashboard">
             <span className="label">Dashboard</span>
             <span className="lock" aria-hidden>sign in</span>
