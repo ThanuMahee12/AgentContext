@@ -36,3 +36,6 @@ src/data/fixtures.json
 
 # internal design notes - never commit to this public repo
 content/ideas/centralized-agent-memory-store.md
+
+# internal drafts - never commit; they ship to every visitor via content.json
+content/ideas/2026-09-18-sec-short-selling-supply-chain.md

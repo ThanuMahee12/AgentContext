@@ -54,6 +54,12 @@ function walkMd(dir, base = '') {
 function load(folder) {
   const dir = join(src, folder)
   return walkMd(dir)
+    // This bundle ships to every visitor inside the JavaScript, so it is a
+    // publishing surface exactly like the database is. The Firestore rule gates
+    // /docs on visibility; without the same gate here a draft is protected in
+    // the database and handed out in the page - which is worse than no gate at
+    // all, because the rule makes it look handled. Absent means draft.
+    .filter(({ file }) => parse(readFileSync(file, 'utf8')).meta.visibility === 'published')
     .map(({ file, rel }) => {
       const { meta, body } = parse(readFileSync(file, 'utf8'))
       const path = rel.replace(/\.md$/, '')
