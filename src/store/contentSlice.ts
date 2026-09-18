@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, query, where } from 'firebase/firestore'
 
 import { content as bundled, type Brainstorm, type Discussion, type Doc } from '../content'
 import { db } from '../firebase'
@@ -39,7 +39,10 @@ const initialState: ContentState = {
 type Section = 'brainstorms' | 'discussions' | 'kt' | 'notes'
 
 export const hydrateContent = createAsyncThunk('content/hydrate', async () => {
-  const snap = await getDocs(collection(db, 'docs'))
+  // Must match the security rule on /docs: only published documents are
+  // publicly readable, and an unconstrained query is rejected rather than
+  // filtered, so the filter is required here and not merely an optimisation.
+  const snap = await getDocs(query(collection(db, 'docs'), where('status', '==', 'published')))
   const out: Record<Section, any[]> = { brainstorms: [], discussions: [], kt: [], notes: [] }
 
   for (const d of snap.docs) {

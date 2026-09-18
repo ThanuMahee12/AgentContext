@@ -2,9 +2,8 @@ rules_version = '2';
 
 // AgentContext access rules.
 //
-// NOT DEPLOYED YET - the project already holds data written by an earlier
-// pipeline, and tightening rules under a live writer breaks it silently.
-// Review against what still writes to this project, then:
+// Deployed 2026-09-18. Before that, /docs was world-readable while holding
+// unpublished drafts - anyone could read them. Redeploy with:
 //     firebase deploy --only firestore:rules
 //
 // Design: private data has NO public read path at all. Published pages are
@@ -101,7 +100,14 @@ service cloud.firestore {
     // Named `docs`, not `content`: `context` already exists and two
     // collections one letter apart is a mistake waiting to happen in a rules file.
     match /docs/{docId} {
-      allow read: if true;
+      // Drafts are NOT public. A document reaches the public page only when an
+      // admin sets status to "published"; anything else is admin-only.
+      //
+      // This is a per-document condition, so a public list query MUST carry a
+      // matching where("status","==","published") - an unconstrained getDocs()
+      // is rejected outright rather than filtered, which is the behaviour we
+      // want: a query that forgets the filter fails loudly instead of leaking.
+      allow read: if canView() || resource.data.status == 'published';
       allow write: if isOwner();
     }
 
