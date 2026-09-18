@@ -103,6 +103,22 @@ export default function Catchup() {
   const dayTotals = selected ? totals[selected] : undefined
   const dayDetail = selected ? byDate.get(selected) : undefined
 
+  // Totals for the month on screen, so the page says something about the shape
+  // of a period rather than only about one square in it.
+  const month = useMemo(() => {
+    if (!picked) return null
+    const prefix = `${picked.getFullYear()}-${String(picked.getMonth() + 1).padStart(2, '0')}`
+    const rows = Object.values(totals).filter((t) => t.date.startsWith(prefix))
+    if (!rows.length) return null
+    return {
+      label: picked.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+      days: rows.length,
+      sessions: rows.reduce((n, t) => n + t.sessions, 0),
+      commands: rows.reduce((n, t) => n + t.commands, 0),
+      busiest: rows.reduce((a, b) => (b.sessions > a.sessions ? b : a)),
+    }
+  }, [picked, totals])
+
   if (loading) return <p className="empty" style={{ paddingTop: 80 }}>Loading…</p>
 
   const dayCount = Object.keys(totals).length
@@ -138,7 +154,7 @@ export default function Catchup() {
         <p className="cal-key">
           <span>quiet</span>
           {[1, 2, 3, 4].map((n) => (
-            <i key={n} style={{ background: `color-mix(in srgb, var(--hue) ${n * 16}%, transparent)` }} />
+            <i key={n} style={{ background: `color-mix(in srgb, var(--hue) ${[14, 28, 44, 62][n - 1]}%, transparent)` }} />
           ))}
           <span>busy</span>
         </p>
@@ -171,6 +187,23 @@ export default function Catchup() {
               {user && dayDetail && <DayHistory day={dayDetail} />}
               {user && !dayDetail && dayTotals && (
                 <p className="empty">No conversation detail for this day.</p>
+              )}
+
+              {month && (
+                <section className="monthsum">
+                  <h3>{month.label}</h3>
+                  <p>
+                    Active on <b>{month.days}</b> day{month.days === 1 ? '' : 's'},
+                    {' '}<b>{month.sessions}</b> conversation{month.sessions === 1 ? '' : 's'},
+                    {' '}<b>{month.commands}</b> command{month.commands === 1 ? '' : 's'}.
+                    {' '}Busiest was{' '}
+                    <button className="linkish" onClick={() => {
+                      const [y, m, d] = month.busiest.date.split('-').map(Number)
+                      setPicked(new Date(y, m - 1, d))
+                    }}>{month.busiest.date}</button>{' '}
+                    with {month.busiest.sessions}.
+                  </p>
+                </section>
               )}
             </>
           )}

@@ -1405,15 +1405,24 @@ body {
 .cal .react-calendar__navigation button:disabled { opacity: .3; }
 .cal .react-calendar__navigation button:focus-visible { outline: 2px solid var(--hue); outline-offset: 1px; }
 
+.cal .react-calendar__month-view__weekdays,
+.cal .react-calendar__month-view__days {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.cal .react-calendar__month-view__weekdays { gap: 4px 4px; margin-bottom: 4px; }
 .cal .react-calendar__month-view__weekdays__weekday {
   font: 600 10px/1 var(--plex-mono); color: var(--text-3);
-  padding: 8px 0; text-align: center;
+  padding: 6px 0; text-align: center;
 }
 .cal .react-calendar__month-view__weekdays__weekday abbr { text-decoration: none; }
 
 .cal .react-calendar__tile {
-  position: relative; aspect-ratio: 1;
+  /* flex-basis from the library is inert inside a grid, which is the point */
+  aspect-ratio: 1;
   display: flex; align-items: center; justify-content: center;
+  max-width: none !important;
   background: none; border: 0; border-radius: var(--r-s);
   color: var(--text-2); font: 400 13px/1 var(--plex-mono);
 }
@@ -1440,7 +1449,7 @@ body {
   margin-top: 12px; color: var(--text-3);
   font: 400 11px/1 var(--plex-mono);
 }
-.cal-key i { width: 13px; height: 13px; border-radius: 3px; display: block; }
+.cal-key i { width: 14px; height: 14px; border-radius: 3px; display: block; border: 1px solid var(--line); }
 
 /* The day panel ------------------------------------------------------------ */
 .catchup-day > h2 {
@@ -1450,7 +1459,8 @@ body {
 
 .totals {
   list-style: none; margin: 0 0 22px; padding: 0;
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 2px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 1px;
+  background: var(--line);
   border: 1px solid var(--line); border-radius: var(--r); overflow: hidden;
 }
 .totals li { background: var(--surface); padding: 13px 14px; }
@@ -1466,6 +1476,18 @@ body {
 }
 .signin-hint a { color: var(--hue); }
 
+.monthsum {
+  margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line);
+}
+.monthsum h3 { margin: 0 0 6px; }
+.monthsum p { margin: 0; color: var(--text-2); font-size: 14px; line-height: 1.6; max-width: 62ch; }
+.monthsum b { color: var(--text); font-family: var(--plex-mono); font-weight: 600; }
+.linkish {
+  background: none; border: 0; padding: 0; font: inherit;
+  color: var(--hue); cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+}
+.linkish:focus-visible { outline: 2px solid var(--hue); outline-offset: 2px; border-radius: 2px; }
+
 .catchup-day h3 {
   font-size: 13px; font-weight: 600; color: var(--text-3);
   margin: 24px 0 10px; font-family: var(--plex-sans);
@@ -1475,7 +1497,11 @@ body {
   .catchup-grid { grid-template-columns: 1fr; gap: 24px; }
   .cal { position: static; }
   .cal .react-calendar__tile { font-size: 14px; }
-  .totals { grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); }
+}
+@media (max-width: 620px) {
+  .totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* an odd number of cells leaves the last one beside a gap; span it */
+  .totals li:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
 /* The sheet's 44px side padding leaves a phone about 280px for a seven-column
    calendar. Pulled back only on this page, so no other view shifts. */
