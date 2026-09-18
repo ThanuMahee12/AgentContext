@@ -105,37 +105,44 @@ export default function Catchup() {
 
   if (loading) return <p className="empty" style={{ paddingTop: 80 }}>Loading…</p>
 
+  const dayCount = Object.keys(totals).length
+
   return (
-    <div className="catchup">
-      <header>
+    // data-section sets --hue, the way every other section of the site does.
+    <div data-section="catchup">
+      <header className="catchup-head">
         <h1>Daily Catchup</h1>
-        <p className="lede">
-          {Object.keys(totals).length} day{Object.keys(totals).length === 1 ? '' : 's'} of
-          recorded activity
-          {user ? ` · signed in as ${user.email}` : ' · sign in to open a day'}
+        <p>
+          {dayCount} day{dayCount === 1 ? '' : 's'} of recorded activity
+          {user ? `, signed in as ${user.email}` : '. Sign in to open a day.'}
         </p>
       </header>
 
       {note && <p className="banner failure">{note}</p>}
 
       <div className="catchup-grid">
+        <div className="cal">
         <Calendar
           onChange={(v) => setPicked(v as Date)}
           value={picked}
           maxDate={new Date()}
-          tileContent={({ date, view }) => {
+          tileClassName={({ date, view }) => {
             if (view !== 'month') return null
             const t = totals[key(date)]
             if (!t?.sessions) return null
-            // Four steps rather than a continuous ramp: a reader is comparing
-            // days at a glance, not reading a value off a scale.
-            const step = Math.min(4, Math.ceil((t.sessions / busiest) * 4))
-            return <span className={`heat heat-${step}`} aria-hidden />
+            // Four steps rather than a continuous ramp: a reader compares days
+            // at a glance, they do not read a value off a scale.
+            return `work-${Math.min(4, Math.ceil((t.sessions / busiest) * 4))}`
           }}
-          tileClassName={({ date, view }) =>
-            view === 'month' && totals[key(date)]?.sessions ? 'has-work' : null
-          }
         />
+        <p className="cal-key">
+          <span>quiet</span>
+          {[1, 2, 3, 4].map((n) => (
+            <i key={n} style={{ background: `color-mix(in srgb, var(--hue) ${n * 16}%, transparent)` }} />
+          ))}
+          <span>busy</span>
+        </p>
+        </div>
 
         <section className="catchup-day">
           {!selected && <p className="empty">Pick a day.</p>}
@@ -145,18 +152,18 @@ export default function Catchup() {
               <h2>{selected}</h2>
               {dayTotals ? (
                 <ul className="totals">
-                  <li><strong>{dayTotals.sessions}</strong> conversations</li>
-                  <li><strong>{dayTotals.messages}</strong> messages</li>
-                  <li><strong>{dayTotals.commands}</strong> commands</li>
-                  <li><strong>{dayTotals.files}</strong> files</li>
+                  <li><b>{dayTotals.sessions}</b><span>conversations</span></li>
+                  <li><b>{dayTotals.messages}</b><span>messages</span></li>
+                  <li><b>{dayTotals.commands}</b><span>commands</span></li>
+                  <li><b>{dayTotals.files}</b><span>files</span></li>
                   {dayTotals.failed > 0 && (
-                    <li className="failure"><strong>{dayTotals.failed}</strong> failed</li>
+                    <li className="bad"><b>{dayTotals.failed}</b><span>failed</span></li>
                   )}
                 </ul>
-              ) : <p className="empty">Nothing recorded.</p>}
+              ) : <p className="empty">Nothing recorded on this day.</p>}
 
               {!user && dayTotals && (
-                <p className="lede signin-hint">
+                <p className="signin-hint">
                   <a href="/admin">Sign in</a> to read the conversations from this day.
                 </p>
               )}
