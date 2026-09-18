@@ -5,6 +5,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import Login from './components/Login'
 import Admin from './pages/Admin'
 import Catchup from './pages/Catchup'
+import ContentAdmin from './pages/ContentAdmin'
 import Published from './pages/Published'
 import PublicLayout from './pages/public/Layout'
 import Home from './pages/public/Home'
@@ -24,6 +25,7 @@ const NEEDS_AUTH = getSource().name === 'firestore'
  *   /s/:slug     public  - a published page from Firestore
  *   /admin       private - the session archive, sign-in required
  *   /catchup     private - the same archive as a calendar, day by day
+ *   /content     private - promote a document to the public page, or pull it back
  *
  * The public routes read no private collection at all. Sessions, notes,
  * context and credentials are denied to anonymous readers by firestore.rules,
@@ -55,6 +57,7 @@ export default function App() {
         <Route path="/s/:slug" element={<Published />} />
         <Route path="/admin" element={<RequireAuth render={(u) => <Admin user={u} />} />} />
         <Route path="/catchup" element={<RequireAuth render={(u) => <Catchup user={u} />} />} />
+        <Route path="/content" element={<RequireAuth render={() => <ContentAdmin />} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
