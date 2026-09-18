@@ -1359,3 +1359,39 @@ body {
 .admin .navitem.dash:hover { color: var(--s-dashboard); }
 .admin .navfoot { gap: 10px; }
 .admin .navfoot .ghost { align-self: start; }
+
+/* Daily Catchup ---------------------------------------------------------- */
+/* A month of squares. Density is the point: which days had work on them
+   should be readable without counting anything. */
+.cal-nav {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+}
+.cal {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+}
+.cal-wd {
+  font: 600 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink); opacity: .45; padding: 2px 0 6px; text-align: center;
+}
+.cal-day {
+  position: relative; aspect-ratio: 1 / 1; min-height: 44px;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--card);
+  color: var(--ink); cursor: pointer; padding: 6px;
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between;
+}
+.cal-day.is-pad { border: none; background: none; cursor: default; }
+.cal-day:hover:not(.is-pad) { border-color: var(--line-strong); }
+/* A day with work is filled, not merely outlined - an empty day should read as
+   absence at a glance rather than as a slightly different border. */
+.cal-day.has-work { background: var(--accent-soft); border-color: var(--accent-line); }
+.cal-day.is-picked { outline: 2px solid var(--accent); outline-offset: -1px; }
+.cal-num { font: 500 12px/1 var(--mono); opacity: .7; }
+.cal-count {
+  align-self: flex-end; font: 600 11px/1 var(--mono);
+  color: var(--accent); background: var(--ground);
+  border-radius: 999px; padding: 3px 6px;
+}
+@media (max-width: 640px) {
+  .cal-day { min-height: 36px; padding: 4px; }
+  .cal-count { padding: 2px 4px; }
+}

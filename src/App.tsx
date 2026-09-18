@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import Login from './components/Login'
 import Admin from './pages/Admin'
+import Catchup from './pages/Catchup'
 import Published from './pages/Published'
 import PublicLayout from './pages/public/Layout'
 import Home from './pages/public/Home'
@@ -22,6 +23,7 @@ const NEEDS_AUTH = getSource().name === 'firestore'
  *                          discussions, notes. Content ships in the bundle.
  *   /s/:slug     public  - a published page from Firestore
  *   /admin       private - the session archive, sign-in required
+ *   /catchup     private - the same archive as a calendar, day by day
  *
  * The public routes read no private collection at all. Sessions, notes,
  * context and credentials are denied to anonymous readers by firestore.rules,
@@ -51,14 +53,15 @@ export default function App() {
         </Route>
 
         <Route path="/s/:slug" element={<Published />} />
-        <Route path="/admin" element={<RequireAuth />} />
+        <Route path="/admin" element={<RequireAuth render={(u) => <Admin user={u} />} />} />
+        <Route path="/catchup" element={<RequireAuth render={(u) => <Catchup user={u} />} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )
 }
 
-function RequireAuth() {
+function RequireAuth({ render }: { render: (user: User | null) => JSX.Element }) {
   const [user, setUser] = useState<User | null>(null)
   const [ready, setReady] = useState(!NEEDS_AUTH)
 
@@ -72,5 +75,5 @@ function RequireAuth() {
 
   if (!ready) return <p className="empty" style={{ paddingTop: 80 }}>Checking sign-in…</p>
   if (NEEDS_AUTH && !user) return <Login />
-  return <Admin user={user} />
+  return render(user)
 }

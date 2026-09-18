@@ -112,7 +112,7 @@ export const sections: Section[] = [
   },
   {
     id: 'discussions',
-    label: 'Ideas',
+    label: 'Discussion',
     path: '/ideas',
     blurb: 'Proposals worked through with other people.',
   },
