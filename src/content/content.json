@@ -1,61 +1,7 @@
 {
-  "generated_at": "2026-09-18T21:25:55.571Z",
+  "generated_at": "2026-09-18T21:29:35.458Z",
   "brainstorms": [],
-  "discussions": [
-    {
-      "id": "2026-09-18-one-memory-many-agents",
-      "path": "2026-09-18-one-memory-many-agents",
-      "segments": [
-        "2026-09-18-one-memory-many-agents"
-      ],
-      "parent": "",
-      "depth": 0,
-      "title": "One memory, many agents",
-      "description": "Why agent memory was moved out of each tool and into a shared MCP server, and what that forced us to fix along the way",
-      "date": "2026-09-18",
-      "status": "implementing",
-      "url": "",
-      "gist": "",
-      "notion": "",
-      "project": "",
-      "tags": [
-        "agentprobe",
-        "mcp",
-        "memory",
-        "architecture"
-      ],
-      "body": "## Discussion\n\nCoding agents each keep their own memory, in their own format, in their own place.\nClaude Code scopes it per *project directory*, so a fact learned in one repository is\ninvisible from the next. Nothing survives a rebuilt machine. No other tool can read\nany of it.\n\nOn one ordinary developer box that had produced 64 memory files spread across 13\nproject directories and two accounts, none of them reachable from anywhere but where\nthey were written. The obvious fix — sync the files around — is wrong twice over: it\nhas to be written once per tool, and it leaves every tool's memory shaped differently\nat the end of it.\n\n### MCP is the seam that already exists\n\nEvery agent worth wiring up speaks the Model Context Protocol. So memory became a\nserver rather than a sync: one store, one protocol, and any client that speaks it gets\nthe same facts on any machine. `memory_search`, `memory_write`, `memory_get`,\n`memory_list`, `memory_delete`, plus a `history_search` over past sessions.\n\nIt replaced a worse idea we had first, which was to inject recall into every prompt\nthrough a hook. A hook has to *guess* when history is wanted, pays a round trip on\nprompts that did not want it, and pushes text into the context whether it helps or\nnot. A tool is called only when the model actually wants the answer.\n\nFacts carry a scope — `global`, `user`, or `project:<name>`. That distinction is what\nstops centralising from being mere relocation: without it a shared store is one\nundifferentiated pile and nobody trusts what comes out of it.\n\n### Centralised only counts if it is centralised for everyone\n\nThe interesting failures were not in the server.\n\nRegistration is not one thing. Four clients, four different config files, three\ndifferent schemas — one nests the command as a single argv list and calls a local\nserver \"local\" rather than \"stdio\"; another writes to a directory next to the one its\nown files live in. None of that is discoverable from documentation. We learned each\nshape by running the tool's own `mcp add` and reading back what it wrote, which is\nthe only method that does not produce config that parses and silently does nothing.\n\nThen the tools themselves turned out to be installed in one user's home directory, so\nthree of four accounts could not run them at all. And the credential the whole thing\nauthenticated with was one person's personal login, mode 600 inside a private home —\nreadable by its owner and nobody else. Both are the same mistake in different\nclothing: something shared in principle, installed somewhere only one account can\nreach.\n\n### The check has to be a command, not a memory\n\nEvery one of those failures was silent. An expired token still reports a configured\nhost. A credential belonging to another user is unreadable rather than absent. MCP\nregisters perfectly happily against a client that is not installed.\n\nSo the diagnostic became a command that answers two questions per check — what is\ntrue, and what to run about it — and exits with the failure count so a script or an\nagent can branch without parsing output. It immediately found something nobody knew:\na cryptography module missing on three of four accounts, needed only for\nservice-account authentication. Those accounts worked fine on the fallback credential\nand would have broken the moment the proper one was installed, looking exactly like a\nbad key rather than a missing module.\n\nIt also has to check *as* each account, through a login shell. Checking by hand the\nobvious way resolves a different PATH and a different interpreter than the account\nreally has, and produces confident wrong answers. That mistake was made twice in one\nday before the tool closed it.\n\n### Publishing needs a gate, and the gate needs its own field\n\nA related thread: documents published from markdown had no notion of draft. Writing a\nfile was enough to publish it. Adding a default fixed that and broke something else —\nthe status field was already in use as a *workflow* state, so keying public access on\nit meant any value the author picked that was not the magic word silently hid the\npage, and every future workflow rename became a security change.\n\nVisibility is now its own field. The lesson generalises: when one field starts\nanswering two questions, the second question is the one that will be answered wrong.\n\n## Open questions\n\n- A second probe, for an agent other than the one that has real lifecycle hooks. The\n  rest need polling, which needs a daemon, which is the same work as periodic sync.\n- Whether memory should be imported from the existing per-project files automatically,\n  or only on request. Importing everything risks drowning the store in facts that were\n  never meant to outlive their directory.\n- What a *wrong* remembered fact costs. Provenance — which agent, which tools, which\n  account — is recorded so one can be traced. Nothing yet expires or re-verifies them.",
-      "headings": [
-        {
-          "depth": 2,
-          "text": "Discussion"
-        },
-        {
-          "depth": 3,
-          "text": "MCP is the seam that already exists"
-        },
-        {
-          "depth": 3,
-          "text": "Centralised only counts if it is centralised for everyone"
-        },
-        {
-          "depth": 3,
-          "text": "The check has to be a command, not a memory"
-        },
-        {
-          "depth": 3,
-          "text": "Publishing needs a gate, and the gate needs its own field"
-        },
-        {
-          "depth": 2,
-          "text": "Open questions"
-        }
-      ],
-      "source": "content/ideas/2026-09-18-one-memory-many-agents.md",
-      "bytes": 4920,
-      "comments": []
-    }
-  ],
+  "discussions": [],
   "kt": [],
   "notes": []
 }
