@@ -1,7 +1,65 @@
 {
-  "generated_at": "2026-09-18T21:29:35.458Z",
+  "generated_at": "2026-09-18T21:32:19.018Z",
   "brainstorms": [],
-  "discussions": [],
+  "discussions": [
+    {
+      "id": "2026-09-18-sec-short-selling-supply-chain",
+      "path": "2026-09-18-sec-short-selling-supply-chain",
+      "segments": [
+        "2026-09-18-sec-short-selling-supply-chain"
+      ],
+      "parent": "",
+      "depth": 0,
+      "title": "SEC Short Selling & Supply Chain Code Fix",
+      "description": "Bloomberg dataset onboarding with shared MR; grabber maps + silver encrypted passthrough + production deployment strategy",
+      "date": "2026-09-18",
+      "status": "draft",
+      "url": "",
+      "gist": "",
+      "notion": "",
+      "project": "",
+      "tags": [
+        "data-alchemy",
+        "onboarding",
+        "bloomberg",
+        "grabber-maps"
+      ],
+      "body": "## Discussion\n\n### Scope\n\nTwo Bloomberg datasets onboarded together in **MR !1210** (`feature/bloomberg-ssl-splc-mapping` → `staging`):\n\n1. **SEC Short Selling** — `sec_short_selling_cwiq_pipe/1.0` → `sec_short_selling/1.0`\n   - Four Sec13f2 families: equity, funds, preferred, warrant (base + V2 versions)\n   - 64 gold files/day\n   - Includes new silver encrypted-passthrough feature for `.enc` files\n\n2. **Supply Chain** — `supply_chain_cwiq_pipe/1.0` → `supply_chain/1.0`\n   - Three SPLC streams (EID34494, EID43990, EID46835)\n   - Expected delivery: 2 CSV + 1 XML daily\n   - Greenfield target (legacy dir never populated)\n\n**Code Changes:** Silver-layer encrypted passthrough feature. New opt-in config: one `.enc` input → encrypted copy + decrypted rename. Preferred streams are encrypted-only in legacy, now replicated verbatim.\n\n**Status:** Validation complete, approved by Wingate (2026-07-22). Ready for merge → staging deploy → prod.\n\n---\n\n### Validation Evidence\n\n#### SEC Short Selling (22-day crawled overlap: 2026-06-23 to 2026-07-14)\n\n**Local pipeline run:**\n- 1,408/1,408 gold files (64/day) delivered\n- All DQ checks **green, zero allowances/ignores:**\n  - Bijective: 1,408 matched\n  - NLookback: ✅\n  - FilenameExistence: 1,408 checked / 0 missing\n  - BronzeGoldConservation: ok=1,408 / unmapped=0\n  - FileTypeFidelity: 0 mismatches\n\n**Staging 24h+ watch run (live since 2026-07-16, box01):**\n- 64/64 gold daily, including weekends\n- Real-key `.enc` decrypt: 546 OK / 0 failures\n- Size comparison vs legacy CDP (2026-07-17): 64/64 files both sides, 100% content parity\n  - 24 gz-level size diffs are content-identical after decompression (re-compression level only)\n- Time comparison (2026-07-19): delivery→gold avg 9m25s ±36s\n  - Legacy CDP upstream has ~5min head start; our pipeline beat CDP on 4 warrant renames\n\n**Discovery DQ pre-deployment verification (2026-07-16, ny5-predpalch01):**\n- ControlDB read-replica: reachable from prod boxes\n- Feed tracked under exact name: `bloomberg/sec_short_selling_cwiq_pipe`\n- 103,006 delivery rows over 90 days\n- Check correctly gates on \"no bronze records — service not yet run\" (no false alerts)\n\n**DQ Report:** https://drive.google.com/file/d/1q-UiBu5Sc4tg2RZQKjJJWM96PY7NTEFH/view\n**Slack thread:** https://codewilling.slack.com/archives/C09274AFYTY/p1784141952172939\n\n---\n\n#### Supply Chain (20-day validation: 2026-06-22 to 2026-07-14)\n\n**Local pipeline run:**\n- 69/69 files delivered, exact tree match\n- All outputs verified intact gzip\n- DQ all green:\n  - BronzeGoldConservation: ok=69 / missing=0 / unmapped=0\n  - NLookback: ✅\n  - ExpectedFileCount: ✅ (2 CSV + 1 XML daily via literal per-EID validation templates)\n  - Bijective/FilenameExistence: correctly skip (empty comparison tree)\n\n**Staging 24h+ watch run (live since 2026-07-16, box01):**\n- 3/3 daily deliveries\n- 9/9 gold byte-identical (via `cmp`) to pipe source across 2026-07-17 to 2026-07-19\n- Delivery→gold latency:\n  - CSV batch: 48s–2m30s\n  - XML: 2m–4m30s\n  - Every day consistent\n\n**Delivery shape confirmed:**\n- Two batches: 2 CSV ~20:02 ET previous evening, XML ~00:08 ET\n\n**DQ Report:** https://drive.google.com/file/d/1S2QQ9Oml7hNAVydBlRh9Xs_GB5LAFDBo/view\n\n---\n\n### Code Changes Required\n\n#### Silver Encrypted Passthrough (New Feature)\n\n**Scope:** SEC Short Selling only (supply chain has no encrypted files)\n\n**Mechanism:**\n- New opt-in config: `silver_encrypted_passthrough`\n- Routes `.enc` files to gold as BOTH encrypted + decrypted variants (per-family rules)\n\n**Dual-output behavior by family:**\n\n| Family | `.enc` Input | Output 1 | Output 2 |\n|---|---|---|---|\n| **equity** | `equitySec13f2...csv.gz.YYYYMMDD.enc` | `.enc` verbatim (encrypted) | Decrypted date-rename (plaintext) |\n| **funds** | `fundsSec13f2...csv.gz.YYYYMMDD.enc` | `.enc` verbatim (encrypted) | Decrypted date-rename (plaintext) |\n| **warrant** | `warrantSec13f2...csv.gz.YYYYMMDD.enc` | `.enc` verbatim (encrypted) | Decrypted date-rename (plaintext) |\n| **preferred** | `preferredSec13f2...csv.gz.YYYYMMDD.enc` | `.enc` verbatim (encrypted) | ❌ None (encrypted-only, legacy) |\n\n**Legacy parity:**\n- Preferred: encrypted-only archives (legacy default)\n- Equity/funds/warrant: both forms delivered (legacy convention for flexibility)\n\n**Implementation notes:**\n- Configuration-based: `silver_encrypted_passthrough` (opt-in per dataset)\n- Also leverages: `silver_decrypt_inclusions` (which families to decrypt)\n- No impact on non-encrypted files (gzip, plaintext csv passthrough)\n- Silver stage inspects both configs and applies only when active\n- Staging/prod have `BLOOMBERG_DES_KEY` for decrypt operations\n\n#### Grabber Maps — Target Path Handling ✅\n\nBoth datasets carry new patterns in **shared MR !1210** (3 commits):\n\n**SEC Short Selling: `bloomberg_sec_short_selling_cwiq_pipe_1_0.json`**\n- Five patterns covering four Sec13f2 families (equity/funds/preferred/warrant, base+V2)\n- **Target path:** `bloomberg/sec_short_selling/1.0/raw/{YYYY}/{YYYYMMDD}/`\n- **Multi-output handling:**\n  1. **Verbatim archive:** `(equity|funds|warrant)Sec13f2(V\\d+)?(Differences)?.csv.gz.YYYYMMDD` (preserved)\n  2. **Dated rename:** `(equity|funds|warrant)Sec13f2(V\\d+)?(Differences)?_YYYYMMDD.csv.gz` (SDP convention)\n  3. **Preferred stream:** Verbatim only (encrypted-only in legacy, no decryption)\n  4. **Encrypted passthrough:** `.enc` files kept verbatim, equity/funds/warrant additionally decrypted\n- **Validation templates:** Per-output (verbatim + rename) with proper date folder extraction\n- Back-office universe (futures, options, corpPfd) intentionally unmapped\n\n**Supply Chain: `bloomberg_supply_chain_cwiq_pipe_1_0.json`**\n- Three patterns, one per SPLC stream (EID34494, EID43990, EID46835)\n- **Target path:** `bloomberg/supply_chain/1.0/raw/{YYYY}/{YYYYMMDD}/`\n- **Filename structure:** `EIDxxxxx_YYYYMMDD.{csv,xml}.gz` (date from filename, not delivery path)\n- **Date folder routing:** Extracted from `EID\\d+_(\\d{4})(\\d{2})(\\d{2})` → `\\1/\\1\\2\\3/`\n  - Handles history/ backfill files with old dates under new delivery paths\n- **Expected file count:** 2 CSV (daily) + 1 XML (daily), validated per-pattern\n- **EID-enumerated:** New streams require deliberate addition (not auto-discovered)\n- **Greenfield target:** Legacy dir unpopulated since 2026-04; SDP convention adopted\n\n---\n\n### Deployment Plan\n\n**Sequence:**\n\n1. **Merge MR !1210** → staging (feature/bloomberg-ssl-splc-mapping)\n   - 4 commits: three for maps/config, fourth for staging service files\n\n2. **Deploy to staging:**\n   - Systemd service: `data-alchemy-staging-bloomberg-1.0-sec_short_selling_cwiq_pipe`\n   - Entry in: `deploy-data-alchemy-staging.yml` (watch mode, real feed)\n   - RAW_FP_PREFIX=/sf/data\n   - Bonus: staging has `CWIQ_PIPE_DB_URL`, so Discovery DQ runs live during watch\n\n3. **Monitor 24h+ watch run** (already done locally, staging runs confirmed)\n   - Time & size comparison vs legacy CDP\n\n4. **Production deployment:**\n   - New MR after staging validation (box TBD by Wingate)\n   - Service per box, watch mode, live feed\n\n---\n\n### Open Items\n\n**SEC Short Selling:**\n- Legacy history pre-dating the pipe feed (~pre-2026-06-22) not reproducible from pipe\n- Prod backfill scope question for Wingate: how far back to fill?\n\n**Supply Chain:**\n- Initial history backfill (~14 days) requires `--fp` (raw discovery's mtime lookback misses older files)\n\n**Testing progression (from tickets):**\n- ✅ Bloomberg Family: tested\n- ✅ BEST: tested\n- 🔄 BBOCAX: next (with new code changes)\n\n---\n\n### Decision Gate\n\n**Current state (2026-07-22):**\n- Both datasets **approved** by Wingate\n- Both ready for **merge → staging → prod**\n- Code changes **configuration-based** (not intrusive)\n- Discovery DQ verified against live ControlDB\n\n**Blockers:**\n- None. Waiting on code review sign-off to land MR !1210.\n\n**Success criteria post-merge:**\n- Staging 24h watch: both datasets cycle daily, DQ green\n- Prod deployment: services start, files land in gold, no regressions on existing datasets",
+      "headings": [
+        {
+          "depth": 2,
+          "text": "Discussion"
+        },
+        {
+          "depth": 3,
+          "text": "Scope"
+        },
+        {
+          "depth": 3,
+          "text": "Validation Evidence"
+        },
+        {
+          "depth": 3,
+          "text": "Code Changes Required"
+        },
+        {
+          "depth": 3,
+          "text": "Deployment Plan"
+        },
+        {
+          "depth": 3,
+          "text": "Open Items"
+        },
+        {
+          "depth": 3,
+          "text": "Decision Gate"
+        }
+      ],
+      "source": "content/ideas/2026-09-18-sec-short-selling-supply-chain.md",
+      "bytes": 8035,
+      "comments": []
+    }
+  ],
   "kt": [],
   "notes": []
 }
