@@ -101,13 +101,17 @@ service cloud.firestore {
     // collections one letter apart is a mistake waiting to happen in a rules file.
     match /docs/{docId} {
       // Drafts are NOT public. A document reaches the public page only when an
-      // admin sets status to "published"; anything else is admin-only.
+      // admin sets visibility to "published"; anything else is admin-only.
+      //
+      // Deliberately not keyed on `status`: that is a workflow state the author
+      // picks (open, implementing, done), and overloading it to also mean "the
+      // world can read this" turns every workflow rename into a security change.
       //
       // This is a per-document condition, so a public list query MUST carry a
-      // matching where("status","==","published") - an unconstrained getDocs()
+      // matching where("visibility","==","published") - an unconstrained getDocs()
       // is rejected outright rather than filtered, which is the behaviour we
       // want: a query that forgets the filter fails loudly instead of leaking.
-      allow read: if canView() || resource.data.status == 'published';
+      allow read: if canView() || resource.data.visibility == 'published';
       allow write: if isOwner();
     }
 

@@ -4,6 +4,7 @@ description: "S&P Global Industry Classification Standard (GICS) data pipeline."
 date: "2026-01-17"
 url: "https://git.codewilling.com/alchmy/inverstigations/-/issues/1"
 tags: ["pipeline", "sp", "data-alchemy"]
+visibility: "published"
 ---
 
 S&P Global Industry Classification Standard (GICS) data pipeline. Source paths cwiq-pipe/env[1-3]/gics/ converge to single gics_direct/ target. Shovel uses ZIP expansion with virtual paths - extracts ZIP contents and maps internal files to flat structure. Key regex pattern: (?P<package>bgicshglb03|pkgGIC01)\.(?P<date>\d{8})\.zip with virtual_path {package}/{filename}. Compression flow: ZIP input → LZ4 output, but grabber map only handles ZIP passthrough (no LZ4). Products directory currently unmapped. Package status: 2 available (bgicshglb03, pkgGIC01), 23 missing from source including asc/bgicshglb03, busdescl, caintl, CompustatRefDataV2, seg, segh etc.

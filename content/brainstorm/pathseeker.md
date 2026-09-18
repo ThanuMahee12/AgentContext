@@ -4,6 +4,7 @@ description: "CLI tool for path analysis and pattern extraction."
 date: "2026-01-16"
 gist: "https://gist.github.com/ThanuMahee12/75938d6097425ee9c3d6690be29e6558"
 tags: ["cli", "path-analysis", "pattern-extraction", "tool"]
+visibility: "published"
 ---
 
 CLI tool for path analysis and pattern extraction. Core idea: Split paths → Classify segments → Generate patterns. Input: file path like /sf/data/bloomberg/2025/11/28/file.csv. Output: glob pattern (sf/data/*/[0-9]{4}/**/*.csv) or regex pattern. Segment types: LITERAL (sf, data), DIGITS (2025, 11), VARIABLE (vendor), TIMESTAMP (070847), DATE (20251128), FILE_EXT (.csv, .parquet). Three extraction modes: SIMPLE (data/*/2025/*.csv), MEDIUM (data/{vendor}/{YYYY}/{filename}.csv), ADVANCED (data/(?P<vendor>[^/]+)/(?P<year>\d{4})/.*\.csv). Components: PathTree (PathNode, BFS/DFS Walker), Analyzer (Segment Splitter, Type Classifier), Extractors (Glob, Regex), CLI (scan, convert commands). Tech stack: Python 3.13+, stdlib only, uv, ruff, pytest.

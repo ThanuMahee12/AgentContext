@@ -1,6 +1,7 @@
 ---
 title: "SQLite Parallelism Bottleneck: Per-Worker SQLite + DuckDB Read Layer"
 description: "Current SQLite architecture has write lock contention when running parallel workers (-p\u2026"
+visibility: "published"
 ---
 
 **Date:** 2026-03-05

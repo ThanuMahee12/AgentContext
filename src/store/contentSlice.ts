@@ -42,7 +42,7 @@ export const hydrateContent = createAsyncThunk('content/hydrate', async () => {
   // Must match the security rule on /docs: only published documents are
   // publicly readable, and an unconstrained query is rejected rather than
   // filtered, so the filter is required here and not merely an optimisation.
-  const snap = await getDocs(query(collection(db, 'docs'), where('status', '==', 'published')))
+  const snap = await getDocs(query(collection(db, 'docs'), where('visibility', '==', 'published')))
   const out: Record<Section, any[]> = { brainstorms: [], discussions: [], kt: [], notes: [] }
 
   for (const d of snap.docs) {
