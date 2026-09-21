@@ -216,29 +216,43 @@ export default function Catchup() {
 /** The signed-in half: what actually happened that day. */
 function DayHistory({ day }: { day: Day }) {
   return (
-    <div style={{ marginTop: 18 }}>
+    <div style={{ marginTop: 20 }}>
       <h3>Conversations</h3>
       <div className="cards">
         {day.sessions.map((s) => <Conversation key={s.session_id} session={s} />)}
       </div>
 
       {day.context.length > 0 && (
-        <div className="links" style={{ marginTop: 16 }}>
+        <>
           <h3>Links</h3>
-          <ul>
+          <ul className="doclist">
             {day.context.map((c) => (
               <li key={c.doc_id}>
-                <a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a>
-                {c.source && <span className="chip">{c.source}</span>}
+                <a href={c.url} target="_blank" rel="noreferrer">
+                  <strong>{c.title || c.url}</strong>
+                  {c.source && <span className="project">{c.source}</span>}
+                </a>
               </li>
             ))}
           </ul>
-        </div>
+        </>
       )}
     </div>
   )
 }
 
+const time = (iso: string) =>
+  iso ? new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
+
+/**
+ * One recorded conversation, built to the shape `.card` actually expects: a
+ * two-column grid of stripe and inner. An earlier version put a button inside
+ * it, which the 3px column squeezed into a sliver - the classes were right and
+ * the structure was not.
+ *
+ * Commands live in a subcollection and are fetched only when a card is opened;
+ * one session in this archive carries 294 of them.
+ */
 function Conversation({ session }: { session: Session }) {
   const [open, setOpen] = useState(false)
   const [full, setFull] = useState<Session>(session)
@@ -255,37 +269,52 @@ function Conversation({ session }: { session: Session }) {
     } catch { /* metadata is still worth showing */ } finally { setBusy(false) }
   }
 
+  const failed = session.failed_count ?? 0
+
   return (
-    <article className="card">
-      <button className="entry" onClick={toggle} aria-expanded={open}>
-        <div className="crumbs">
-          <span className="crumb">{session.project}</span>
-          {session.git_branch && <span className="branch">{session.git_branch}</span>}
-          <span className="chip">{session.provider}</span>
-        </div>
-        <p className="lede">{session.preview || '(no preview)'}</p>
-        <div className="facet">
-          <span>{session.message_count} msg</span>
-          <span>{session.command_count} cmd</span>
-          {session.failed_count > 0 && <span className="failure">{session.failed_count} failed</span>}
-          <span>{(session.started || '').slice(11, 16)}</span>
-        </div>
+    <div className="convo">
+      <button className="card" onClick={toggle} aria-expanded={open}>
+        <span className="stripe" data-provider={session.provider}
+              data-state={failed > 0 ? 'failed' : undefined} />
+        <span className="inner">
+          <span className="row1">
+            <time dateTime={session.started}>{time(session.started)}</time>
+            <span className="project">{session.project}</span>
+            <span className="who">
+              {session.provider}
+              {session.os_user ? ` · ${session.os_user}` : ''}
+              {session.git_branch && session.git_branch !== 'HEAD' ? ` · ${session.git_branch}` : ''}
+            </span>
+          </span>
+
+          {session.preview && <span className="preview">{session.preview}</span>}
+
+          <span className="stats">
+            <span className="stat"><b>{session.message_count}</b> msg</span>
+            <span className="stat"><b>{session.command_count}</b> cmd</span>
+            {failed > 0 && <span className="stat err"><b>{failed}</b> failed</span>}
+            <span className="stat"><b>{session.file_count}</b> files</span>
+            <span className="stat">{open ? 'hide commands' : 'show commands'}</span>
+          </span>
+        </span>
       </button>
+
       {open && (
-        <div className="detail">
+        <div className="convo-detail">
           {busy && <p className="empty">Fetching commands…</p>}
-          {full.commands?.length ? (
-            <ul className="doclist">
+          {!busy && !full.commands?.length && <p className="empty">No commands recorded.</p>}
+          {!!full.commands?.length && (
+            <ol className="cmdlist">
               {full.commands.map((c, i) => (
-                <li key={c.tool_id || i}>
-                  <code className="cmd">{c.command}</code>
-                  {c.exit_status === 1 && <span className="failure"> failed</span>}
+                <li key={c.tool_id || i} data-failed={c.exit_status === 1 || undefined}>
+                  <code>{c.command}</code>
+                  {c.description && <span>{c.description}</span>}
                 </li>
               ))}
-            </ul>
-          ) : (!busy && <p className="empty">No commands recorded.</p>)}
+            </ol>
+          )}
         </div>
       )}
-    </article>
+    </div>
   )
 }
