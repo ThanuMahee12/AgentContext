@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { onAuthStateChanged, type User } from 'firebase/auth'
 import { collection, getDocs } from 'firebase/firestore'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 
 import { auth, db } from '../firebase'
+import { keys } from '../lib/queryClient'
 import { FirestoreSource } from '../lib/firestore'
 import { getSource, groupByDay } from '../lib/source'
 import type { ContextItem, Day, Session } from '../types'
@@ -42,46 +44,50 @@ const key = (d: Date) =>
 export default function Catchup() {
   const [user, setUser] = useState<User | null>(null)
   const [authReady, setAuthReady] = useState(false)
-  const [totals, setTotals] = useState<Record<string, Totals>>({})
-  const [days, setDays] = useState<Day[]>([])
   const [picked, setPicked] = useState<Date | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [note, setNote] = useState('')
 
   useEffect(() => onAuthStateChanged(auth, (u) => { setUser(u); setAuthReady(true) }), [])
 
-  // Public half — always loaded, for everyone.
-  useEffect(() => {
-    getDocs(collection(db, 'daily'))
-      .then((snap) => {
-        const out: Record<string, Totals> = {}
-        snap.docs.forEach((d) => {
-          const v = d.data() as Partial<Totals>
-          out[d.id] = {
-            date: d.id,
-            sessions: Number(v.sessions ?? 0),
-            messages: Number(v.messages ?? 0),
-            commands: Number(v.commands ?? 0),
-            files: Number(v.files ?? 0),
-            failed: Number(v.failed ?? 0),
-          }
-        })
-        setTotals(out)
+  // Public half — everyone gets this, signed in or not.
+  const totalsQuery = useQuery({
+    queryKey: keys.daily,
+    queryFn: async (): Promise<Record<string, Totals>> => {
+      const snap = await getDocs(collection(db, 'daily'))
+      const out: Record<string, Totals> = {}
+      snap.docs.forEach((d) => {
+        const v = d.data() as Partial<Totals>
+        out[d.id] = {
+          date: d.id,
+          sessions: Number(v.sessions ?? 0),
+          messages: Number(v.messages ?? 0),
+          commands: Number(v.commands ?? 0),
+          files: Number(v.files ?? 0),
+          failed: Number(v.failed ?? 0),
+        }
       })
-      .catch((e) => setNote(String((e as Error)?.message ?? e)))
-      .finally(() => setLoading(false))
-  }, [])
+      return out
+    },
+  })
 
-  // Private half — only attempted when signed in. The rules would refuse it
-  // anyway; not asking keeps a guaranteed 403 out of everyone's console.
-  useEffect(() => {
-    if (!authReady || !user) return
-    Promise.allSettled([source.sessions(), source.context()]).then(([s, c]) => {
-      const sessions = s.status === 'fulfilled' ? (s.value as Session[]) : []
-      const context = c.status === 'fulfilled' ? (c.value as ContextItem[]) : []
-      setDays(groupByDay(sessions, context))
-    })
-  }, [authReady, user])
+  // Private half. `enabled` is what keeps a signed-out visitor from firing a
+  // request the rules are guaranteed to refuse - the query simply never runs,
+  // rather than running and failing quietly in everyone's console.
+  const daysQuery = useQuery({
+    queryKey: [...keys.sessions, 'days'],
+    enabled: authReady && !!user,
+    queryFn: async (): Promise<Day[]> => {
+      const [s, c] = await Promise.allSettled([source.sessions(), source.context()])
+      return groupByDay(
+        s.status === 'fulfilled' ? (s.value as Session[]) : [],
+        c.status === 'fulfilled' ? (c.value as ContextItem[]) : [],
+      )
+    },
+  })
+
+  const totals = totalsQuery.data ?? {}
+  const days = daysQuery.data ?? []
+  const loading = totalsQuery.isLoading
+  const note = totalsQuery.error ? String((totalsQuery.error as Error).message) : ''
 
   const byDate = useMemo(() => new Map(days.map((d) => [d.date, d])), [days])
 

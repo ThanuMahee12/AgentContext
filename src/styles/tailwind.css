@@ -1,0 +1,45 @@
+/* Tailwind, sharing the design system rather than forking it.
+ *
+ * The tokens in tokens.css stay the single source of truth: every colour below
+ * points at the variable that already defines it, so `bg-surface` in a utility
+ * and `background: var(--surface)` in a stylesheet cannot drift apart. Adding
+ * Tailwind's own palette instead would give the project two sets of colours
+ * with similar names and no rule about which one is right.
+ */
+/* Utilities and theme only - deliberately NOT preflight. This project has its
+   own reset in tokens.css and 1500 lines of hand-written CSS that relies on it;
+   dropping Tailwind's reset on top would quietly restyle every heading, list
+   and form control already on the page. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-line-lit: var(--line-lit);
+
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+
+  --color-accent: var(--accent);
+  --color-ok: var(--ok);
+  --color-err: var(--err);
+
+  /* the current section's colour, so a utility can follow it too */
+  --color-hue: var(--hue);
+
+  --font-sans: var(--plex-sans);
+  --font-serif: var(--plex-serif);
+  --font-mono: var(--plex-mono);
+
+  --radius-DEFAULT: var(--r);
+  --radius-s: var(--r-s);
+}
+
+/* The existing stylesheets are hand-written and specific; Tailwind's reset
+   would undo type and spacing they rely on. Utilities are additive here - new
+   UI can use them, nothing existing has to be rewritten to keep working. */

@@ -6,6 +6,7 @@
  */
 
 @import "./tokens.css";
+@import "./tailwind.css";
 @import "./shell.css";
 @import "./dashboard.css";
 @import "./ui.css";

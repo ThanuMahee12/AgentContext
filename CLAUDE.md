@@ -9,6 +9,28 @@ AgentContext is a React app. It has two halves behind one deployment:
 **Live:** https://agentcontext-sessions.web.app
 **Capture:** [AgentProbe](https://github.com/ThanuMahee12/AgentProbe) writes the sessions this reads.
 
+## Stack
+
+React 18 · TypeScript · Vite · React Router · Redux Toolkit (UI state) ·
+**TanStack Query** (server state) · **Tailwind v4** · Framer Motion ·
+react-hook-form · react-icons · react-calendar · Firebase.
+
+Two rules keep the styling from forking in half:
+
+- **Tokens are the single source of truth.** `styles/tailwind.css` maps every
+  Tailwind colour onto the CSS variable that already defines it, so `bg-surface`
+  and `background: var(--surface)` cannot drift apart.
+- **Preflight is deliberately not imported.** This project has its own reset and
+  1500 lines of hand-written CSS that depends on it; Tailwind's reset would
+  quietly restyle every heading, list and form control already on the page.
+  Utilities are additive — new UI can use them, nothing existing must be rewritten.
+
+Server state goes through TanStack Query, not `useEffect`. The archive is
+append-only, so the defaults cache hard (5 min stale, 30 min gc) and retry is
+off: a denied read is the *expected* outcome for a signed-out visitor hitting a
+private collection, and retrying a 403 only delays the page they can see. A
+private query carries `enabled` so it never fires at all when signed out.
+
 ## Layout
 
 ```
@@ -25,9 +47,10 @@ src/
 ├── components/            shared UI: Markdown, CodeBlock, Media, Login,
 │                          SessionDetail, Tree, shared
 ├── lib/                   data access: DataSource, Firestore, published,
-│                          fixtures (git-ignored)
+│                          queryClient (+ query keys), fixtures (git-ignored)
 ├── store/                 Redux Toolkit slices
-├── styles/                index.css imports the rest in cascade order
+├── styles/                index.css imports the rest in cascade order;
+│                          tailwind.css maps utilities onto the tokens
 └── content/               content.json (generated) + section config
 ```
 
@@ -81,10 +104,11 @@ elements rather than HTML — no `dangerouslySetInnerHTML` anywhere.
 
 This repository is public and Firebase Hosting serves the bundle to anyone.
 `src/content/content.json` is shipped to every visitor, so treat it as
-published the moment it is committed. It currently contains internal hostnames
-(`ny5-predpalch01/02`), a service-account name (`svc_dat_alchemy`) and the
-internal GitLab host — carried over from the mkdocs site, which already
-published them.
+published the moment it is committed. It is generated from `content/*.md` and
+now carries **only documents marked `visibility: "published"`** — a draft is
+filed in Firestore for the admin panel and never reaches the bundle. Before
+that filter existed it shipped internal hostnames and a service-account name to
+every visitor, which is the failure this guards against.
 
 The private session archive is the opposite: `firestore.rules` denies every
 collection to anonymous readers except `public/`, and `src/lib/fixtures.json`
@@ -93,9 +117,13 @@ fails the build if fixture data reaches the artifact.
 
 ## Commands
 
+There are no build steps to run by hand. `predev` and `prebuild` are npm
+lifecycle hooks, so `npm run dev` and `npm run build` already regenerate the
+content bundle and the dev fixtures first.
+
 ```bash
 npm run dev        # local, uses fixtures if present
-npm run build      # typecheck + bundle
+npm run build      # content + typecheck + bundle
 npm run verify     # assert no local session data in dist/
 npm run typecheck
 npm run content    # rebuild src/content/content.json from content/*.md
