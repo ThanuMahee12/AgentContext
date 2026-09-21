@@ -7,11 +7,11 @@ import Admin from './pages/Admin'
 import Catchup from './pages/Catchup'
 import ContentAdmin from './pages/ContentAdmin'
 import Published from './pages/Published'
-import PublicLayout from './pages/public/Layout'
-import Home from './pages/public/Home'
-import Section from './pages/public/Section'
+import PublicLayout from './pages/Layout'
+import Home from './pages/Home'
+import Section from './pages/Section'
 import { auth } from './firebase'
-import { getSource } from './data/source'
+import { getSource } from './lib/source'
 
 /** Only the Firestore source needs a signed-in user. With fixtures or the empty
  *  source everything is local, and gating it would just obstruct development. */

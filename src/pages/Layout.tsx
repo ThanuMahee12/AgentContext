@@ -2,10 +2,10 @@ import { useEffect } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
-import { SECTION_KEY, sections } from '../../content'
-import { useAppDispatch, useAppSelector } from '../../store'
-import { hydrateContent } from '../../store/contentSlice'
-import { setNavOpen, setQuery } from '../../store/uiSlice'
+import { SECTION_KEY, sections } from '../content'
+import { useAppDispatch, useAppSelector } from '../store'
+import { hydrateContent } from '../store/contentSlice'
+import { setNavOpen, setQuery } from '../store/uiSlice'
 
 /** The public shell.
  *

@@ -1,6 +1,6 @@
 /* Fail the build if a production bundle contains local fixture data.
  *
- * The DEV guard in src/data/source.ts already makes this structurally
+ * The DEV guard in src/lib/source.ts already makes this structurally
  * impossible, but Firebase Hosting is public and the cost of being wrong is a
  * data leak, so this checks the artifact rather than trusting the source.
  *
@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const dist = resolve(here, '../dist')
-const fixtures = resolve(here, '../src/data/fixtures.json')
+const fixtures = resolve(here, '../src/lib/fixtures.json')
 
 if (!existsSync(dist)) {
   console.error('verify-bundle: dist/ not found — run the build first')

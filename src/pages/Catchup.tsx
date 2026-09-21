@@ -5,8 +5,8 @@ import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 
 import { auth, db } from '../firebase'
-import { FirestoreSource } from '../data/firestore'
-import { getSource, groupByDay } from '../data/source'
+import { FirestoreSource } from '../lib/firestore'
+import { getSource, groupByDay } from '../lib/source'
 import type { ContextItem, Day, Session } from '../types'
 
 const source = getSource()

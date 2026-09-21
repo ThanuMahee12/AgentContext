@@ -1,0 +1,94 @@
+/* design tokens, reset and base typography */
+
+/* AgentContext — one dark palette, deliberately.
+ *
+ * This commits to a single visual world rather than supporting both themes:
+ * the subject is an archive of terminal work and pipeline internals, read
+ * mostly at night, and a design that only has to hold up in one light can be
+ * tuned properly instead of compromised twice. There is no media query and no
+ * [data-theme] stamp - every colour is stated once, and `body` paints its own
+ * ground so the page never borrows the host's.
+ *
+ * The ground is a deep blue-black, not the near-black-plus-one-acid-accent that
+ * dark interfaces default to. Four section hues carry the structure, because the
+ * content genuinely divides into kinds.
+ */
+
+:root {
+  color-scheme: dark;
+
+  --ground:    #0b0f16;
+  --surface:   #131925;
+  --raised:    #1a2130;
+  --line:      #232c3d;
+  --line-lit:  #33405a;
+
+  --text:      #e8ecf4;
+  --text-2:    #9aa6bd;
+  --text-3:    #64718c;
+
+  /* Categorical identity, validated for the dark band rather than chosen by eye:
+     OKLCH L inside 0.48-0.67, chroma >= 0.10, worst adjacent CVD deltaE 8.4,
+     and every hue >= 4.5:1 against this ground so it can carry link text too.
+     Sections are always named beside their colour, so identity never rests on
+     hue alone. */
+  --s-brainstorms: #9085e9;  /* violet  6.14:1 */
+  --s-kt:          #199e70;  /* aqua    5.64:1 */
+  --s-discussions: #c98500;  /* yellow  6.25:1 */
+  --s-notes:       #3987e5;  /* blue    5.27:1 */
+  --s-dashboard:   #d55181;  /* magenta 4.87:1 */
+  --s-catchup:     #6cb33f;  /* green   7.46:1 */
+
+  --ok:        #4ade80;
+  --ok-soft:   #10241a;
+  --err:       #fb7185;
+  --err-soft:  #2a1420;
+
+  /* the dashboard half still reads these names */
+  --paper:       var(--ground);
+  --card:        var(--surface);
+  --surface-2:   var(--raised);
+  --rule:        var(--line);
+  --line-strong: var(--line-lit);
+  --ink:         var(--text);
+  --ink-2:       var(--text-2);
+  --ink-3:       var(--text-3);
+  --accent:      #fbbf24;
+  --accent-soft: #2a2110;
+  --accent-line: #4a3a18;
+
+  --plex-sans:  "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --plex-serif: "IBM Plex Serif", Georgia, serif;
+  --plex-mono:  "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --sans: var(--plex-sans);
+  --mono: var(--plex-mono);
+
+  --r:   6px;
+  --r-s: 4px;
+}
+
+[data-section="brainstorms"] { --hue: var(--s-brainstorms); }
+[data-section="kt"]          { --hue: var(--s-kt); }
+[data-section="discussions"] { --hue: var(--s-discussions); }
+[data-section="notes"]       { --hue: var(--s-notes); }
+[data-section="dashboard"]   { --hue: var(--s-dashboard); }
+[data-section="catchup"]     { --hue: var(--s-catchup); }
+[data-section="home"]        { --hue: var(--text-2); }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------------------------------------------------------------- shell -- */

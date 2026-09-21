@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
-import { getPublished } from '../data/published'
+import { getPublished } from '../lib/published'
 import type { PublishedPage } from '../types'
 
 /** A single published page, readable by anyone with the link. */

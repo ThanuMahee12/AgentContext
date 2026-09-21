@@ -9,8 +9,8 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const target = resolve(here, '../src/data/fixtures.json')
-const template = resolve(here, '../src/data/fixtures.example.json')
+const target = resolve(here, '../src/lib/fixtures.json')
+const template = resolve(here, '../src/lib/fixtures.example.json')
 
 if (!existsSync(target)) {
   copyFileSync(template, target)

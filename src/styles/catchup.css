@@ -1,0 +1,168 @@
+/* Daily Catchup: calendar and day panel */
+
+/* Daily Catchup ---------------------------------------------------------- */
+/* The sheet already owns the page's width and padding, so this block sets
+   neither - an earlier version added its own and double-padded every view. */
+
+.catchup-head { margin-bottom: 26px; }
+.catchup-head h1 {
+  font-family: var(--plex-serif);
+  font-size: clamp(27px, 4.2vw, 38px);
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.catchup-head p { margin: 0; color: var(--text-3); font-size: 14px; }
+
+.catchup-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  gap: 34px;
+  align-items: start;
+}
+
+/* react-calendar ships a light theme and fixed widths. Its variables are
+   overridden here rather than its markup fought with, and `minmax(0, …)` above
+   is what actually lets it shrink - a grid column defaults to min-content,
+   which a 7-column table refuses to go below. */
+.cal { position: sticky; top: 24px; }
+.cal .react-calendar {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px;
+  font-family: var(--plex-sans);
+  line-height: 1.35;
+}
+.cal .react-calendar__navigation { display: flex; margin-bottom: 6px; }
+.cal .react-calendar__navigation button {
+  background: none; border: 0; color: var(--text);
+  font: 600 14px/1 var(--plex-sans); min-width: 38px; border-radius: var(--r-s);
+}
+.cal .react-calendar__navigation button:enabled:hover { background: var(--raised); }
+.cal .react-calendar__navigation button:disabled { opacity: .3; }
+.cal .react-calendar__navigation button:focus-visible { outline: 2px solid var(--hue); outline-offset: 1px; }
+
+.cal .react-calendar__month-view__weekdays,
+.cal .react-calendar__month-view__days {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.cal .react-calendar__month-view__weekdays { gap: 4px 4px; margin-bottom: 4px; }
+.cal .react-calendar__month-view__weekdays__weekday {
+  font: 600 10px/1 var(--plex-mono); color: var(--text-3);
+  padding: 6px 0; text-align: center;
+}
+.cal .react-calendar__month-view__weekdays__weekday abbr { text-decoration: none; }
+
+.cal .react-calendar__tile {
+  /* flex-basis from the library is inert inside a grid, which is the point */
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  max-width: none !important;
+  background: none; border: 0; border-radius: var(--r-s);
+  color: var(--text-2); font: 400 13px/1 var(--plex-mono);
+}
+.cal .react-calendar__tile:enabled:hover { background: var(--raised); color: var(--text); }
+.cal .react-calendar__tile:focus-visible { outline: 2px solid var(--hue); outline-offset: -2px; }
+.cal .react-calendar__month-view__days__day--neighboringMonth { opacity: .28; }
+
+/* Activity tints the day itself. A separate bar under the number was a second
+   thing to read in a 40px square; the square carrying its own weight is one. */
+.cal .react-calendar__tile.work-1 { background: color-mix(in srgb, var(--hue) 14%, transparent); color: var(--text); }
+.cal .react-calendar__tile.work-2 { background: color-mix(in srgb, var(--hue) 28%, transparent); color: var(--text); }
+.cal .react-calendar__tile.work-3 { background: color-mix(in srgb, var(--hue) 44%, transparent); color: #fff; }
+.cal .react-calendar__tile.work-4 { background: color-mix(in srgb, var(--hue) 62%, transparent); color: #fff; font-weight: 600; }
+
+.cal .react-calendar__tile--active,
+.cal .react-calendar__tile--active:enabled:hover {
+  box-shadow: inset 0 0 0 2px var(--hue);
+  color: var(--text);
+}
+.cal .react-calendar__tile--now { text-decoration: underline; text-underline-offset: 3px; }
+
+.cal-key {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 12px; color: var(--text-3);
+  font: 400 11px/1 var(--plex-mono);
+}
+.cal-key i { width: 14px; height: 14px; border-radius: 3px; display: block; border: 1px solid var(--line); }
+
+/* The day panel ------------------------------------------------------------ */
+.catchup-day > h2 {
+  font-family: var(--plex-mono); font-size: 15px; font-weight: 500;
+  color: var(--text-3); margin: 0 0 14px; letter-spacing: .01em;
+}
+
+.totals {
+  list-style: none; margin: 0 0 22px; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line); border-radius: var(--r); overflow: hidden;
+}
+.totals li { background: var(--surface); padding: 13px 14px; }
+.totals b {
+  display: block; font: 600 22px/1.1 var(--plex-mono); color: var(--text);
+}
+.totals span { font-size: 12px; color: var(--text-3); }
+.totals li.bad b { color: var(--err); }
+
+.signin-hint {
+  border: 1px dashed var(--line-lit); border-radius: var(--r);
+  padding: 15px 16px; color: var(--text-2); font-size: 14px; margin: 0;
+}
+.signin-hint a { color: var(--hue); }
+
+.monthsum {
+  margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line);
+}
+.monthsum h3 { margin: 0 0 6px; }
+.monthsum p { margin: 0; color: var(--text-2); font-size: 14px; line-height: 1.6; max-width: 62ch; }
+.monthsum b { color: var(--text); font-family: var(--plex-mono); font-weight: 600; }
+.linkish {
+  background: none; border: 0; padding: 0; font: inherit;
+  color: var(--hue); cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+}
+.linkish:focus-visible { outline: 2px solid var(--hue); outline-offset: 2px; border-radius: 2px; }
+
+/* A conversation is a card plus a panel that opens under it, so the two are
+   wrapped rather than the panel living inside the button. */
+.convo + .convo { margin-top: 6px; }
+.convo-detail {
+  border: 1px solid var(--line); border-top: 0;
+  border-radius: 0 0 var(--r) var(--r);
+  background: var(--ground); padding: 12px 14px;
+}
+.cmdlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.cmdlist li { display: grid; gap: 3px; }
+.cmdlist code {
+  font: 400 12px/1.5 var(--plex-mono); color: var(--text-2);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.cmdlist li[data-failed] code { color: var(--err); }
+.cmdlist li > span { font-size: 12px; color: var(--text-3); }
+
+.catchup-day h3 {
+  font-size: 13px; font-weight: 600; color: var(--text-3);
+  margin: 24px 0 10px; font-family: var(--plex-sans);
+}
+
+@media (max-width: 900px) {
+  .catchup-grid { grid-template-columns: 1fr; gap: 24px; }
+  .cal { position: static; }
+  .cal .react-calendar__tile { font-size: 14px; }
+}
+@media (max-width: 620px) {
+  .totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* an odd number of cells leaves the last one beside a gap; span it */
+  .totals li:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+/* The sheet's 44px side padding leaves a phone about 280px for a seven-column
+   calendar. Pulled back only on this page, so no other view shifts. */
+@media (max-width: 560px) {
+  .sheet:has(.catchup-grid) { padding-left: 18px; padding-right: 18px; }
+  .catchup-head h1 { font-size: 26px; }
+  .totals li { padding: 11px 12px; }
+  .totals b { font-size: 19px; }
+}

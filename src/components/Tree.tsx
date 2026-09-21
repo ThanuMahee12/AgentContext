@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 
-import { useAppDispatch, useAppSelector } from '../../store'
-import { toggleFolder } from '../../store/uiSlice'
+import { useAppDispatch, useAppSelector } from '../store'
+import { toggleFolder } from '../store/uiSlice'
 
 interface Node {
   name: string

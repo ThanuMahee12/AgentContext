@@ -1,0 +1,218 @@
+/* session timeline, cards, chips, detail panel */
+
+/* ------------------------------------------------------------- timeline -- */
+
+
+.daygroup + .daygroup { margin-top: 28px; }
+
+.dayhead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: -20px;
+  background: var(--ground);
+  z-index: 1;
+}
+.dayhead h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.dayhead .meta {
+  font: 400 12px/1 var(--mono);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.cards { display: flex; flex-direction: column; gap: 8px; }
+
+/* ----------------------------------------------------------------- card -- */
+
+.card {
+  display: grid;
+  grid-template-columns: 3px 1fr;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  width: 100%;
+  padding: 0;
+}
+.card:hover { border-color: var(--line-strong); }
+.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.card[aria-selected="true"] { border-color: var(--accent-line); }
+
+/* The stripe encodes STATE, not provider.
+ *
+ * It used to carry provider identity in five hand-picked hues. Checked across
+ * every pair rather than adjacent ones, that palette failed: violet and blue
+ * sit at deltaE 9.8 for normal vision, below the floor where full-colour
+ * readers can separate them at all. Five arbitrary-adjacency categories cannot
+ * be done in colour alone, and the guidance there is to cut the series rather
+ * than dress it up.
+ *
+ * It was also encoding nothing: every session in the archive is claude. So
+ * provider is text now, and the stripe shows whether a session had failing
+ * commands - a status, which is reserved, separate from any categorical hue,
+ * and always shipped beside its own label. */
+.card .stripe { background: var(--line-lit); }
+.card .stripe[data-state="failed"] { background: var(--err); }
+
+.card .inner { padding: 10px 12px; min-width: 0; }
+
+.card .row1 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.card time {
+  font: 500 12px/1 var(--mono);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.card .project { font-weight: 600; }
+.card .who {
+  margin-left: auto;
+  font: 400 11px/1 var(--mono);
+  color: var(--text-3);
+}
+
+.card .preview {
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 6px;
+}
+
+.stats { display: flex; gap: 12px; }
+.stat {
+  font: 400 11px/1 var(--mono);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.stat b { color: var(--text-2); font-weight: 600; }
+.stat.err b { color: var(--err); }
+
+/* ---------------------------------------------------------------- chips -- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font: 500 11px/1.6 var(--mono);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  text-decoration: none;
+}
+.chip.accent { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
+.chip.ok     { background: var(--ok-soft);  border-color: transparent; color: var(--ok); }
+.chip.err    { background: var(--err-soft); border-color: transparent; color: var(--err); }
+
+.links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.links a:hover { border-color: var(--line-strong); color: var(--text); }
+
+/* --------------------------------------------------------------- detail -- */
+
+.detail {
+  flex: 0 0 min(52%, 720px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  min-height: 0;
+}
+
+.detail header {
+  padding: 14px 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.detail h2 {
+  margin: 0 0 2px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.detail .sub {
+  font: 400 11px/1.6 var(--mono);
+  color: var(--text-3);
+  word-break: break-all;
+}
+
+.tabs { display: flex; gap: 2px; margin-top: 10px; }
+.tabs button {
+  border: 0;
+  background: transparent;
+  font: 500 12px/1 var(--sans);
+  color: var(--text-3);
+  padding: 8px 10px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.tabs button:hover { color: var(--text); }
+.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+
+.pane { flex: 1 1 auto; overflow-y: auto; padding: 12px 16px 40px; }
+
+.cmd {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+.cmd:last-child { border-bottom: 0; }
+.cmd .mark {
+  font: 600 11px/1.5 var(--mono);
+  color: var(--text-3);
+}
+.cmd .mark.ok  { color: var(--ok); }
+.cmd .mark.err { color: var(--err); }
+.cmd code {
+  font: 400 12px/1.5 var(--mono);
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.cmd .desc { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+.filerow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--line);
+  font: 400 12px/1.5 var(--mono);
+}
+.filerow:last-child { border-bottom: 0; }
+.filerow .act {
+  flex: 0 0 44px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+}
+.filerow .act.write { color: var(--accent); }
+.filerow .act.edit  { color: var(--ok); }
+.filerow .p { word-break: break-all; color: var(--text-2); }
+
+.empty {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--text-3);
+}
+
+/* --------------------------------------------------------------- misc --- */

@@ -26,7 +26,7 @@ dist/
 # internal hostnames and conversation previews - regenerate locally with
 #   ./scripts/export-fixtures.sh
 # and never commit it. This repository is public.
-src/data/fixtures.json
+src/lib/fixtures.json
 
 # Firebase local state
 *.log

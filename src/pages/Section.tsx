@@ -1,11 +1,11 @@
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 
-import { SECTION_KEY, sections, type SectionId } from '../../content'
-import { useAppDispatch, useAppSelector } from '../../store'
-import { toggleTag } from '../../store/uiSlice'
-import Markdown from '../../components/Markdown'
-import Tree from './Tree'
-import { matches, TagRow, Empty } from './shared'
+import { SECTION_KEY, sections, type SectionId } from '../content'
+import { useAppDispatch, useAppSelector } from '../store'
+import { toggleTag } from '../store/uiSlice'
+import Markdown from '../components/Markdown'
+import Tree from '../components/Tree'
+import { matches, TagRow, Empty } from '../components/shared'
 
 type Key = Exclude<SectionId, 'home'>
 

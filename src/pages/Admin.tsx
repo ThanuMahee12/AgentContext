@@ -3,8 +3,8 @@ import { signOut, type User } from 'firebase/auth'
 import { Link } from 'react-router-dom'
 import SessionDetail from '../components/SessionDetail'
 import { auth } from '../firebase'
-import { FirestoreSource } from '../data/firestore'
-import { applyFilters, facets, getSource, groupByDay } from '../data/source'
+import { FirestoreSource } from '../lib/firestore'
+import { applyFilters, facets, getSource, groupByDay } from '../lib/source'
 import type { ContextItem, Session } from '../types'
 
 const source = getSource()

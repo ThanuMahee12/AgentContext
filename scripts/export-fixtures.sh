@@ -9,7 +9,7 @@
 set -euo pipefail
 
 PROBE="${1:-${AGENTPROBE_PATH:-$HOME/AgentProbe}}"
-OUT="$(cd "$(dirname "$0")/.." && pwd)/src/data/fixtures.json"
+OUT="$(cd "$(dirname "$0")/.." && pwd)/src/lib/fixtures.json"
 EMAIL="${AGENTPROBE_EMAIL:-$(git config user.email 2>/dev/null || echo unknown@localhost)}"
 
 if [ ! -d "$PROBE/agentprobe" ]; then

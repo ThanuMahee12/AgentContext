@@ -13,18 +13,27 @@ AgentContext is a React app. It has two halves behind one deployment:
 
 ```
 src/
-├── content/content.json   generated from content/*.md — the bundled fallback
-├── content/index.ts       types + the section list
-├── pages/public/          Layout, Home, Brainstorms, Discussions, Docs
-├── store/contentSlice.ts  bundle as initial state, Firestore hydrates over it
-├── pages/Admin.tsx        the session dashboard (authenticated)
-├── pages/Published.tsx    a published page at /s/:slug
-├── store/                 Redux Toolkit: search, tag filter, theme
-├── data/                  DataSource interface; Firestore + local fixtures
-└── components/            Markdown renderer, SessionDetail, Login
+├── main.tsx               entry; mounts App and imports styles/index.css
+├── App.tsx                routing only - which path renders which page
+├── firebase.ts            app init, auth, db
+├── types.ts               shared record shapes
+├── pages/                 one file per route
+│   ├── Layout.tsx         public shell: nav, search, outlet
+│   ├── Home.tsx  Section.tsx  Published.tsx
+│   ├── Catchup.tsx        the activity calendar
+│   └── Admin.tsx  ContentAdmin.tsx     signed-in
+├── components/            shared UI: Markdown, CodeBlock, Media, Login,
+│                          SessionDetail, Tree, shared
+├── lib/                   data access: DataSource, Firestore, published,
+│                          fixtures (git-ignored)
+├── store/                 Redux Toolkit slices
+├── styles/                index.css imports the rest in cascade order
+└── content/               content.json (generated) + section config
 ```
 
-There is no `web/` directory and no mkdocs.
+There is no `web/` directory, no mkdocs, and no `src/data` - data access lives
+in `src/lib`.
+
 
 ## Content: markdown in, Firestore out
 
@@ -78,7 +87,7 @@ internal GitLab host — carried over from the mkdocs site, which already
 published them.
 
 The private session archive is the opposite: `firestore.rules` denies every
-collection to anonymous readers except `public/`, and `src/data/fixtures.json`
+collection to anonymous readers except `public/`, and `src/lib/fixtures.json`
 is git-ignored because it holds real commands and paths. `scripts/verify-bundle.mjs`
 fails the build if fixture data reaches the artifact.
 

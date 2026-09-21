@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 
-import { SECTION_KEY, sections, type SectionId } from '../../content'
-import { useAppSelector } from '../../store'
+import { SECTION_KEY, sections, type SectionId } from '../content'
+import { useAppSelector } from '../store'
 
 /** The public overview.
  *
