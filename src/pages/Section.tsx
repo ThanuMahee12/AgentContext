@@ -1,7 +1,8 @@
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 
-import { SECTION_KEY, sections, type SectionId } from '../content'
+import { SECTION_KEY, sections, type SectionId } from '../lib/sections'
 import { useAppDispatch, useAppSelector } from '../store'
+import { useContent } from '../lib/useContent'
 import { toggleTag } from '../store/uiSlice'
 import Markdown from '../components/Markdown'
 import Tree from '../components/Tree'
@@ -25,7 +26,7 @@ export default function Section({ id }: { id: Key }) {
   const params = useParams()
   const location = useLocation()
   const meta = sections.find((s) => s.id === id)!
-  const items = useAppSelector((s) => s.content[SECTION_KEY[id]]) as any[]
+  const items = useContent().content[SECTION_KEY[id]] as any[]
 
   // react-router gives the wildcard tail in `*`; older single-segment routes
   // still pass docId, so both are accepted.

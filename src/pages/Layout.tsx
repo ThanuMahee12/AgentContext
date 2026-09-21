@@ -2,9 +2,9 @@ import { useEffect } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
-import { SECTION_KEY, sections } from '../content'
+import { SECTION_KEY, sections } from '../lib/sections'
 import { useAppDispatch, useAppSelector } from '../store'
-import { hydrateContent } from '../store/contentSlice'
+import { useContent } from '../lib/useContent'
 import { setNavOpen, setQuery } from '../store/uiSlice'
 
 /** The public shell.
@@ -21,13 +21,9 @@ import { setNavOpen, setQuery } from '../store/uiSlice'
 export default function PublicLayout() {
   const dispatch = useAppDispatch()
   const { query, navOpen } = useAppSelector((s) => s.ui)
-  const content = useAppSelector((s) => s.content)
+  const { content } = useContent()
   const location = useLocation()
   const still = useReducedMotion()
-
-  useEffect(() => {
-    dispatch(hydrateContent())
-  }, [dispatch])
 
   useEffect(() => {
     window.scrollTo(0, 0)

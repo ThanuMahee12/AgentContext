@@ -14,6 +14,11 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 
+/* Plugins. `typography` is the one that earns its place: the markdown a
+   document renders through is the largest block of hand-written CSS in the
+   project, and prose styling is exactly what it exists to replace. */
+@plugin "@tailwindcss/typography";
+
 @theme inline {
   --color-ground: var(--ground);
   --color-surface: var(--surface);
@@ -43,3 +48,30 @@
 /* The existing stylesheets are hand-written and specific; Tailwind's reset
    would undo type and spacing they rely on. Utilities are additive here - new
    UI can use them, nothing existing has to be rewritten to keep working. */
+
+/* Prose, wired to the tokens so a rendered document matches the rest of the
+   site instead of Tailwind's defaults. `prose-invert` is unnecessary once the
+   colours are stated outright. */
+@utility prose-doc {
+  /* the serif measure the documents were always set in */
+  font-family: var(--plex-serif);
+  font-size: 16px;
+  line-height: 1.7;
+
+  --tw-prose-body: var(--text-2);
+  --tw-prose-headings: var(--text);
+  --tw-prose-lead: var(--text-2);
+  --tw-prose-links: var(--hue);
+  --tw-prose-bold: var(--text);
+  --tw-prose-counters: var(--text-3);
+  --tw-prose-bullets: var(--line-lit);
+  --tw-prose-hr: var(--line);
+  --tw-prose-quotes: var(--text-2);
+  --tw-prose-quote-borders: var(--hue);
+  --tw-prose-captions: var(--text-3);
+  --tw-prose-code: var(--text);
+  --tw-prose-pre-code: var(--text-2);
+  --tw-prose-pre-bg: var(--ground);
+  --tw-prose-th-borders: var(--line-lit);
+  --tw-prose-td-borders: var(--line);
+}

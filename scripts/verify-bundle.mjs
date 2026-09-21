@@ -58,23 +58,6 @@ for (const s of [
   needles.add(s)
 }
 
-// A needle that is already committed as public content cannot be a leak - the
-// site's own footer link and the gist referenced by a brainstorm both appear in
-// captured transcripts too. Subtracting published content keeps the check about
-// data that was never meant to ship.
-const publicContent = resolve(here, '../src/content/content.json')
-if (existsSync(publicContent)) {
-  const published = readFileSync(publicContent, 'utf8')
-  let dropped = 0
-  for (const needle of [...needles]) {
-    if (published.includes(needle)) {
-      needles.delete(needle)
-      dropped++
-    }
-  }
-  if (dropped) console.log(`verify-bundle: ${dropped} needle(s) are published content, not leaks`)
-}
-
 const walk = (dir) =>
   readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
     e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)],

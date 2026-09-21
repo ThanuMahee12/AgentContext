@@ -21,7 +21,10 @@ import { Figure, classify } from './Media'
  *  there.
  */
 export default function Markdown({ source }: { source: string }) {
-  return <div className="md">{renderBlocks(source)}</div>
+  // `prose` carries the document typography; `prose-doc` points its colours at
+  // the design tokens. max-w-none because the column is already constrained by
+  // the page, and prose would otherwise impose a second, narrower measure.
+  return <div className="md prose prose-doc max-w-none">{renderBlocks(source)}</div>
 }
 
 function renderBlocks(src: string): ReactNode[] {

@@ -1,15 +1,10 @@
-/** Typed access to the flat content module.
+/** Document shapes and the section map.
  *
- *  Everything the public site shows is bundled at build time from this one
- *  JSON. There is no CMS, no runtime fetch and no markdown loader - the site
- *  ships with its content, so a page render cannot fail on a network call.
- *
- *  The private session archive in Firestore is deliberately not part of this:
- *  it holds internal hostnames and production detail, and nothing here is
- *  behind authentication.
+ * Content itself is no longer bundled: the app reads documents from Firestore
+ * at runtime. What stays here is the part that is configuration rather than
+ * data - which sections exist, what they are called and where they live - and
+ * the record shapes those documents arrive in.
  */
-
-import raw from './content.json'
 
 export interface Comment {
   date: string
@@ -76,7 +71,6 @@ export interface Content {
   kt: Doc[]
 }
 
-export const content = raw as unknown as Content
 
 export type SectionId = 'home' | 'brainstorms' | 'kt' | 'discussions' | 'notes'
 
@@ -129,12 +123,3 @@ export function findDoc(list: Doc[], id: string): Doc | undefined {
 }
 
 /** Every distinct tag across discussions and brainstorms, most used first. */
-export function allTags(): Array<{ tag: string; count: number }> {
-  const counts = new Map<string, number>()
-  for (const item of [...content.discussions, ...content.brainstorms]) {
-    for (const t of item.tags ?? []) counts.set(t, (counts.get(t) ?? 0) + 1)
-  }
-  return [...counts.entries()]
-    .map(([tag, count]) => ({ tag, count }))
-    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
-}

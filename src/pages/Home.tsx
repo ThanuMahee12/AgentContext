@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 
-import { SECTION_KEY, sections, type SectionId } from '../content'
-import { useAppSelector } from '../store'
+import { SECTION_KEY, sections, type SectionId } from '../lib/sections'
+import { useContent } from '../lib/useContent'
 
 /** The public overview.
  *
@@ -15,7 +15,7 @@ import { useAppSelector } from '../store'
  *  so tags are entry points rather than a chart.
  */
 export default function Home() {
-  const content = useAppSelector((s) => s.content)
+  const { content } = useContent()
 
   const keys = ['brainstorms', 'kt', 'discussions', 'notes'] as const
   const rows = sections
