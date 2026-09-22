@@ -27,17 +27,23 @@
   --text-2:    #9aa6bd;
   --text-3:    #64718c;
 
-  /* Categorical identity, validated for the dark band rather than chosen by eye:
-     OKLCH L inside 0.48-0.67, chroma >= 0.10, worst adjacent CVD deltaE 8.4,
-     and every hue >= 4.5:1 against this ground so it can carry link text too.
-     Sections are always named beside their colour, so identity never rests on
-     hue alone. */
-  --s-brainstorms: #9085e9;  /* violet  6.14:1 */
-  --s-kt:          #199e70;  /* aqua    5.64:1 */
-  --s-discussions: #c98500;  /* yellow  6.25:1 */
-  --s-notes:       #3987e5;  /* blue    5.27:1 */
-  --s-dashboard:   #d55181;  /* magenta 4.87:1 */
-  --s-catchup:     #6cb33f;  /* green   7.46:1 */
+  /* ONE accent, everywhere.
+   *
+   * There were six section hues here - violet, aqua, yellow, blue, magenta,
+   * green - measured for this dark band and used to tell you which section you
+   * were in by colour. They are retired: the app now wears a single accent on
+   * every page, public and signed-in alike. Sections were always named beside
+   * their colour, so nothing became unreadable when the colour stopped varying;
+   * what went is a distinction that had to be learnt to be useful.
+   *
+   * Git has the retired values and their measured ratios if the categorical
+   * palette is ever wanted back.
+   *
+   * True navy cannot be a foreground on this ground: #1f3a93 is 1.91:1. So navy
+   * is a FILL, and the accent is the nearest blue to it that still clears AA.
+   */
+  --navy:    #0f1a30;   /* fill: sign-in brand column, admin bar */
+  --hue:     #6f93d6;   /* 6.23:1 on --ground, 5.71:1 on --surface */
 
   --ok:        #4ade80;
   --ok-soft:   #10241a;
@@ -67,23 +73,17 @@
   --r-s: 4px;
 }
 
-[data-section="brainstorms"] { --hue: var(--s-brainstorms); }
-[data-section="kt"]          { --hue: var(--s-kt); }
-[data-section="discussions"] { --hue: var(--s-discussions); }
-[data-section="notes"]       { --hue: var(--s-notes); }
-[data-section="dashboard"]   { --hue: var(--s-dashboard); }
-[data-section="catchup"]     { --hue: var(--s-catchup); }
-[data-section="home"]        { --hue: var(--text-2); }
+/* --hue is global now, so nothing maps per section. data-section stays on the
+   elements that carry it: it is still a useful hook, it just no longer decides
+   a colour. */
 
-/* Two derived values, because the base tokens do not clear WCAG AA on
- * --surface and washed-out secondary text is most of what makes a panel look
- * cheap:
- *   --text-3 on --surface  3.59:1   (4.5:1 needed for small text)
- *   --hue    on --surface  4.46:1
- * --hue clears 4.87:1 on --ground, which is what the block above measured and
- * promised - but a card is --surface, one step lighter, and the promise does
- * not carry there. These are additions, not edits: every existing token keeps
- * its value, so nothing already drawn moves.
+/* --text-3 does not clear WCAG AA on a card - 3.59:1 against --surface, where
+ * 4.5:1 is needed for small text - and washed-out secondary text is most of
+ * what makes a panel look cheap. This is the muted colour that passes.
+ *
+ * (The accent no longer needs the same treatment: the magenta it replaced was
+ * 4.46:1 on --surface and failed; --hue is 5.71:1 and passes. --hue-lit below
+ * is now headroom rather than a fix.)
  */
 :root { --text-muted: #8894ad; }          /* 5.77:1 on --surface */
 
@@ -94,29 +94,14 @@
    form controls only. */
 :root { --field-line: #66739a; }         /* 3.44:1 on --raised, 3.76:1 on --surface */
 
-/* The signed-in area's own colour: sign-in, the archive and content.
- *
- * Not a section hue. Sections are categorical identity and the public nav
- * lists them together, where --s-notes is already blue; a blue section beside
- * it is the one thing that palette exists to prevent. The signed-in area is
- * never in that nav, so it can be blue at no cost to the system.
- *
- * True navy cannot be a foreground on --ground: #1f3a93 is 1.91:1. So navy is
- * a FILL, and the accent is the nearest blue to it that still clears AA. */
-:root {
-  --admin-navy:    #0f1a30;   /* fill: brand column, top bar */
-  --admin-hue:     #6f93d6;   /* 6.23:1 on --ground, 5.71:1 on --surface */
-  --admin-hue-lit: #87a9db;   /* 7.31:1 on --surface, for links on a card */
-}
-/* Derived from whichever hue is in scope, so it is right in every section
-   rather than only the magenta one.
+/* The accent lifted to pass AA on a --surface card.
    The fallback is written out rather than left to the build: Lightning CSS
-   emits `--hue-lit: var(--hue)` for browsers without color-mix, which lands
-   back on the 4.46:1 value this token exists to replace. --text-2 is neutral
-   and 7.18:1, so an old browser loses the hue and keeps the legibility. */
-[data-section] { --hue-lit: var(--text-2); }
+   emits `--hue-lit: var(--hue)` where color-mix is unsupported, landing back
+   on a value that fails. --text-2 is neutral and 7.18:1, so an old browser
+   loses the hue and keeps the legibility. */
+:root { --hue-lit: var(--text-2); }
 @supports (color: color-mix(in srgb, red, red)) {
-  [data-section] { --hue-lit: color-mix(in srgb, var(--hue) 82%, white); }
+  :root { --hue-lit: color-mix(in srgb, var(--hue) 82%, white); }
 }
 
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

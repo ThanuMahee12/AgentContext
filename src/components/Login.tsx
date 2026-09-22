@@ -122,13 +122,11 @@ export default function Login() {
   const copy = MODES[mode]
 
   return (
-    // No data-section: auth.css gives this page its own navy rather than
-    // borrowing the dashboard's section identity. See the note there.
     <div className="auth tw-scope">
       {/* Two columns: what this is, and the way in. The brand column is where
           the backdrop lives now - contained beside the form rather than behind
           it, which is what stopped it competing with the labels. */}
-      <aside className="relative hidden overflow-hidden border-r border-line bg-[var(--admin-navy)] p-11 lg:flex lg:flex-col">
+      <aside className="relative hidden overflow-hidden border-r border-line bg-[var(--navy)] p-11 lg:flex lg:flex-col">
         {WIDE && (
           <Decorative>
             <Suspense fallback={null}>

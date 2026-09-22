@@ -9,12 +9,7 @@
  * full-bleed fixed canvas host, and a mask painted with a pseudo-element.
  */
 
-/* The signed-in navy, defined once in tokens.css and shared with the archive
- * so the door and the room behind it are the same colour. */
 .auth {
-  --hue:     var(--admin-hue);
-  --hue-lit: var(--admin-hue-lit);
-
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   min-height: 100vh;

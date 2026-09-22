@@ -98,14 +98,17 @@
   color: var(--text);
   text-decoration: none;
 }
-/* Four strata, one per section hue - the pipeline layers this content is about. */
+/* Four strata - the pipeline layers this content is about. They were one
+   section hue each; with a single accent the shape carries the idea and
+   opacity carries the depth, which is what the colours were doing anyway. */
 .wordmark .glyph {
   width: 13px; height: 17px; flex: none;
   background:
-    linear-gradient(var(--s-brainstorms) 0 0) 0 0    / 100% 3px no-repeat,
-    linear-gradient(var(--s-kt)          0 0) 0 5px  / 100% 3px no-repeat,
-    linear-gradient(var(--s-discussions) 0 0) 0 10px / 100% 3px no-repeat,
-    linear-gradient(var(--s-notes)       0 0) 0 15px / 100% 2px no-repeat;
+    linear-gradient(var(--hue) 0 0) 0 0    / 100% 3px no-repeat,
+    linear-gradient(var(--hue) 0 0) 0 5px  / 100% 3px no-repeat,
+    linear-gradient(var(--hue) 0 0) 0 10px / 100% 3px no-repeat,
+    linear-gradient(var(--hue) 0 0) 0 15px / 100% 2px no-repeat;
+  opacity: 0.9;
 }
 
 .sidenav nav { display: flex; flex-direction: column; }
@@ -149,7 +152,7 @@
   border-top: 1px solid var(--line);
   border-radius: 0;
 }
-.navitem.dash:hover { color: var(--s-dashboard); }
+.navitem.dash:hover { color: var(--hue); }
 .navitem.dash .lock {
   margin-left: auto;
   font: 400 10px/1.8 var(--plex-mono);
@@ -820,7 +823,7 @@
   padding: 0 24px;
   height: 56px;
   border-bottom: 1px solid var(--line);
-  background: var(--admin-navy);
+  background: var(--navy);
 }
 
 .adminbar .wordmark { margin: 0; }
@@ -993,11 +996,7 @@
 .admin .facets { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .admin .sheet { flex-grow: 1; min-width: 0; padding: 22px 24px 72px; overflow: auto; }
 
-/* The signed-in area carries the navy from tokens.css, the same colour the
-   sign-in page uses - the door and the room behind it match. --s-dashboard
-   keeps its magenta for the one place it is still an identity: the Dashboard
-   entry in the PUBLIC nav, where it sits beside the other sections. */
-.site.admin { --hue: var(--admin-hue); --hue-lit: var(--admin-hue-lit); }
+/* Nothing to set: --hue is global now and every page wears it. */
 
 .admin .navitem.dash { color: var(--text-2); }
 .admin .navitem.dash:hover { color: var(--hue); }

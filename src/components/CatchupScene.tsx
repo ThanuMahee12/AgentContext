@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
+
+import { readTheme } from '../lib/theme'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 /**
@@ -56,15 +58,12 @@ export default function CatchupScene({
       .sort((a, b) => a.date.localeCompare(b.date))
     if (!bars.length) return
 
-    // --- colours come from the design tokens, not from this file ------------
-    // getComputedStyle resolves the var() chain, so the scene follows
-    // [data-section="catchup"] and any future theme change with it.
-    const css = getComputedStyle(host)
-    const read = (name: string, fallback: string) =>
-      new THREE.Color(css.getPropertyValue(name).trim() || fallback)
-    const hue = read('--hue', '#3987e5')
-    const ground = read('--ground', '#0b0f16')
-    const dim = read('--line-lit', '#2f3a4f')
+    // Colours come from the tokens, never from this file - see lib/theme.ts
+    // for why the fallbacks live in one table.
+    const theme = readTheme(host, ['--hue', '--ground', '--line-lit'])
+    const hue = new THREE.Color(theme['--hue'])
+    const ground = new THREE.Color(theme['--ground'])
+    const dim = new THREE.Color(theme['--line-lit'])
 
     // --- renderer -----------------------------------------------------------
     let renderer: THREE.WebGLRenderer

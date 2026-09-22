@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
+import { readTheme } from '../lib/theme'
+
 /**
  * The backdrop on the sign-in page: agents at work, in the shape the archive
  * actually records.
@@ -41,11 +43,9 @@ export default function AgentField() {
     // and a decorative backdrop must not be the thing that throws.
     const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true
 
-    const css = getComputedStyle(host)
-    const read = (name: string, fallback: string) =>
-      new THREE.Color(css.getPropertyValue(name).trim() || fallback)
-    const hue = read('--hue', '#d55181')
-    const idle = read('--line-lit', '#33405a')
+    const theme = readTheme(host, ['--hue', '--line-lit'])
+    const hue = new THREE.Color(theme['--hue'])
+    const idle = new THREE.Color(theme['--line-lit'])
 
     let renderer: THREE.WebGLRenderer
     try {

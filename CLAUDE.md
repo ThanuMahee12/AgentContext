@@ -149,9 +149,19 @@ Hand-written CSS in `styles/`, with Tailwind available for new work.
 - **Preflight is deliberately not imported.** This project has its own reset and
   ~1500 lines of CSS that depend on it; Tailwind's reset would restyle every
   heading, list and form control already on the page. Utilities are additive.
-- Every section registers a hue: `[data-section="…"] { --hue: … }`. A new
-  section needs one, **measured** — the palette promises ≥4.5:1 against the
-  ground, and each colour is committed with its ratio in a comment.
+- **One accent, everywhere.** `--hue` is global. There were six section hues —
+  violet, aqua, yellow, blue, magenta, green — mapped by
+  `[data-section="…"]`, and they are retired: the app wears the same colour on
+  every page, public and signed-in. `data-section` still sits on those
+  elements; it just no longer decides a colour. Git holds the retired values
+  and their measured ratios.
+- `--hue` #6f93d6 clears 4.5:1 on every ground it lands on — 6.23:1 on
+  `--ground`, 5.71:1 on `--surface`, 5.23:1 on `--raised`, 5.63:1 on `--navy`.
+  Check any replacement against all four, not just the ground.
+- `--navy` is a **fill**, never a foreground: true navy is 1.91:1 here.
+- Colours a three.js scene needs come from `lib/theme.ts`, never from the
+  component. Both scenes used to carry their own fallback table and disagreed
+  about the same token — and one of them fell back to the retired magenta.
 - `index.css` import order is the original order of the file these were split
   out of. Reordering silently changes the cascade.
 - Markdown renders through Tailwind's `prose` plus `prose-doc`, which points the
