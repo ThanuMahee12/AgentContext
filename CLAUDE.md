@@ -140,9 +140,39 @@ npm run typecheck
 public, and it fails the build if strings from `lib/fixtures.json` — real
 commands and paths — reach the artifact. Do not remove it.
 
-Deploy: `firebase deploy --only hosting` (also `firestore:rules`,
-`firestore:indexes` when those change). CI:
-`.github/workflows/deploy-dashboard.yml` on push to `main`.
+Deploy by hand: `firebase deploy --only hosting` (also `firestore:rules`,
+`firestore:indexes` when those change — no workflow touches those).
+
+## CI/CD: releases drive deploys
+
+Three workflows, one chain. A push to `main` releases and deploys itself.
+
+```
+pull_request ──► ci.yml            install · typecheck · build · verify
+push to main ──► release.yml
+                   ├─ ci.yml       the gate: a broken build never gets tagged
+                   ├─ bump patch   npm version → commit "Release vX.Y.Z" → tag → GitHub Release
+                   └─ deploy-dashboard.yml (ref = the new tag)
+nightly 18:30 UTC ► deploy-dashboard.yml   backstop only
+```
+
+**Versions come from `package.json`, not from commit messages.** This repo
+writes prose commit subjects, so a Conventional-Commits parser would read every
+one as "no release". Patch is automatic; a minor or major bump is deliberate —
+run **Release** from the Actions tab and choose one.
+
+- `deploy-dashboard.yml` no longer triggers on push. `release.yml` calls it, so
+  every deploy corresponds to a tag. Two workflows watching `push: main` would
+  have raced for one Hosting site; they now share the `firebase-hosting`
+  concurrency group instead.
+- The bump commit is pushed with `GITHUB_TOKEN`, which GitHub refuses to let
+  trigger further workflows. `release.yml` *also* skips any head commit starting
+  `Release v`, because that platform guarantee disappears the day someone
+  switches to a PAT.
+- `paths-ignore` keeps markdown, `content/` and `pages/` from minting versions —
+  none of it reaches the bundle.
+- **Requires** repo secret `FIREBASE_SERVICE_ACCOUNT`, Actions permitted to
+  write contents, and `main` not protected against the bot's push.
 
 ## Things that have actually gone wrong here
 

@@ -1,0 +1,155 @@
+name: Release
+
+# Auto-release on merge to main.
+#
+#   push to main -> CI gate -> bump patch -> tag vX.Y.Z -> GitHub Release -> deploy
+#
+# Version numbers come from package.json, not from commit messages: this
+# repository writes prose commit subjects ("Read documents from Firestore; stop
+# bundling markdown"), so a Conventional-Commits parser would read every one of
+# them as "no release" and cut empty versions forever. Patch is therefore the
+# default and a minor or major bump is a deliberate act - run this workflow from
+# the Actions tab and pick one.
+on:
+  push:
+    branches: [main]
+    # Nothing here reaches the built artifact, so changing one should not mint a
+    # version. The dashboard renders `content/` from Firestore at runtime, not
+    # from this tree.
+    paths-ignore:
+      - '**/*.md'
+      - 'content/**'
+      - 'pages/**'
+      - '.gitignore'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Which part of the version to raise'
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+        required: true
+
+# Releases are serialised, never cancelled. Cancelling one half-way could leave
+# a tag pushed with no Release attached to it.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  # The gate. If this fails, no tag is cut and nothing deploys.
+  #
+  # The `if` is belt-and-braces against a release loop. GitHub already refuses to
+  # trigger workflows from a push made with GITHUB_TOKEN, which is what the bump
+  # commit below uses - but that guarantee is a platform behaviour, and a future
+  # switch to a PAT would silently turn this workflow into an infinite version
+  # bumper. Recognising our own commit costs one line.
+  ci:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      !startsWith(github.event.head_commit.message, 'Release v')
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: ci
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history and tags: the notes are "every commit since the last
+          # tag", which a shallow clone cannot answer.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Written before the version is bumped, so the "Release vX.Y.Z" commit
+      # never appears in its own changelog.
+      - name: Collect release notes
+        id: notes
+        run: |
+          set -euo pipefail
+          PREV=$(git tag --list 'v*' --sort=-v:refname | head -n1)
+          if [ -n "$PREV" ]; then
+            echo "previous tag: $PREV"
+            git log --no-merges --reverse --pretty='- %s' "$PREV..HEAD" > /tmp/notes.md
+          else
+            # No tag has ever been cut, so "since the last release" is the whole
+            # repository - 400-odd commits reaching back to the MkDocs site this
+            # app replaced. Listing all of it as the changelog for one patch
+            # release is noise, so the first release summarises instead.
+            echo 'no previous tag; summarising recent history only'
+            {
+              echo '_First automated release. Earlier history predates tagging and is omitted._'
+              echo
+              git log --no-merges --reverse --pretty='- %s' -n 20 HEAD
+            } > /tmp/notes.md
+          fi
+          if [ ! -s /tmp/notes.md ]; then
+            echo '- No code changes.' > /tmp/notes.md
+          fi
+          echo "prev=$PREV" >> "$GITHUB_OUTPUT"
+          echo '--- notes ---'
+          cat /tmp/notes.md
+
+      - name: Bump version and tag
+        id: version
+        run: |
+          set -euo pipefail
+          BUMP="${{ github.event.inputs.bump || 'patch' }}"
+
+          # npm version keeps package.json and package-lock.json in step - both
+          # carry the version, and editing one by hand desynchronises `npm ci`.
+          TAG=$(npm version "$BUMP" --no-git-tag-version)
+          echo "new version: $TAG"
+
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::Tag $TAG already exists. package.json is behind the" \
+                 "tags - set it to the next unused version and push that first."
+            exit 1
+          fi
+
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -am "Release $TAG"
+
+          # `git tag` rejects -m and -F together, so the subject line is folded
+          # into the file instead of passed alongside it.
+          { echo "Release $TAG"; echo; cat /tmp/notes.md; } > /tmp/tag-message.md
+          git tag -a "$TAG" -F /tmp/tag-message.md
+
+          # --atomic: the branch and the tag land together or not at all. A tag
+          # that exists without its commit on main is the worst failure here.
+          git push --atomic origin HEAD:main "refs/tags/$TAG"
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          PREV: ${{ steps.notes.outputs.prev }}
+        run: |
+          set -euo pipefail
+          if [ -n "$PREV" ]; then
+            printf '\n**Full changelog:** %s/compare/%s...%s\n' \
+              "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" "$PREV" "$TAG" >> /tmp/notes.md
+          fi
+          gh release create "$TAG" --title "$TAG" --notes-file /tmp/notes.md
+
+  # Same Hosting site, same concurrency group as the nightly backstop, so these
+  # queue rather than race. Deploys the tag, not the branch, so what is live is
+  # always a version with a name.
+  deploy:
+    needs: release
+    uses: ./.github/workflows/deploy-dashboard.yml
+    with:
+      ref: ${{ needs.release.outputs.tag }}
+    secrets: inherit

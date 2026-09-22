@@ -4,23 +4,33 @@ name: Deploy dashboard to Firebase Hosting
 # Deploys therefore follow CODE changes, not a clock. The nightly run is a
 # backstop that catches drift (a dependency change, a failed earlier run), not
 # the mechanism by which data reaches the site.
+#
+# The push trigger is gone on purpose: release.yml now owns the main branch and
+# calls this workflow after it has tagged a release, so every deploy corresponds
+# to a version someone can name. Two workflows both watching `push: main` would
+# have raced for the same Hosting site.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src/**'
-      - 'index.html'
-      - 'package.json'
-      - 'vite.config.ts'
-      - 'firebase.json'
-      - '.firebaserc'
-      - '.github/workflows/deploy-dashboard.yml'
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Commit, tag or branch to build and deploy. Defaults to the triggering ref.'
+        type: string
+        required: false
+        default: ''
   schedule:
     # 18:30 UTC = 00:00 Asia/Colombo. GitHub cron is UTC only.
     - cron: '30 18 * * *'
   workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Commit, tag or branch to build and deploy (blank = default branch)'
+        type: string
+        required: false
+        default: ''
 
-# Never let two deploys race to the same Hosting site.
+# Never let two deploys race to the same Hosting site. This group is shared with
+# the scheduled backstop, so a nightly run queues behind a release rather than
+# overwriting it.
 concurrency:
   group: firebase-hosting
   cancel-in-progress: false
@@ -33,6 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Empty string means "whatever triggered this", which is what the
+          # schedule and a bare dispatch want. A release passes its own tag.
+          ref: ${{ inputs.ref || github.ref }}
 
       - uses: actions/setup-node@v4
         with:
@@ -49,10 +63,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Hosting is public. Prove the artifact carries no local session data
-      # before anything is uploaded.
+      # Re-checked here rather than trusted from CI: this job builds its own
+      # artifact from its own checkout, and the artifact that gets uploaded is
+      # the one that has to be clean.
       - name: Verify bundle carries no local data
-        run: node scripts/verify-bundle.mjs
+        run: npm run verify
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
