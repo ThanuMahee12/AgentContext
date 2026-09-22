@@ -25,6 +25,8 @@
   --color-raised: var(--raised);
   --color-line: var(--line);
   --color-line-lit: var(--line-lit);
+  /* visible as a form control's edge, where --line is not */
+  --color-field-line: var(--field-line);
 
   --color-text: var(--text);
   --color-text-2: var(--text-2);

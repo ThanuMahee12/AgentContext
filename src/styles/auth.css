@@ -9,14 +9,42 @@
  * full-bleed fixed canvas host, and a mask painted with a pseudo-element.
  */
 
+/* Navy, scoped to this page.
+ *
+ * Set here rather than by changing --s-dashboard, because that token is a
+ * section identity: the public nav lists every section together, --s-notes is
+ * already blue (#3987e5), and a blue dashboard entry beside it would be the
+ * one thing the section palette exists to prevent. The sign-in page is not a
+ * section - it is the door - so it can carry its own colour without costing
+ * the system its distinctions.
+ *
+ * True navy cannot be a foreground on this ground: #1f3a93 is 1.91:1 against
+ * #0b0f16, and anything dark enough to read as navy fails. So navy is the
+ * FILL of the brand column, and the accent is the blue nearest it that still
+ * clears AA.
+ */
 .auth {
-  position: relative;          /* the column stacks above the canvas */
+  --hue:      #6f93d6;   /* 6.23:1 on --ground, 5.71:1 on --surface */
+  --hue-lit:  #87a9db;   /* 7.31:1 on --surface, for links on the card */
+  --auth-navy: #0f1a30;  /* the brand column's ground */
+
   display: grid;
-  place-items: center;
+  grid-template-columns: minmax(0, 1fr);
   min-height: 100vh;
-  min-height: 100dvh;          /* dvh so the panel is not pushed under mobile browser chrome */
-  padding: 32px 20px;
+  min-height: 100dvh;          /* dvh so the form is not pushed under mobile browser chrome */
   background: var(--ground);
+}
+
+/* Two columns once there is room for the brand panel to say something without
+   squeezing the form. Below this the panel is display:none and the form takes
+   the whole width.
+   1024px is Tailwind's `lg`, and it has to be: the panel is hidden with
+   `hidden lg:flex`, so a different number here opens a second grid column
+   while the panel is still display:none - an empty gap with the form jammed
+   beside it. Change one, change all three (this, the utilities in Login.tsx,
+   and WIDE). */
+@media (min-width: 1024px) {
+  .auth { grid-template-columns: minmax(0, 460px) minmax(0, 1fr); }
 }
 
 /* --- animated backdrop ---------------------------------------------------- */
@@ -25,7 +53,11 @@
    is what happens on a WebGL failure or a slow chunk. */
 
 .auth-bg {
-  position: fixed;
+  /* Absolute inside the brand column, not fixed to the viewport. The split
+     is what made the backdrop workable: it is beside the form now instead of
+     underneath it, so it needs no mask over the middle and cannot reduce the
+     contrast of a single label. */
+  position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;   /* never eat a click meant for the form */
@@ -34,28 +66,12 @@
 /* Dimmed on the canvas, NOT on the wrapper. Opacity on .auth-bg fades its own
    ::after vignette too, so the mask that keeps the form readable would itself
    run at 30% - the centre never gets as dark as it is drawn to be. */
-.auth-bg canvas { opacity: 0.3; }
-
-/* The form sits dead centre, so the centre is darkened. Without this the
-   tethers cross the panel and the labels lose contrast against moving colour.
-   A mask is the cheap way: no second render pass, no blur. */
-.auth-bg::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse 60% 64% at 50% 50%,
-    var(--ground) 0%,
-    var(--ground) 30%,
-    color-mix(in srgb, var(--ground) 80%, transparent) 55%,
-    transparent 85%
-  );
-}
+.auth-bg canvas { opacity: 0.42; }
 
 @media (prefers-reduced-motion: reduce) {
   /* Transitions are already killed globally by tokens.css, so only the thing
      that rule cannot reach belongs here: AgentField draws one static frame
      instead of animating, and a still field has no motion to excuse its
      contrast against the text. */
-  .auth-bg canvas { opacity: 0.22; }
+  .auth-bg canvas { opacity: 0.3; }
 }

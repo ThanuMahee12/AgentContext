@@ -12,6 +12,16 @@ import { describeAuthError } from '../lib/authErrors'
  *  never at all if the chunk fails to load. */
 const AgentField = lazy(() => import('./AgentField'))
 
+/** 1024px is Tailwind's `lg`, matching `hidden lg:flex` on the brand column
+ *  and the media query in auth.css - all three must agree.
+ *
+ *  The brand column is display:none below this width, so the canvas would
+ *  mount into a zero-sized box and pull 530 kB of three.js onto a phone for
+ *  nothing. Read once: this is a page you arrive at, not one that gets resized
+ *  mid-session, and re-mounting a WebGL context on every drag of a window edge
+ *  would be worse than not reacting. */
+const WIDE = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches
+
 const SUBMIT =
   'mt-[22px] h-11 w-full cursor-pointer rounded-s bg-hue text-[14px] font-semibold ' +
   'tracking-[0.01em] text-ground transition-[filter] duration-150 ' +
@@ -112,33 +122,51 @@ export default function Login() {
   const copy = MODES[mode]
 
   return (
-    // data-section makes --hue the dashboard's own magenta, the way every
-    // other area of the site takes its colour.
-    <div className="auth" data-section="dashboard">
-      {/* Decorative, deferred, and firewalled: a throw inside the canvas cannot
-          take sign-in down with it. */}
-      <Decorative>
-        <Suspense fallback={null}>
-          <AgentField />
-        </Suspense>
-      </Decorative>
+    // No data-section: auth.css gives this page its own navy rather than
+    // borrowing the dashboard's section identity. See the note there.
+    <div className="auth tw-scope">
+      {/* Two columns: what this is, and the way in. The brand column is where
+          the backdrop lives now - contained beside the form rather than behind
+          it, which is what stopped it competing with the labels. */}
+      <aside className="relative hidden overflow-hidden border-r border-line bg-[var(--auth-navy)] p-11 lg:flex lg:flex-col">
+        {WIDE && (
+          <Decorative>
+            <Suspense fallback={null}>
+              <AgentField />
+            </Suspense>
+          </Decorative>
+        )}
 
-      {/* tw-scope carries the preflight subset these utilities assume - this
-          project does not import preflight globally. See styles/tailwind-plus.css. */}
-      <main className="tw-scope relative z-[1] w-full max-w-[400px]">
-        <div className="flex items-center gap-[9px] text-[15px] font-semibold tracking-[-0.012em] text-text">
+        <div className="relative z-[1] flex items-center gap-[9px] text-[15px] font-semibold tracking-[-0.012em] text-text">
           <span className="size-[9px] rounded-full bg-hue" aria-hidden />
           AgentContext
         </div>
 
-        <section
-          className="mt-[26px] rounded border border-line bg-surface p-[30px] pb-6 shadow-[0_10px_34px_-18px_rgb(0_0_0/0.85)]"
-          aria-labelledby="auth-heading"
-        >
-          <h1
-            className="m-0 text-[21px] font-semibold leading-tight tracking-[-0.02em] text-text"
-            id="auth-heading"
-          >
+        <div className="relative z-[1] mt-auto">
+          <p className="m-0 max-w-[18ch] text-[26px] leading-[1.32] tracking-[-0.02em] text-text">
+            Every session your agents run, kept where you can read it back.
+          </p>
+          <p className="mt-[18px] max-w-[36ch] text-[13.5px] leading-[1.6] text-text-2">
+            Commands, files and transcripts from Claude Code, Gemini CLI and Antigravity.
+            Readable only by named addresses.
+          </p>
+        </div>
+      </aside>
+
+      <main className="grid place-items-center px-5 py-10">
+        <div className="w-full max-w-[360px]">
+          {/* The wordmark only appears here when the brand column is not shown,
+              so the page is never nameless and never says it twice. */}
+          <div className="mb-9 flex items-center gap-[9px] text-[15px] font-semibold tracking-[-0.012em] text-text lg:hidden">
+            <span className="size-[9px] rounded-full bg-hue" aria-hidden />
+            AgentContext
+          </div>
+
+          <section aria-labelledby="auth-heading">
+            <h1
+              className="m-0 text-[24px] font-semibold leading-tight tracking-[-0.02em] text-text"
+              id="auth-heading"
+            >
             {copy.title}
           </h1>
           {mode === 'signin' && (
@@ -245,7 +273,8 @@ export default function Login() {
               </button>
             )}
           </nav>
-        </section>
+          </section>
+        </div>
       </main>
     </div>
   )

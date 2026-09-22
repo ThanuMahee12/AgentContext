@@ -86,6 +86,13 @@
  * its value, so nothing already drawn moves.
  */
 :root { --text-muted: #8894ad; }          /* 5.77:1 on --surface */
+
+/* A control's boundary needs 3:1 against what is either side of it (WCAG
+   1.4.11). --line manages 1.15:1 against --raised, so an input outlined with
+   it is drawn and invisible - which is exactly how it was reported. --line
+   stays as it is for the hairlines and dividers it was chosen for; this is for
+   form controls only. */
+:root { --field-line: #66739a; }         /* 3.44:1 on --raised, 3.76:1 on --surface */
 /* Derived from whichever hue is in scope, so it is right in every section
    rather than only the magenta one.
    The fallback is written out rather than left to the build: Lightning CSS
