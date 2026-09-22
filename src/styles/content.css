@@ -863,42 +863,132 @@
    its own element now that the grid runs in rows. */
 .adminbody { display: flex; min-height: 0; min-width: 0; }
 
-/* Filters as a row of toggles rather than a column of checkboxes. */
-.admin .facet {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
+/* Filters as dropdowns. A row of toggles worked at four values and failed at
+   eighteen - the toolbar became a wall and the table lost the space. */
+.admin .facet { position: relative; }
 .admin .facet + .facet { margin-top: 0; }
-.admin .facet h3 { margin: 0 2px 0 0; }
 
-.fchip {
+.facetbtn {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 5px 10px;
-  /* field-line, not line: a toggle is a control, and --line is 1.37:1 against
-     the ground - the same invisible border the inputs had. */
+  padding: 6px 11px;
+  /* field-line, not line: a control's edge needs 3:1 and --line is 1.37:1
+     against the ground. */
   border: 1px solid var(--field-line);
-  border-radius: 999px;
+  border-radius: var(--r-s);
   background: none;
   color: var(--text-2);
   font: 500 12.5px/1 var(--plex-sans);
   cursor: pointer;
 }
-.fchip:hover { border-color: var(--hue); color: var(--text); }
-.fchip.on {
+.facetbtn:hover { border-color: var(--hue); color: var(--text); }
+.facetbtn[aria-expanded='true'] { border-color: var(--hue); color: var(--text); }
+.facetbtn.on {
   border-color: var(--hue);
   background: color-mix(in srgb, var(--hue) 14%, transparent);
   color: var(--text);
 }
-.fchip .count {
-  font: 500 11px/1 var(--plex-mono);
-  color: var(--text-3);
+
+/* The count of what is active, so the button says how many without listing
+   them. */
+.facetbtn .n {
+  min-width: 16px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--hue);
+  color: var(--ground);
+  font: 600 10.5px/1.5 var(--plex-mono);
   font-variant-numeric: tabular-nums;
 }
-.fchip.on .count { color: var(--text-2); }
+
+.facetbtn .caret {
+  width: 0;
+  height: 0;
+  border-inline: 3.5px solid transparent;
+  border-top: 4px solid currentcolor;
+}
+
+.facetmenu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  width: max-content;
+  min-width: 210px;
+  max-width: 320px;
+  padding: 8px;
+  border: 1px solid var(--line-lit);
+  border-radius: var(--r);
+  background: var(--surface);
+  box-shadow: 0 14px 36px -16px rgb(0 0 0 / 0.9);
+}
+
+.facetfind {
+  width: 100%;
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 9px;
+  margin-bottom: 6px;
+  background: var(--raised);
+  border: 1px solid var(--field-line);
+  border-radius: var(--r-s);
+  color: var(--text);
+  font: 400 13px/1 var(--plex-sans);
+  outline: none;
+}
+.facetfind:focus { border-color: var(--hue); }
+
+/* Capped and scrolled: eighteen values must not push the menu off screen. */
+.facetlist {
+  max-height: 264px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.facetlist label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 7px;
+  border-radius: var(--r-s);
+  color: var(--text-2);
+  font: 400 13px/1.3 var(--plex-sans);
+  cursor: pointer;
+}
+.facetlist label:hover { background: var(--raised); color: var(--text); }
+.facetlist input { accent-color: var(--hue); margin: 0; flex: none; }
+
+/* The value can be long; the count must never be pushed out of sight. */
+.facetlist .name {
+  flex-grow: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.facetlist .count {
+  flex: none;
+  font: 500 11px/1 var(--plex-mono);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.facetnone { margin: 0; padding: 8px 7px; font-size: 12.5px; color: var(--text-muted); }
+
+.facetclear {
+  width: 100%;
+  margin-top: 6px;
+  padding: 7px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: none;
+  color: var(--hue-lit);
+  font: 500 12.5px/1 var(--plex-sans);
+  cursor: pointer;
+}
+.facetclear:hover { color: var(--text); }
 
 .admin .here {
   display: flex;
@@ -916,7 +1006,7 @@
   border-radius: 999px;
 }
 
-.admin .facets { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.admin .facets { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .admin .sheet { flex-grow: 1; min-width: 0; padding: 22px 24px 72px; overflow: auto; }
 
 /* The signed-in area carries the navy from tokens.css, the same colour the

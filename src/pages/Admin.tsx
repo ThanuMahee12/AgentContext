@@ -24,8 +24,8 @@ export default function Admin({ user }: { user: User | null }) {
   const problems = data?.problems ?? []
 
   const [query, setQuery] = useState('')
-  const [projects, setProjects] = useState<string[]>([])
   const [users, setUsers] = useState<string[]>([])
+  const [projects, setProjects] = useState<string[]>([])
   const [providers, setProviders] = useState<string[]>([])
   const [selected, setSelected] = useState<Session | null>(null)
 
