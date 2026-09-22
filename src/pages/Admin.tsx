@@ -82,7 +82,6 @@ export default function Admin({ user }: { user: User | null }) {
   return (
     <AdminShell
       user={user}
-      here="Session archive"
       panel={selected && <SessionDetail session={selected} onClose={() => setSelected(null)} />}
       toolbar={
         <>

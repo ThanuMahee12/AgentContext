@@ -3,9 +3,6 @@ import { Link, NavLink } from 'react-router-dom'
 import { signOut, type User } from 'firebase/auth'
 
 import { auth } from '../firebase'
-import { getSource } from '../lib/source'
-
-const source = getSource()
 
 /** The signed-in shell: a top bar, and the page under it.
  *
@@ -15,20 +12,22 @@ const source = getSource()
  * permanently visible. Nav that is read once per visit does not need a column;
  * it needs a row.
  *
+ * No label for the current screen: the nav below already names both screens and
+ * marks the active one, and the source badge said `firestore` on every visit
+ * while the one case worth knowing about - no source configured - has its own
+ * banner on the archive page.
+ *
  * `toolbar` is what the sidebar's filters became: a row under the bar, owned by
  * the page, because search and facets belong to the archive and mean nothing on
  * /content.
  */
 export default function AdminShell({
   user,
-  here,
   toolbar,
   panel,
   children,
 }: {
   user: User | null
-  /** What this screen is, shown beside the wordmark. */
-  here: string
   /** Screen-specific controls - search, filters - in a row under the bar. */
   toolbar?: ReactNode
   /** A panel beside the main column, not inside it. `.detail` is
@@ -44,11 +43,6 @@ export default function AdminShell({
           <span className="glyph" aria-hidden />
           AgentContext
         </Link>
-
-        <p className="here">
-          {here}
-          <span className="src">{source.name}</span>
-        </p>
 
         <nav aria-label="Signed in">
           {PRIVATE.map((item) => (

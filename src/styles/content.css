@@ -990,22 +990,6 @@
 }
 .facetclear:hover { color: var(--text); }
 
-.admin .here {
-  display: flex;
-  align-items: baseline;
-  gap: 9px;
-  margin: 0;
-  font: 500 12px/1 var(--plex-sans);
-  color: var(--text-2);
-}
-.admin .here .src {
-  font: 400 10px/1.8 var(--plex-mono);
-  color: var(--text-3);
-  padding: 0 7px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-}
-
 .admin .facets { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .admin .sheet { flex-grow: 1; min-width: 0; padding: 22px 24px 72px; overflow: auto; }
 

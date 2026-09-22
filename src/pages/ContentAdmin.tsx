@@ -34,14 +34,14 @@ export default function ContentAdmin({ user }: { user: User | null }) {
   // Inside the shell, so the nav and sign-out stay reachable while it loads.
   if (isPending) {
     return (
-      <AdminShell user={user} here="Content">
+      <AdminShell user={user}>
         <Loading page>Loading documents…</Loading>
       </AdminShell>
     )
   }
 
   return (
-    <AdminShell user={user} here="Content">
+    <AdminShell user={user}>
       <Title>Content</Title>
       <header className="dayhead" style={{ marginBottom: 16 }}>
         <div>
