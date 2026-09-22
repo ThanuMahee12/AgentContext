@@ -45,7 +45,8 @@ src/
 │   ├── Home.tsx  Section.tsx  Published.tsx
 │   ├── Catchup.tsx     activity calendar; public counts, private detail
 │   └── Admin.tsx  ContentAdmin.tsx      signed-in
-├── components/         Markdown, CodeBlock, Media, Login, SessionDetail,
+├── components/         Markdown, CodeBlock, Media, Login, Field, Decorative,
+│                       SessionDetail,
 │                       SessionTable (TanStack Table v9), CatchupScene (three.js,
 │                       lazy), Title, State (Loading/Nothing/Failure/Chip),
 │                       Facet, LinkRow, Tree, shared
@@ -270,6 +271,19 @@ tracked-out uppercase the dashboard uses for its forty-odd micro-labels.
 
 `react-hook-form` earns its place here and nowhere else yet: validation, error
 messages and `isSubmitting` on three forms that share two fields.
+
+`components/Field.tsx` owns the label/input/message triple and wires the
+`aria-describedby` association itself, because a call site can forget it — and
+one did: the third copy set `aria-invalid` and rendered no message.
+`components/Decorative.tsx` is the error boundary the backdrop sits in.
+`lib/authErrors.ts` maps Firebase codes to sentences.
+
+**Every action goes through `handleSubmit`, including the ones that are not
+form submissions.** "Copy request" read the field directly and copied whatever
+was in it, so an empty field produced *"Please add  to the AgentContext viewer
+list."* — a broken sentence, copied happily. Routing it through `handleSubmit`
+is what validates the address and what gives that field its error message at
+all.
 
 ## Markdown
 

@@ -1,13 +1,45 @@
-import { Component, lazy, Suspense, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth'
 
+import Decorative from './Decorative'
+import Field from './Field'
 import { auth } from '../firebase'
+import { describeAuthError } from '../lib/authErrors'
 
 /** three.js is ~547 kB and this is a page two people visit. Lazy, like
  *  CatchupScene - the backdrop arrives after the form is already usable, and
  *  never at all if the chunk fails to load. */
 const AgentField = lazy(() => import('./AgentField'))
+
+const SUBMIT =
+  'mt-[22px] h-11 w-full cursor-pointer rounded-s bg-hue text-[14px] font-semibold ' +
+  'tracking-[0.01em] text-ground transition-[filter] duration-150 ' +
+  'hover:brightness-110 disabled:cursor-default disabled:opacity-55'
+/* hue-lit, not hue: the base hue is 4.46:1 on a --surface card and fails AA. */
+const LINK = 'cursor-pointer text-[13px] font-medium text-hue-lit hover:underline'
+const NOTE = 'mb-[14px] text-[12.5px] leading-[1.6] text-text-muted'
+const MESSAGE = 'mb-[14px] rounded-s border px-[11px] py-[9px] text-[12.5px] leading-[1.5]'
+
+type Mode = 'signin' | 'reset' | 'request'
+
+interface Fields {
+  email: string
+  password: string
+}
+
+/** What each mode calls itself and what its button does. Kept as data so the
+ *  heading, the button and the busy label cannot drift out of step. */
+const MODES: Record<Mode, { title: string; action: string; busy: string }> = {
+  signin: { title: 'Sign in', action: 'Sign in', busy: 'Signing in…' },
+  reset: { title: 'Reset your password', action: 'Send reset link', busy: 'Sending…' },
+  request: { title: 'Request access', action: 'Copy request', busy: 'Copy request' },
+}
+
+const EMAIL_RULES = {
+  required: 'Enter your email address.',
+  pattern: { value: /^\S+@\S+\.\S+$/, message: 'That does not look like an email address.' },
+}
 
 /**
  * The door to the archive.
@@ -23,42 +55,16 @@ const AgentField = lazy(() => import('./AgentField'))
  * to receive a request, and a button that silently does nothing is worse than
  * one that explains itself.
  */
-/* Utility strings, named once. Repeating a 12-class input three times is how
- * two fields end up a pixel apart; naming them is not a component library, it
- * is the same discipline as a CSS class. */
-const LABEL = 'mb-[7px] block text-[13px] font-medium text-text-2'
-const INPUT =
-  'h-11 w-full rounded-s border border-line bg-raised px-[13px] text-[15px] text-text ' +
-  'outline-none transition-[border-color,box-shadow] duration-150 ' +
-  'placeholder:text-text-muted ' +
-  'focus:border-hue focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--hue)_22%,transparent)] ' +
-  'aria-[invalid=true]:border-err ' +
-  'aria-[invalid=true]:focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--err)_22%,transparent)]'
-const SUBMIT =
-  'mt-[22px] h-11 w-full cursor-pointer rounded-s bg-hue text-[14px] font-semibold ' +
-  'tracking-[0.01em] text-ground transition-[filter] duration-150 ' +
-  'hover:brightness-110 disabled:cursor-default disabled:opacity-55'
-/* hue-lit, not hue: the base hue is 4.46:1 on a --surface card and fails AA. */
-const LINK = 'cursor-pointer text-[13px] font-medium text-hue-lit hover:underline'
-const NOTE = 'mb-[14px] text-[12.5px] leading-[1.6] text-text-muted'
-const HINT = 'mt-[6px] block text-[12px] not-italic leading-[1.5] text-err'
-const MESSAGE = 'mb-[14px] rounded-s border px-[11px] py-[9px] text-[12.5px] leading-[1.5]'
-
-type Mode = 'signin' | 'reset' | 'request'
-
-interface Fields {
-  email: string
-  password: string
-}
-
 export default function Login() {
   const [mode, setMode] = useState<Mode>('signin')
   const [failure, setFailure] = useState('')
   const [sentTo, setSentTo] = useState('')
   const [copied, setCopied] = useState(false)
 
-  const form = useForm<Fields>({ defaultValues: { email: '', password: '' }, mode: 'onSubmit' })
-  const { register, handleSubmit, formState, getValues, setFocus } = form
+  const { register, handleSubmit, formState, setFocus } = useForm<Fields>({
+    defaultValues: { email: '', password: '' },
+    mode: 'onSubmit',
+  })
   const { errors, isSubmitting } = formState
 
   const go = (next: Mode) => {
@@ -79,34 +85,38 @@ export default function Login() {
         await signInWithEmailAndPassword(auth, address, password)
         return // the auth listener in App swaps this whole view out
       }
-      if (mode === 'reset') {
-        await sendPasswordResetEmail(auth, address)
-        setSentTo(address)
-      }
+      await sendPasswordResetEmail(auth, address)
+      setSentTo(address)
     } catch (err) {
-      setFailure(explain(err, mode))
+      setFailure(describeAuthError(err, mode === 'reset' ? 'reset' : 'signin'))
     }
   })
 
-  const copyRequest = async () => {
-    const address = getValues('email').trim()
+  /* Through handleSubmit, so the address is validated before it is copied.
+   * Reading the field directly would copy whatever is there - an empty field
+   * produced "Please add  to the AgentContext viewer list.", a broken sentence
+   * with a blank in it, and copied it happily. This also gives the field its
+   * error message, since nothing else in this mode ever ran validation. */
+  const copyRequest = handleSubmit(async ({ email }) => {
+    setFailure('')
     try {
       await navigator.clipboard.writeText(
-        `Please add ${address} to the AgentContext viewer list.`,
+        `Please add ${email.trim()} to the AgentContext viewer list.`,
       )
       setCopied(true)
     } catch {
       setFailure('Could not reach the clipboard. Select the address and copy it by hand.')
     }
-  }
+  })
+
+  const copy = MODES[mode]
 
   return (
     // data-section makes --hue the dashboard's own magenta, the way every
     // other area of the site takes its colour.
     <div className="auth" data-section="dashboard">
-      {/* Decorative, deferred, and firewalled. No Suspense fallback because a
-          form that waits for a backdrop is a form that failed, and the boundary
-          means a throw inside the canvas cannot take sign-in down with it. */}
+      {/* Decorative, deferred, and firewalled: a throw inside the canvas cannot
+          take sign-in down with it. */}
       <Decorative>
         <Suspense fallback={null}>
           <AgentField />
@@ -129,7 +139,7 @@ export default function Login() {
             className="m-0 text-[21px] font-semibold leading-tight tracking-[-0.02em] text-text"
             id="auth-heading"
           >
-            {mode === 'signin' ? 'Sign in' : mode === 'reset' ? 'Reset your password' : 'Request access'}
+            {copy.title}
           </h1>
           {mode === 'signin' && (
             <p className="mt-[7px] text-[13.5px] leading-[1.55] text-text-muted">
@@ -138,49 +148,63 @@ export default function Login() {
           )}
 
           {mode === 'request' ? (
-            <RequestAccess
-              register={register}
-              copied={copied}
-              onCopy={copyRequest}
-              invalid={!!errors.email}
-            />
+            <>
+              <p className={NOTE + ' mt-6'}>
+                Accounts are not created here. An owner adds your address to the viewer list,
+                and you sign in with it afterwards.
+              </p>
+
+              <Field
+                label="Your email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                registration={register('email', {
+                  ...EMAIL_RULES,
+                  required: 'Enter the address you want added.',
+                })}
+                error={errors.email?.message}
+              />
+
+              {failure && (
+                <p className={MESSAGE + ' border-err/30 bg-err-soft text-err'} role="alert">
+                  {failure}
+                </p>
+              )}
+
+              <button className={SUBMIT} type="button" onClick={copyRequest}>
+                {copied ? 'Copied' : copy.action}
+              </button>
+
+              <p className={NOTE + ' mb-0 mt-3'}>
+                Nothing is sent from this page. Copying puts one line on your clipboard to pass
+                to whoever runs the archive.
+              </p>
+            </>
           ) : (
             <form onSubmit={onSubmit} noValidate className="mt-6">
-              <label className="mb-[18px] block">
-                <span className={LABEL}>Email</span>
-                <input
-                  {...register('email', {
-                    required: 'Enter your email address.',
-                    pattern: { value: /^\S+@\S+\.\S+$/, message: 'That does not look like an email address.' },
-                  })}
-                  type="email"
-                  autoComplete="username"
-                  autoFocus
-                  className={INPUT}
-                  aria-invalid={!!errors.email}
-                  aria-describedby={errors.email ? 'err-email' : undefined}
-                />
-                {errors.email && <em id="err-email" className={HINT}>{errors.email.message}</em>}
-              </label>
+              <Field
+                label="Email"
+                type="email"
+                autoComplete="username"
+                autoFocus
+                registration={register('email', EMAIL_RULES)}
+                error={errors.email?.message}
+              />
 
               {mode === 'signin' && (
-                <label className="mb-[18px] block">
-                  <span className={LABEL + ' flex items-baseline justify-between gap-[10px]'}>
-                    Password
+                <Field
+                  label="Password"
+                  type="password"
+                  autoComplete="current-password"
+                  registration={register('password', { required: 'Enter your password.' })}
+                  error={errors.password?.message}
+                  action={
                     <button type="button" className={LINK} onClick={() => go('reset')}>
                       Forgot it?
                     </button>
-                  </span>
-                  <input
-                    {...register('password', { required: 'Enter your password.' })}
-                    type="password"
-                    autoComplete="current-password"
-                    className={INPUT}
-                    aria-invalid={!!errors.password}
-                    aria-describedby={errors.password ? 'err-password' : undefined}
-                  />
-                  {errors.password && <em id="err-password" className={HINT}>{errors.password.message}</em>}
-                </label>
+                  }
+                />
               )}
 
               {mode === 'reset' && !sentTo && (
@@ -196,19 +220,19 @@ export default function Login() {
               )}
 
               {failure && (
-                <p className={MESSAGE + ' border-err/30 bg-err-soft text-err'} role="alert">{failure}</p>
+                <p className={MESSAGE + ' border-err/30 bg-err-soft text-err'} role="alert">
+                  {failure}
+                </p>
               )}
 
               <button className={SUBMIT} type="submit" disabled={isSubmitting}>
-                {isSubmitting
-                  ? mode === 'signin' ? 'Signing in…' : 'Sending…'
-                  : mode === 'signin' ? 'Sign in' : 'Send reset link'}
+                {isSubmitting ? copy.busy : copy.action}
               </button>
             </form>
           )}
 
-          {/* justify-end plus an auto margin on a lone child keeps a single
-              link off-centre-free without a :only-child rule. */}
+          {/* An only child pushes itself right, so a single link never sits
+              off-centre under the divider. */}
           <nav className="mt-[22px] flex justify-between gap-3 border-t border-line pt-[18px] [&>*:only-child]:ml-auto">
             {mode !== 'signin' && (
               <button type="button" className={LINK} onClick={() => go('signin')}>
@@ -225,92 +249,4 @@ export default function Login() {
       </main>
     </div>
   )
-}
-
-/** Renders nothing if its child throws.
- *
- *  For decoration only. The sign-in form is the one thing on this page that has
- *  to work, and a WebGL context failure, a missing browser API or a chunk that
- *  will not load must cost the reader a backdrop, never the ability to sign in.
- *  React unmounts the whole tree on an uncaught render error, so without this
- *  the canvas and the form share a fate. */
-class Decorative extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false }
-  static getDerivedStateFromError() {
-    return { failed: true }
-  }
-  render() {
-    return this.state.failed ? null : this.props.children
-  }
-}
-
-/** Deliberately not a sign-up form. See the note at the top of this file. */
-function RequestAccess({
-  register,
-  copied,
-  onCopy,
-  invalid,
-}: {
-  register: ReturnType<typeof useForm<Fields>>['register']
-  copied: boolean
-  onCopy: () => void
-  invalid: boolean
-}) {
-  return (
-    <>
-      <p className={NOTE + ' mt-6'}>
-        Accounts are not created here. An owner adds your address to the viewer list, and
-        you sign in with it afterwards.
-      </p>
-
-      <label className="mb-[18px] block">
-        <span className={LABEL}>Your email</span>
-        <input
-          {...register('email', { required: 'Enter the address you want added.' })}
-          type="email"
-          autoComplete="email"
-          className={INPUT}
-          aria-invalid={invalid}
-          placeholder="you@example.com"
-        />
-      </label>
-
-      <button className={SUBMIT} type="button" onClick={onCopy}>
-        {copied ? 'Copied' : 'Copy request'}
-      </button>
-
-      <p className={NOTE + ' mb-0 mt-3'}>
-        Nothing is sent from this page. Copying puts one line on your clipboard to pass to
-        whoever runs the archive.
-      </p>
-    </>
-  )
-}
-
-/** Firebase error codes are not for humans. Say what to do about it. */
-function explain(err: unknown, mode: Mode): string {
-  const code = (err as { code?: string })?.code ?? ''
-  switch (code) {
-    case 'auth/invalid-email':
-      return 'That email address is not valid.'
-    case 'auth/missing-password':
-      return 'Enter your password.'
-    case 'auth/invalid-credential':
-    case 'auth/wrong-password':
-    case 'auth/user-not-found':
-      // One message for all three on purpose: saying which half was wrong tells
-      // an attacker which addresses have accounts.
-      return 'Email or password is incorrect.'
-    case 'auth/too-many-requests':
-      return 'Too many attempts. Wait a minute and try again.'
-    case 'auth/network-request-failed':
-      return 'Could not reach Firebase. Check your connection.'
-    case 'auth/admin-restricted-operation':
-      return 'Account creation is switched off for this project.'
-    case 'auth/configuration-not-found':
-      return 'Email sign-in is not enabled for this Firebase project yet.'
-    default:
-      if (code) return `${mode === 'reset' ? 'Reset' : 'Sign-in'} failed (${code}).`
-      return mode === 'reset' ? 'Could not send the reset link.' : 'Sign-in failed.'
-  }
 }
