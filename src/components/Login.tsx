@@ -23,6 +23,27 @@ const AgentField = lazy(() => import('./AgentField'))
  * to receive a request, and a button that silently does nothing is worse than
  * one that explains itself.
  */
+/* Utility strings, named once. Repeating a 12-class input three times is how
+ * two fields end up a pixel apart; naming them is not a component library, it
+ * is the same discipline as a CSS class. */
+const LABEL = 'mb-[7px] block text-[13px] font-medium text-text-2'
+const INPUT =
+  'h-11 w-full rounded-s border border-line bg-raised px-[13px] text-[15px] text-text ' +
+  'outline-none transition-[border-color,box-shadow] duration-150 ' +
+  'placeholder:text-text-muted ' +
+  'focus:border-hue focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--hue)_22%,transparent)] ' +
+  'aria-[invalid=true]:border-err ' +
+  'aria-[invalid=true]:focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--err)_22%,transparent)]'
+const SUBMIT =
+  'mt-[22px] h-11 w-full cursor-pointer rounded-s bg-hue text-[14px] font-semibold ' +
+  'tracking-[0.01em] text-ground transition-[filter] duration-150 ' +
+  'hover:brightness-110 disabled:cursor-default disabled:opacity-55'
+/* hue-lit, not hue: the base hue is 4.46:1 on a --surface card and fails AA. */
+const LINK = 'cursor-pointer text-[13px] font-medium text-hue-lit hover:underline'
+const NOTE = 'mb-[14px] text-[12.5px] leading-[1.6] text-text-muted'
+const HINT = 'mt-[6px] block text-[12px] not-italic leading-[1.5] text-err'
+const MESSAGE = 'mb-[14px] rounded-s border px-[11px] py-[9px] text-[12.5px] leading-[1.5]'
+
 type Mode = 'signin' | 'reset' | 'request'
 
 interface Fields {
@@ -92,18 +113,28 @@ export default function Login() {
         </Suspense>
       </Decorative>
 
-      <main className="auth-col">
-        <div className="auth-mark">
-          <span className="auth-dot" aria-hidden />
+      {/* tw-scope carries the preflight subset these utilities assume - this
+          project does not import preflight globally. See styles/tailwind-plus.css. */}
+      <main className="tw-scope relative z-[1] w-full max-w-[400px]">
+        <div className="flex items-center gap-[9px] text-[15px] font-semibold tracking-[-0.012em] text-text">
+          <span className="size-[9px] rounded-full bg-hue" aria-hidden />
           AgentContext
         </div>
 
-        <section className="auth-panel" aria-labelledby="auth-heading">
-          <h1 className="auth-title" id="auth-heading">
+        <section
+          className="mt-[26px] rounded border border-line bg-surface p-[30px] pb-6 shadow-[0_10px_34px_-18px_rgb(0_0_0/0.85)]"
+          aria-labelledby="auth-heading"
+        >
+          <h1
+            className="m-0 text-[21px] font-semibold leading-tight tracking-[-0.02em] text-text"
+            id="auth-heading"
+          >
             {mode === 'signin' ? 'Sign in' : mode === 'reset' ? 'Reset your password' : 'Request access'}
           </h1>
           {mode === 'signin' && (
-            <p className="auth-sub">Access is limited to named addresses.</p>
+            <p className="mt-[7px] text-[13.5px] leading-[1.55] text-text-muted">
+              Access is limited to named addresses.
+            </p>
           )}
 
           {mode === 'request' ? (
@@ -114,9 +145,9 @@ export default function Login() {
               invalid={!!errors.email}
             />
           ) : (
-            <form onSubmit={onSubmit} noValidate>
-              <label className="auth-field">
-                <span>Email</span>
+            <form onSubmit={onSubmit} noValidate className="mt-6">
+              <label className="mb-[18px] block">
+                <span className={LABEL}>Email</span>
                 <input
                   {...register('email', {
                     required: 'Enter your email address.',
@@ -125,17 +156,18 @@ export default function Login() {
                   type="email"
                   autoComplete="username"
                   autoFocus
+                  className={INPUT}
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? 'err-email' : undefined}
                 />
-                {errors.email && <em id="err-email" className="auth-hint">{errors.email.message}</em>}
+                {errors.email && <em id="err-email" className={HINT}>{errors.email.message}</em>}
               </label>
 
               {mode === 'signin' && (
-                <label className="auth-field">
-                  <span className="auth-label-row">
+                <label className="mb-[18px] block">
+                  <span className={LABEL + ' flex items-baseline justify-between gap-[10px]'}>
                     Password
-                    <button type="button" className="auth-link" onClick={() => go('reset')}>
+                    <button type="button" className={LINK} onClick={() => go('reset')}>
                       Forgot it?
                     </button>
                   </span>
@@ -143,28 +175,31 @@ export default function Login() {
                     {...register('password', { required: 'Enter your password.' })}
                     type="password"
                     autoComplete="current-password"
+                    className={INPUT}
                     aria-invalid={!!errors.password}
                     aria-describedby={errors.password ? 'err-password' : undefined}
                   />
-                  {errors.password && <em id="err-password" className="auth-hint">{errors.password.message}</em>}
+                  {errors.password && <em id="err-password" className={HINT}>{errors.password.message}</em>}
                 </label>
               )}
 
               {mode === 'reset' && !sentTo && (
-                <p className="auth-note">
+                <p className={NOTE}>
                   We send a link to this address if an account uses it. The link expires in an hour.
                 </p>
               )}
 
               {sentTo && (
-                <p className="auth-ok" role="status">
+                <p className={MESSAGE + ' border-ok/30 bg-ok-soft text-ok'} role="status">
                   Check {sentTo} for the reset link. It expires in an hour.
                 </p>
               )}
 
-              {failure && <p className="auth-error" role="alert">{failure}</p>}
+              {failure && (
+                <p className={MESSAGE + ' border-err/30 bg-err-soft text-err'} role="alert">{failure}</p>
+              )}
 
-              <button className="auth-submit" type="submit" disabled={isSubmitting}>
+              <button className={SUBMIT} type="submit" disabled={isSubmitting}>
                 {isSubmitting
                   ? mode === 'signin' ? 'Signing in…' : 'Sending…'
                   : mode === 'signin' ? 'Sign in' : 'Send reset link'}
@@ -172,14 +207,16 @@ export default function Login() {
             </form>
           )}
 
-          <nav className="auth-switch">
+          {/* justify-end plus an auto margin on a lone child keeps a single
+              link off-centre-free without a :only-child rule. */}
+          <nav className="mt-[22px] flex justify-between gap-3 border-t border-line pt-[18px] [&>*:only-child]:ml-auto">
             {mode !== 'signin' && (
-              <button type="button" className="auth-link" onClick={() => go('signin')}>
+              <button type="button" className={LINK} onClick={() => go('signin')}>
                 Back to sign in
               </button>
             )}
             {mode !== 'request' && (
-              <button type="button" className="auth-link" onClick={() => go('request')}>
+              <button type="button" className={LINK} onClick={() => go('request')}>
                 No account?
               </button>
             )}
@@ -221,27 +258,28 @@ function RequestAccess({
 }) {
   return (
     <>
-      <p className="auth-note">
+      <p className={NOTE + ' mt-6'}>
         Accounts are not created here. An owner adds your address to the viewer list, and
         you sign in with it afterwards.
       </p>
 
-      <label className="auth-field">
-        <span>Your email</span>
+      <label className="mb-[18px] block">
+        <span className={LABEL}>Your email</span>
         <input
           {...register('email', { required: 'Enter the address you want added.' })}
           type="email"
           autoComplete="email"
+          className={INPUT}
           aria-invalid={invalid}
           placeholder="you@example.com"
         />
       </label>
 
-      <button className="auth-submit" type="button" onClick={onCopy}>
+      <button className={SUBMIT} type="button" onClick={onCopy}>
         {copied ? 'Copied' : 'Copy request'}
       </button>
 
-      <p className="auth-note auth-note-quiet">
+      <p className={NOTE + ' mb-0 mt-3'}>
         Nothing is sent from this page. Copying puts one line on your clipboard to pass to
         whoever runs the archive.
       </p>

@@ -75,6 +75,28 @@
 [data-section="catchup"]     { --hue: var(--s-catchup); }
 [data-section="home"]        { --hue: var(--text-2); }
 
+/* Two derived values, because the base tokens do not clear WCAG AA on
+ * --surface and washed-out secondary text is most of what makes a panel look
+ * cheap:
+ *   --text-3 on --surface  3.59:1   (4.5:1 needed for small text)
+ *   --hue    on --surface  4.46:1
+ * --hue clears 4.87:1 on --ground, which is what the block above measured and
+ * promised - but a card is --surface, one step lighter, and the promise does
+ * not carry there. These are additions, not edits: every existing token keeps
+ * its value, so nothing already drawn moves.
+ */
+:root { --text-muted: #8894ad; }          /* 5.77:1 on --surface */
+/* Derived from whichever hue is in scope, so it is right in every section
+   rather than only the magenta one.
+   The fallback is written out rather than left to the build: Lightning CSS
+   emits `--hue-lit: var(--hue)` for browsers without color-mix, which lands
+   back on the 4.46:1 value this token exists to replace. --text-2 is neutral
+   and 7.18:1, so an old browser loses the hue and keeps the legibility. */
+[data-section] { --hue-lit: var(--text-2); }
+@supports (color: color-mix(in srgb, red, red)) {
+  [data-section] { --hue-lit: color-mix(in srgb, var(--hue) 82%, white); }
+}
+
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 * { box-sizing: border-box; }

@@ -1,36 +1,25 @@
-/* The sign-in page.
+/* What is left of the sign-in stylesheet.
  *
- * Its own stylesheet rather than more of ui.css, because it is the one screen
- * that is not the dashboard: no nav, no data, one column, and it is the first
- * thing a stranger sees.
+ * The form itself is Tailwind utilities in components/Login.tsx, inside a
+ * `.tw-scope` wrapper so it gets the preflight subset those utilities assume -
+ * this project does not import preflight globally, and without it `border`
+ * draws nothing and an <input> renders in the browser's own font.
  *
- * Every colour is a token. The wrapper carries data-section="dashboard", so
- * --hue resolves to the dashboard magenta and the door wears the colour of the
- * room behind it - the same mechanism every section of the site already uses.
- *
- * Labels here are sentence case, deliberately unlike .field's tracked-out
- * uppercase in ui.css. Uppercase micro-labels are hard to read at the size a
- * form label wants to be, and this screen has four of them rather than forty.
+ * Only two things stay as CSS, because neither is a utility's job: a
+ * full-bleed fixed canvas host, and a mask painted with a pseudo-element.
  */
 
 .auth {
-  position: relative;
+  position: relative;          /* the column stacks above the canvas */
   display: grid;
   place-items: center;
   min-height: 100vh;
-  min-height: 100dvh;      /* dvh so the panel is not pushed under mobile browser chrome */
+  min-height: 100dvh;          /* dvh so the panel is not pushed under mobile browser chrome */
   padding: 32px 20px;
   background: var(--ground);
 }
 
-.auth-col {
-  position: relative;
-  z-index: 1;     /* above the backdrop canvas */
-  width: 100%;
-  max-width: 400px;
-}
-
-/* --- animated backdrop --------------------------------------------------- */
+/* --- animated backdrop ---------------------------------------------------- */
 /* Agents spawning subagents, drawn by components/AgentField.tsx. Decorative:
    the page is complete and legible with this element missing entirely, which
    is what happens on a WebGL failure or a slow chunk. */
@@ -43,13 +32,13 @@
 }
 
 /* Dimmed on the canvas, NOT on the wrapper. Opacity on .auth-bg fades its own
-   ::after vignette too, so the mask that keeps the form readable was itself
-   running at 55% - the centre never got as dark as it was drawn to be. */
+   ::after vignette too, so the mask that keeps the form readable would itself
+   run at 30% - the centre never gets as dark as it is drawn to be. */
 .auth-bg canvas { opacity: 0.3; }
 
 /* The form sits dead centre, so the centre is darkened. Without this the
    tethers cross the panel and the labels lose contrast against moving colour.
-   The mask is the cheap way: no second render pass, no blur. */
+   A mask is the cheap way: no second render pass, no blur. */
 .auth-bg::after {
   content: '';
   position: absolute;
@@ -63,191 +52,10 @@
   );
 }
 
-/* The panel is opaque anyway, but a hair of separation from a moving field
-   stops it reading as a sticker laid on top. */
-.auth-panel {
-  box-shadow: 0 10px 34px -18px rgb(0 0 0 / 0.85);
-}
-
-/* --- wordmark ------------------------------------------------------------ */
-
-.auth-mark {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font: 600 15px/1 var(--plex-sans);
-  letter-spacing: -0.012em;
-  color: var(--text);
-}
-
-.auth-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--hue);
-}
-
-/* --- panel --------------------------------------------------------------- */
-
-.auth-panel {
-  /* Roomier than the first pass in every direction. The old 22px box read as
-     cramped next to 38px controls; a form people sign into daily can afford
-     the space, and the extra padding is what separates it from the moving
-     field behind it. */
-  margin-top: 26px;
-  padding: 30px 30px 24px;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--surface);
-}
-
-/* A real scale rather than three sizes a point apart: 21 / 13.5 / 15 / 13.
-   The first pass set the title at 17px against 14px inputs, which is not
-   enough difference to read as hierarchy - it read as one flat block. */
-.auth-title {
-  margin: 0;
-  font: 600 21px/1.2 var(--plex-sans);
-  letter-spacing: -0.02em;
-  color: var(--text);
-}
-
-.auth-sub {
-  margin: 7px 0 0;
-  font: 400 13.5px/1.55 var(--plex-sans);
-  color: var(--text-3);
-}
-
-/* The gap belongs after the heading block, not on the heading, so it is the
-   same whether or not the subtitle is showing. */
-.auth-panel form,
-.auth-panel > .auth-note:first-of-type {
-  margin-top: 24px;
-}
-
-/* --- fields -------------------------------------------------------------- */
-
-.auth-field {
-  display: block;
-  margin-bottom: 18px;
-}
-
-.auth-field > span {
-  display: block;
-  margin-bottom: 7px;
-  font: 500 13px/1 var(--plex-sans);
-  color: var(--text-2);
-}
-
-.auth-label-row {
-  display: flex !important;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.auth-field input {
-  width: 100%;
-  height: 44px;              /* 38px was below the 44px comfortable target */
-  padding: 0 13px;
-  background: var(--raised);
-  border: 1px solid var(--line);
-  border-radius: var(--r-s);
-  color: var(--text);
-  font: 400 15px/1 var(--plex-sans);
-  outline: none;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
-}
-
-.auth-field input::placeholder { color: var(--text-3); }
-
-.auth-field input:focus {
-  border-color: var(--hue);
-  /* A ring rather than a heavier border, so the field does not shift by a pixel
-     when it takes focus. */
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--hue) 22%, transparent);
-}
-
-.auth-field input[aria-invalid='true'] { border-color: var(--err); }
-.auth-field input[aria-invalid='true']:focus {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--err) 22%, transparent);
-}
-
-.auth-hint {
-  display: block;
-  margin-top: 6px;
-  font: 400 12px/1.5 var(--plex-sans);
-  font-style: normal;
-  color: var(--err);
-}
-
-/* --- messages ------------------------------------------------------------ */
-
-.auth-note {
-  margin: 0 0 14px;
-  font: 400 12.5px/1.6 var(--plex-sans);
-  color: var(--text-3);
-}
-
-.auth-note-quiet { margin: 12px 0 0; }
-
-.auth-ok,
-.auth-error {
-  margin: 0 0 14px;
-  padding: 9px 11px;
-  border-radius: var(--r-s);
-  font: 400 12.5px/1.5 var(--plex-sans);
-}
-
-.auth-ok    { background: var(--ok-soft);  color: var(--ok);  border: 1px solid color-mix(in srgb, var(--ok) 30%, transparent); }
-.auth-error { background: var(--err-soft); color: var(--err); border: 1px solid color-mix(in srgb, var(--err) 30%, transparent); }
-
-/* --- actions ------------------------------------------------------------- */
-
-.auth-submit {
-  width: 100%;
-  height: 44px;              /* matches the inputs it sits under */
-  margin-top: 22px;
-  border: 0;
-  border-radius: var(--r-s);
-  background: var(--hue);
-  color: var(--ground);
-  font: 600 14px/1 var(--plex-sans);
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  transition: filter 120ms ease;
-}
-
-.auth-submit:hover:not(:disabled) { filter: brightness(1.08); }
-.auth-submit:disabled { opacity: 0.55; cursor: default; }
-
-.auth-link {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--hue);
-  font: 500 13px/1 var(--plex-sans);
-  cursor: pointer;
-}
-
-.auth-link:hover { text-decoration: underline; }
-
-.auth-switch {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid var(--line);
-}
-
-/* A single switch pushes itself to the right, so the divider never sits above
-   an off-centre lone link. */
-.auth-switch > :only-child { margin-left: auto; }
-
 @media (prefers-reduced-motion: reduce) {
   /* Transitions are already killed globally by tokens.css, so only the thing
      that rule cannot reach belongs here: AgentField draws one static frame
      instead of animating, and a still field has no motion to excuse its
-     contrast against the text, so it is dimmed further. */
+     contrast against the text. */
   .auth-bg canvas { opacity: 0.22; }
 }

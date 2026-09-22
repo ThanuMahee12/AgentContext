@@ -29,13 +29,22 @@
   --color-text: var(--text);
   --color-text-2: var(--text-2);
   --color-text-3: var(--text-3);
+  /* accessible on --surface, where --text-3 is not */
+  --color-text-muted: var(--text-muted);
 
   --color-accent: var(--accent);
   --color-ok: var(--ok);
   --color-err: var(--err);
+  /* The tinted grounds those two sit on. Without these, `bg-ok-soft` is not a
+     class and a status message renders with a border and no fill - which is
+     how it shipped for exactly one build. */
+  --color-ok-soft: var(--ok-soft);
+  --color-err-soft: var(--err-soft);
 
   /* the current section's colour, so a utility can follow it too */
   --color-hue: var(--hue);
+  /* the same hue lifted to pass AA on a --surface card */
+  --color-hue-lit: var(--hue-lit);
 
   --font-sans: var(--plex-sans);
   --font-serif: var(--plex-serif);
