@@ -84,7 +84,7 @@ export default function Admin({ user }: { user: User | null }) {
       user={user}
       here="Session archive"
       panel={selected && <SessionDetail session={selected} onClose={() => setSelected(null)} />}
-      aside={
+      toolbar={
         <>
           <label className="find">
             <span className="sr">Search</span>

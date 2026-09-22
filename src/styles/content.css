@@ -153,7 +153,7 @@
 .navitem.dash .lock {
   margin-left: auto;
   font: 400 10px/1.8 var(--plex-mono);
-  color: var(--text-3);
+  color: var(--text-muted);
   padding: 0 7px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -804,13 +804,107 @@
    product rather than two applications behind one URL.
    ========================================================================== */
 
-.site.admin { grid-template-columns: 250px minmax(0, 1fr); }
+/* No sidebar. The archive is a wide table and a 250px column of nav was
+   costing it a fifth of the screen on every visit; the nav is a row now.
+   Rows, not columns: bar, tools, body. */
+.site.admin {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  align-content: start;
+}
+
+.adminbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 24px;
+  height: 56px;
+  border-bottom: 1px solid var(--line);
+  background: var(--admin-navy);
+}
+
+.adminbar .wordmark { margin: 0; }
+.adminbar nav { display: flex; gap: 4px; }
+
+.adminbar .navitem {
+  padding: 6px 11px;
+  border-radius: var(--r-s);
+  font: 500 13px/1 var(--plex-sans);
+  color: var(--text-2);
+  text-decoration: none;
+}
+.adminbar .navitem:hover { color: var(--text); background: var(--raised); }
+.adminbar .navitem.on { color: var(--text); background: var(--raised); }
+
+/* Pushed to the far end, and the divider is what separates leaving the app
+   from moving around inside it. */
+.adminbar-end {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+  padding-left: 16px;
+  border-left: 1px solid var(--line);
+}
+.adminbar-end .navitem { padding: 6px 0; }
+
+.admintools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.admintools .find { flex: 0 1 300px; margin: 0; }
+
+/* The detail panel is a flex sibling of the sheet, so the row they share is
+   its own element now that the grid runs in rows. */
+.adminbody { display: flex; min-height: 0; min-width: 0; }
+
+/* Filters as a row of toggles rather than a column of checkboxes. */
+.admin .facet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.admin .facet + .facet { margin-top: 0; }
+.admin .facet h3 { margin: 0 2px 0 0; }
+
+.fchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  /* field-line, not line: a toggle is a control, and --line is 1.37:1 against
+     the ground - the same invisible border the inputs had. */
+  border: 1px solid var(--field-line);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-2);
+  font: 500 12.5px/1 var(--plex-sans);
+  cursor: pointer;
+}
+.fchip:hover { border-color: var(--hue); color: var(--text); }
+.fchip.on {
+  border-color: var(--hue);
+  background: color-mix(in srgb, var(--hue) 14%, transparent);
+  color: var(--text);
+}
+.fchip .count {
+  font: 500 11px/1 var(--plex-mono);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.fchip.on .count { color: var(--text-2); }
 
 .admin .here {
   display: flex;
   align-items: baseline;
   gap: 9px;
-  margin: -14px 0 0;
+  margin: 0;
   font: 500 12px/1 var(--plex-sans);
   color: var(--text-2);
 }
@@ -822,15 +916,16 @@
   border-radius: 999px;
 }
 
-.admin .facets { display: grid; gap: 22px; }
-.admin .sheet { padding: 28px 28px 72px; }
+.admin .facets { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.admin .sheet { flex-grow: 1; min-width: 0; padding: 22px 24px 72px; overflow: auto; }
 
-/* The dashboard has no section hue of its own; its accent is the archive's. */
-.site.admin { --hue: var(--s-dashboard); }
+/* The signed-in area carries the navy from tokens.css, the same colour the
+   sign-in page uses - the door and the room behind it match. --s-dashboard
+   keeps its magenta for the one place it is still an identity: the Dashboard
+   entry in the PUBLIC nav, where it sits beside the other sections. */
+.site.admin { --hue: var(--admin-hue); --hue-lit: var(--admin-hue-lit); }
 
 .admin .navitem.dash { color: var(--text-2); }
-.admin .navitem.dash:hover { color: var(--s-dashboard); }
-.admin .navfoot { gap: 10px; }
-.admin .navfoot .ghost { align-self: start; }
+.admin .navitem.dash:hover { color: var(--hue); }
 
 /* Daily Catchup ---------------------------------------------------------- */

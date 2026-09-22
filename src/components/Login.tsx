@@ -128,7 +128,7 @@ export default function Login() {
       {/* Two columns: what this is, and the way in. The brand column is where
           the backdrop lives now - contained beside the form rather than behind
           it, which is what stopped it competing with the labels. */}
-      <aside className="relative hidden overflow-hidden border-r border-line bg-[var(--auth-navy)] p-11 lg:flex lg:flex-col">
+      <aside className="relative hidden overflow-hidden border-r border-line bg-[var(--admin-navy)] p-11 lg:flex lg:flex-col">
         {WIDE && (
           <Decorative>
             <Suspense fallback={null}>

@@ -7,45 +7,39 @@ import { getSource } from '../lib/source'
 
 const source = getSource()
 
-/** The signed-in shell.
+/** The signed-in shell: a top bar, and the page under it.
  *
- * Admin built this chrome itself and ContentAdmin had none at all, which left
- * three things wrong at once:
+ * There was a 250px sidebar here. It cost a fifth of the width on every screen
+ * to hold six links and three filter lists, on a page whose whole job is a
+ * wide table - eleven columns that were being squeezed so a nav could stay
+ * permanently visible. Nav that is read once per visit does not need a column;
+ * it needs a row.
  *
- *   - `/content` was orphaned. Nothing in the app linked to it, so the screen
- *     that promotes a draft to the public internet was reachable only by typing
- *     the URL.
- *   - the sidebar existed twice, here and in Layout.tsx, and the two copies had
- *     already drifted.
- *   - sign-out lived on one screen, so leaving from `/content` meant navigating
- *     somewhere else first.
- *
- * Composed by props rather than mounted as a route layout: Admin's search and
- * facets belong IN the sidebar, and a page cannot render into its parent's
- * <aside> through an <Outlet> without a portal or a context dance. Passing the
- * extras down is the version with no indirection in it.
+ * `toolbar` is what the sidebar's filters became: a row under the bar, owned by
+ * the page, because search and facets belong to the archive and mean nothing on
+ * /content.
  */
 export default function AdminShell({
   user,
   here,
-  aside,
+  toolbar,
   panel,
   children,
 }: {
   user: User | null
-  /** What this screen is, shown under the wordmark. */
+  /** What this screen is, shown beside the wordmark. */
   here: string
-  /** Screen-specific sidebar content - filters, facets, a search box. */
-  aside?: ReactNode
+  /** Screen-specific controls - search, filters - in a row under the bar. */
+  toolbar?: ReactNode
   /** A panel beside the main column, not inside it. `.detail` is
-   *  `flex: 0 0 min(52%, 720px)` against `.site`, so nesting it in `.sheet`
-   *  would collapse it into the scrolling body instead of splitting the row. */
+   *  `flex: 0 0 min(52%, 720px)` against `.adminbody`, so nesting it in
+   *  `.sheet` would collapse it into the scrolling body. */
   panel?: ReactNode
   children: ReactNode
 }) {
   return (
     <div className="site admin">
-      <aside className="sidenav">
+      <header className="adminbar">
         <Link to="/" className="wordmark">
           <span className="glyph" aria-hidden />
           AgentContext
@@ -62,22 +56,19 @@ export default function AdminShell({
               key={item.to}
               to={item.to}
               className={({ isActive }) => 'navitem' + (isActive ? ' on' : '')}
-              data-section="dashboard"
             >
-              <span className="label">{item.label}</span>
+              {item.label}
             </NavLink>
           ))}
         </nav>
 
-        {aside}
-
-        <div className="navfoot">
+        <div className="adminbar-end">
           {/* A dashboard with no way back to the site it belongs to is a dead end. */}
           <Link className="navitem dash" to="/catchup">
-            <span className="label">Daily Catchup</span>
+            Daily Catchup
           </Link>
           <Link className="navitem dash" to="/">
-            <span className="label">Public site</span>
+            Public site
           </Link>
           {user && (
             <button className="ghost" onClick={() => signOut(auth)} title={user.email ?? undefined}>
@@ -85,11 +76,14 @@ export default function AdminShell({
             </button>
           )}
         </div>
-      </aside>
+      </header>
 
-      <main className="sheet">{children}</main>
+      {toolbar && <div className="admintools">{toolbar}</div>}
 
-      {panel}
+      <div className="adminbody">
+        <main className="sheet">{children}</main>
+        {panel}
+      </div>
     </div>
   )
 }

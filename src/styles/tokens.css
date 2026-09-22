@@ -93,6 +93,21 @@
    stays as it is for the hairlines and dividers it was chosen for; this is for
    form controls only. */
 :root { --field-line: #66739a; }         /* 3.44:1 on --raised, 3.76:1 on --surface */
+
+/* The signed-in area's own colour: sign-in, the archive and content.
+ *
+ * Not a section hue. Sections are categorical identity and the public nav
+ * lists them together, where --s-notes is already blue; a blue section beside
+ * it is the one thing that palette exists to prevent. The signed-in area is
+ * never in that nav, so it can be blue at no cost to the system.
+ *
+ * True navy cannot be a foreground on --ground: #1f3a93 is 1.91:1. So navy is
+ * a FILL, and the accent is the nearest blue to it that still clears AA. */
+:root {
+  --admin-navy:    #0f1a30;   /* fill: brand column, top bar */
+  --admin-hue:     #6f93d6;   /* 6.23:1 on --ground, 5.71:1 on --surface */
+  --admin-hue-lit: #87a9db;   /* 7.31:1 on --surface, for links on a card */
+}
 /* Derived from whichever hue is in scope, so it is right in every section
    rather than only the magenta one.
    The fallback is written out rather than left to the build: Lightning CSS

@@ -9,24 +9,11 @@
  * full-bleed fixed canvas host, and a mask painted with a pseudo-element.
  */
 
-/* Navy, scoped to this page.
- *
- * Set here rather than by changing --s-dashboard, because that token is a
- * section identity: the public nav lists every section together, --s-notes is
- * already blue (#3987e5), and a blue dashboard entry beside it would be the
- * one thing the section palette exists to prevent. The sign-in page is not a
- * section - it is the door - so it can carry its own colour without costing
- * the system its distinctions.
- *
- * True navy cannot be a foreground on this ground: #1f3a93 is 1.91:1 against
- * #0b0f16, and anything dark enough to read as navy fails. So navy is the
- * FILL of the brand column, and the accent is the blue nearest it that still
- * clears AA.
- */
+/* The signed-in navy, defined once in tokens.css and shared with the archive
+ * so the door and the room behind it are the same colour. */
 .auth {
-  --hue:      #6f93d6;   /* 6.23:1 on --ground, 5.71:1 on --surface */
-  --hue-lit:  #87a9db;   /* 7.31:1 on --surface, for links on the card */
-  --auth-navy: #0f1a30;  /* the brand column's ground */
+  --hue:     var(--admin-hue);
+  --hue-lit: var(--admin-hue-lit);
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);
