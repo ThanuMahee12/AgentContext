@@ -1,19 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { signOut, type User } from 'firebase/auth'
 import { Link } from 'react-router-dom'
+
+import Facet from '../components/Facet'
+import LinkRow from '../components/LinkRow'
 import SessionDetail from '../components/SessionDetail'
+import SessionTable, { toRows } from '../components/SessionTable'
+import Title from '../components/Title'
+import { FIRESTORE_HINT, Failure, Loading, Nothing } from '../components/State'
 import { auth } from '../firebase'
 import { FirestoreSource } from '../lib/firestore'
+import { useArchive } from '../lib/queries'
+import { countBy, mergeContext, subagentCounts } from '../lib/sessions'
 import { applyFilters, facets, getSource, groupByDay } from '../lib/source'
-import type { ContextItem, Session } from '../types'
+import type { Session } from '../types'
 
 const source = getSource()
 
 export default function Admin({ user }: { user: User | null }) {
-  const [sessions, setSessions] = useState<Session[]>([])
-  const [context, setContext] = useState<ContextItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  // One shared read: Catchup asks for the same archive and gets this cache.
+  const { data, isPending } = useArchive()
+  const sessions = data?.sessions ?? []
+  const context = data?.context ?? []
+  const problems = data?.problems ?? []
 
   const [query, setQuery] = useState('')
   const [projects, setProjects] = useState<string[]>([])
@@ -37,24 +46,7 @@ export default function Admin({ user }: { user: User | null }) {
     }
   }
 
-  useEffect(() => {
-    // Settled, not all: a failure in either query used to reject the pair and
-    // leave both empty, which rendered as "No sessions captured yet" - the same
-    // thing an empty database looks like. A permission or index error must not
-    // be indistinguishable from having no data.
-    Promise.allSettled([source.sessions(), source.context()])
-      .then(([s, c]) => {
-        const problems: string[] = []
-        if (s.status === 'fulfilled') setSessions(s.value)
-        else problems.push(`sessions: ${describe(s.reason)}`)
-        if (c.status === 'fulfilled') setContext(c.value)
-        else problems.push(`links: ${describe(c.reason)}`)
-        setError(problems.join(' · '))
-      })
-      .finally(() => setLoading(false))
-  }, [])
-
-  // "/" focuses search — this is a keyboard-first tool, not a form
+  // "/" focuses search - this is a keyboard-first tool, not a form
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === '/' && document.activeElement !== searchRef.current) {
@@ -69,18 +61,7 @@ export default function Admin({ user }: { user: User | null }) {
   }, [])
 
   const f = useMemo(() => facets(sessions.filter((s) => !s.is_sidechain)), [sessions])
-
-  /** Subagent runs per parent session, so a card can say a session spawned
-   *  eleven agents without those agents appearing as sessions themselves. */
-  const agentCounts = useMemo(() => {
-    const out: Record<string, number> = {}
-    for (const s of sessions) {
-      if (!s.is_sidechain) continue
-      const parent = s.parent_session_id
-      if (parent) out[parent] = (out[parent] ?? 0) + 1
-    }
-    return out
-  }, [sessions])
+  const agentCounts = useMemo(() => subagentCounts(sessions), [sessions])
 
   const days = useMemo(
     () => applyFilters(groupByDay(sessions, context), { projects, users, providers, query }),
@@ -89,8 +70,19 @@ export default function Admin({ user }: { user: User | null }) {
 
   const shown = days.reduce((n, d) => n + d.sessions.length, 0)
 
+  /** The table is flat, so the per-day link rows have nowhere to hang. Rather
+   *  than drop them, the links for every day still in the filter are merged and
+   *  shown once. */
+  const links = useMemo(() => mergeContext(days), [days])
+
+  const rows = useMemo(
+    () => toRows(days.flatMap((d) => d.sessions), agentCounts),
+    [days, agentCounts],
+  )
+
   return (
     <div className="site admin">
+      <Title>Session archive</Title>
       <aside className="sidenav">
         <Link to="/" className="wordmark">
           <span className="glyph" aria-hidden />
@@ -142,198 +134,35 @@ export default function Admin({ user }: { user: User | null }) {
           </div>
         )}
 
-          {loading ? (
-            <p className="empty">Loading…</p>
-          ) : error ? (
-            <div className="failure">
-              <strong>Could not load data.</strong>
-              <p>{error}</p>
-              <p className="hint">
-                A permission error means the signed-in account is not the one named in
-                firestore.rules. A failed-precondition error means a query needs an index
-                that has not been built.
-              </p>
-            </div>
-          ) : days.length === 0 ? (
-            <p className="empty">
-              {query ? `Nothing matches “${query}”.` : 'No sessions captured yet.'}
+        {isPending ? (
+          <Loading />
+        ) : problems.length ? (
+          <Failure detail={problems.join(' · ')} hint={FIRESTORE_HINT} />
+        ) : days.length === 0 ? (
+          <Nothing>{query ? `Nothing matches “${query}”.` : 'No sessions captured yet.'}</Nothing>
+        ) : (
+          <>
+            <p style={{ color: 'var(--text-3)', fontSize: 12, marginTop: 0 }}>
+              {shown} session{shown === 1 ? '' : 's'} across {days.length} day
+              {days.length === 1 ? '' : 's'}
+              {' · click a column to sort, a row to open it'}
             </p>
-          ) : (
-            <>
-              {query && (
-                <p style={{ color: 'var(--text-3)', fontSize: 12, marginTop: 0 }}>
-                  {shown} session{shown === 1 ? '' : 's'} across {days.length} day
-                  {days.length === 1 ? '' : 's'}
-                </p>
-              )}
-              {days.map((day) => (
-                <section className="daygroup" key={day.date}>
-                  <div className="dayhead">
-                    <h2>{formatDay(day.date)}</h2>
-                    <span className="meta">
-                      {day.sessions.length} session{day.sessions.length === 1 ? '' : 's'}
-                      {day.context.length > 0 && ` · ${day.context.length} link${day.context.length === 1 ? '' : 's'}`}
-                    </span>
-                  </div>
 
-                  <div className="cards">
-                    {day.sessions.map((s) => (
-                      <SessionCard
-                        key={s.session_id}
-                        session={s}
-                        agents={agentCounts[s.session_id] ?? 0}
-                        selected={selected?.session_id === s.session_id}
-                        onOpen={() => openSession(s)}
-                      />
-                    ))}
-                  </div>
+            <SessionTable rows={rows} selectedId={selected?.session_id} onOpen={openSession} />
 
-                  {day.context.length > 0 && <LinkRow items={day.context} />}
-                </section>
-              ))}
-            </>
-          )}
+            {links.length > 0 && (
+              <section style={{ marginTop: 20 }}>
+                <h2 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-3)' }}>
+                  Links in view
+                </h2>
+                <LinkRow items={links} />
+              </section>
+            )}
+          </>
+        )}
       </main>
 
       {selected && <SessionDetail session={selected} onClose={() => setSelected(null)} />}
     </div>
   )
-}
-
-// ---------------------------------------------------------------------------
-
-function SessionCard({
-  session,
-  agents,
-  selected,
-  onOpen,
-}: {
-  session: Session
-  agents: number
-  selected: boolean
-  onOpen: () => void
-}) {
-  const failed = session.failed_count ?? session.commands.filter((c) => c.exit_status === 1).length
-  return (
-    <button className="card" aria-selected={selected} onClick={onOpen}>
-      <span className="stripe" data-provider={session.provider} />
-      <span className="inner">
-        <span className="row1">
-          <time dateTime={session.started}>{formatTime(session.started)}</time>
-          <span className="project">{session.project}</span>
-          <span className="who">
-            {session.provider}
-            {' · '}
-            {session.os_user}
-            {session.git_branch && session.git_branch !== 'HEAD' ? ` · ${session.git_branch}` : ''}
-          </span>
-        </span>
-
-        {session.preview && <span className="preview">{session.preview}</span>}
-
-        <span className="stats">
-          <span className="stat"><b>{session.message_count}</b> msg</span>
-          <span className="stat"><b>{session.command_count}</b> cmd</span>
-          {failed > 0 && <span className="stat err"><b>{failed}</b> failed</span>}
-          {agents > 0 && <span className="stat"><b>{agents}</b> agents</span>}
-          <span className="stat"><b>{session.file_count}</b> files</span>
-          <span className="stat">{(session.transcript_bytes / 1024).toFixed(0)} KB</span>
-        </span>
-      </span>
-    </button>
-  )
-}
-
-function LinkRow({ items }: { items: ContextItem[] }) {
-  return (
-    <div className="links">
-      {items.map((c) => (
-        <a
-          className={'chip' + (c.source !== 'web' ? ' accent' : '')}
-          key={c.doc_id}
-          href={c.url}
-          target="_blank"
-          rel="noreferrer noopener"
-          title={c.url}
-        >
-          {c.source}
-          {c.external_id && <span style={{ opacity: 0.75 }}>{truncate(c.external_id, 28)}</span>}
-          {c.mention_count > 1 && <span style={{ opacity: 0.55 }}>×{c.mention_count}</span>}
-        </a>
-      ))}
-    </div>
-  )
-}
-
-function Facet({
-  title,
-  options,
-  selected,
-  onChange,
-  counts,
-}: {
-  title: string
-  options: string[]
-  selected: string[]
-  onChange: (v: string[]) => void
-  counts: Record<string, number>
-}) {
-  if (options.length === 0) return null
-  return (
-    <div className="facet">
-      <h3>{title}</h3>
-      {options.map((o) => (
-        <label key={o}>
-          <input
-            type="checkbox"
-            checked={selected.includes(o)}
-            onChange={(e) =>
-              onChange(e.target.checked ? [...selected, o] : selected.filter((x) => x !== o))
-            }
-          />
-          <span>{o}</span>
-          <span className="count">{counts[o] ?? 0}</span>
-        </label>
-      ))}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-
-function countBy<T>(xs: T[], key: (x: T) => string): Record<string, number> {
-  const out: Record<string, number> = {}
-  for (const x of xs) {
-    const k = key(x)
-    if (k) out[k] = (out[k] ?? 0) + 1
-  }
-  return out
-}
-
-function formatDay(iso: string): string {
-  const d = new Date(iso + 'T00:00:00')
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '--:--'
-  return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
-}
-
-function truncate(s: string, n: number): string {
-  return s.length > n ? s.slice(0, n - 1) + '…' : s
-}
-
-/** Firebase errors carry a machine code and a long message; the code is what
- *  identifies the fault. */
-function describe(err: unknown): string {
-  const e = err as { code?: string; message?: string }
-  return e?.code ? `${e.code}` : (e?.message ?? String(err)).slice(0, 120)
 }

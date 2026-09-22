@@ -12,3 +12,9 @@
 @import "./ui.css";
 @import "./content.css";
 @import "./catchup.css";
+
+/* Appended, never inserted: the order above is load-bearing (see the note at
+   the top of this file). Scoped preflight comes last so that inside a
+   .tw-scope subtree it wins over the site's own reset, which is the whole
+   point - and it cannot affect anything outside that subtree either way. */
+@import "./tailwind-plus.css";

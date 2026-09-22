@@ -1,33 +1,26 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { onAuthStateChanged, type User } from 'firebase/auth'
-import { collection, getDocs } from 'firebase/firestore'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 
-import { auth, db } from '../firebase'
-import { keys } from '../lib/queryClient'
+import Title from '../components/Title'
+import { Loading, Nothing } from '../components/State'
+import type { DayBar } from '../components/CatchupScene'
+
+/** three.js is bigger than the rest of this app combined, so it is fetched only
+ *  when someone actually switches to the 3D view - never on first paint, and
+ *  never at all for a reader who stays on the calendar. Vite gives the dynamic
+ *  import its own chunk automatically. */
+const CatchupScene = lazy(() => import('../components/CatchupScene'))
+import { auth } from '../firebase'
 import { FirestoreSource } from '../lib/firestore'
+import { formatMonth, formatTime, parseDayKey, toDayKey } from '../lib/format'
+import { useArchive, useDailyTotals } from '../lib/queries'
+import { failedCount } from '../lib/sessions'
 import { getSource, groupByDay } from '../lib/source'
-import type { ContextItem, Day, Session } from '../types'
+import type { Day, Session } from '../types'
 
 const source = getSource()
-
-/** Public per-day totals. Counts only — the private collection holding what
- *  actually happened is denied to anonymous readers by firestore.rules. */
-type Totals = {
-  date: string
-  sessions: number
-  messages: number
-  commands: number
-  files: number
-  failed: number
-}
-
-/** YYYY-MM-DD in local time. `toISOString` shifts the date across the dateline
- *  for anyone west of UTC and files a day under the wrong square. */
-const key = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 /**
  * Daily Catchup.
@@ -45,47 +38,24 @@ export default function Catchup() {
   const [user, setUser] = useState<User | null>(null)
   const [authReady, setAuthReady] = useState(false)
   const [picked, setPicked] = useState<Date | null>(null)
+  const [view, setView] = useState<'calendar' | '3d'>('calendar')
 
   useEffect(() => onAuthStateChanged(auth, (u) => { setUser(u); setAuthReady(true) }), [])
 
-  // Public half — everyone gets this, signed in or not.
-  const totalsQuery = useQuery({
-    queryKey: keys.daily,
-    queryFn: async (): Promise<Record<string, Totals>> => {
-      const snap = await getDocs(collection(db, 'daily'))
-      const out: Record<string, Totals> = {}
-      snap.docs.forEach((d) => {
-        const v = d.data() as Partial<Totals>
-        out[d.id] = {
-          date: d.id,
-          sessions: Number(v.sessions ?? 0),
-          messages: Number(v.messages ?? 0),
-          commands: Number(v.commands ?? 0),
-          files: Number(v.files ?? 0),
-          failed: Number(v.failed ?? 0),
-        }
-      })
-      return out
-    },
-  })
+  // Public half - everyone gets this, signed in or not.
+  const totalsQuery = useDailyTotals()
 
   // Private half. `enabled` is what keeps a signed-out visitor from firing a
   // request the rules are guaranteed to refuse - the query simply never runs,
-  // rather than running and failing quietly in everyone's console.
-  const daysQuery = useQuery({
-    queryKey: [...keys.sessions, 'days'],
-    enabled: authReady && !!user,
-    queryFn: async (): Promise<Day[]> => {
-      const [s, c] = await Promise.allSettled([source.sessions(), source.context()])
-      return groupByDay(
-        s.status === 'fulfilled' ? (s.value as Session[]) : [],
-        c.status === 'fulfilled' ? (c.value as ContextItem[]) : [],
-      )
-    },
-  })
+  // rather than running and failing quietly in everyone's console. Admin reads
+  // the same archive, so whichever screen is opened second pays nothing.
+  const archive = useArchive({ enabled: authReady && !!user })
 
   const totals = totalsQuery.data ?? {}
-  const days = daysQuery.data ?? []
+  const days = useMemo(
+    () => (archive.data ? groupByDay(archive.data.sessions, archive.data.context) : []),
+    [archive.data],
+  )
   const loading = totalsQuery.isLoading
   const note = totalsQuery.error ? String((totalsQuery.error as Error).message) : ''
 
@@ -95,17 +65,23 @@ export default function Catchup() {
   // usually empty first thing.
   useEffect(() => {
     if (picked) return
-    const dates = Object.keys(totals).sort().reverse()
-    if (dates.length) {
-      const [y, m, d] = dates[0].split('-').map(Number)
-      setPicked(new Date(y, m - 1, d))
-    }
+    const latest = Object.keys(totals).sort().reverse()[0]
+    if (latest) setPicked(parseDayKey(latest))
   }, [totals, picked])
 
   const busiest = useMemo(
     () => Math.max(1, ...Object.values(totals).map((t) => t.sessions)), [totals])
 
-  const selected = picked ? key(picked) : ''
+  /** Every recorded day, oldest first - the 3D field shows the whole archive at
+   *  once rather than one month, which is the thing the calendar cannot do. */
+  const series = useMemo<DayBar[]>(
+    () => Object.values(totals)
+      .map((t) => ({ date: t.date, sessions: t.sessions, commands: t.commands }))
+      .sort((a, b) => a.date.localeCompare(b.date)),
+    [totals],
+  )
+
+  const selected = picked ? toDayKey(picked) : ''
   const dayTotals = selected ? totals[selected] : undefined
   const dayDetail = selected ? byDate.get(selected) : undefined
 
@@ -117,7 +93,7 @@ export default function Catchup() {
     const rows = Object.values(totals).filter((t) => t.date.startsWith(prefix))
     if (!rows.length) return null
     return {
-      label: picked.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+      label: formatMonth(picked),
       days: rows.length,
       sessions: rows.reduce((n, t) => n + t.sessions, 0),
       commands: rows.reduce((n, t) => n + t.commands, 0),
@@ -125,13 +101,14 @@ export default function Catchup() {
     }
   }, [picked, totals])
 
-  if (loading) return <p className="empty" style={{ paddingTop: 80 }}>Loading…</p>
+  if (loading) return <Loading page />
 
   const dayCount = Object.keys(totals).length
 
   return (
     // data-section sets --hue, the way every other section of the site does.
     <div data-section="catchup">
+      <Title>Daily Catchup</Title>
       <header className="catchup-head">
         <h1>Daily Catchup</h1>
         <p>
@@ -142,15 +119,38 @@ export default function Catchup() {
 
       {note && <p className="banner failure">{note}</p>}
 
-      <div className="catchup-grid">
-        <div className="cal">
+      <div className="cal-views" role="group" aria-label="View">
+        {(['calendar', '3d'] as const).map((v) => (
+          <button
+            key={v}
+            className={'tag' + (view === v ? ' on' : '')}
+            aria-pressed={view === v}
+            onClick={() => setView(v)}
+          >
+            {v === 'calendar' ? 'Calendar' : '3D activity'}
+          </button>
+        ))}
+      </div>
+
+      {view === '3d' && (
+        <Suspense fallback={<Loading>Loading the 3D view…</Loading>}>
+          <CatchupScene
+            data={series}
+            selected={selected}
+            onPick={(iso) => setPicked(parseDayKey(iso))}
+          />
+        </Suspense>
+      )}
+
+      <div className={'catchup-grid' + (view === '3d' ? ' solo' : '')}>
+        <div className="cal" hidden={view === '3d'}>
         <Calendar
           onChange={(v) => setPicked(v as Date)}
           value={picked}
           maxDate={new Date()}
           tileClassName={({ date, view }) => {
             if (view !== 'month') return null
-            const t = totals[key(date)]
+            const t = totals[toDayKey(date)]
             if (!t?.sessions) return null
             // Four steps rather than a continuous ramp: a reader compares days
             // at a glance, they do not read a value off a scale.
@@ -167,7 +167,7 @@ export default function Catchup() {
         </div>
 
         <section className="catchup-day">
-          {!selected && <p className="empty">Pick a day.</p>}
+          {!selected && <Nothing>Pick a day.</Nothing>}
 
           {selected && (
             <>
@@ -182,7 +182,7 @@ export default function Catchup() {
                     <li className="bad"><b>{dayTotals.failed}</b><span>failed</span></li>
                   )}
                 </ul>
-              ) : <p className="empty">Nothing recorded on this day.</p>}
+              ) : <Nothing>Nothing recorded on this day.</Nothing>}
 
               {!user && dayTotals && (
                 <p className="signin-hint">
@@ -192,7 +192,7 @@ export default function Catchup() {
 
               {user && dayDetail && <DayHistory day={dayDetail} />}
               {user && !dayDetail && dayTotals && (
-                <p className="empty">No conversation detail for this day.</p>
+                <Nothing>No conversation detail for this day.</Nothing>
               )}
 
               {month && (
@@ -247,9 +247,6 @@ function DayHistory({ day }: { day: Day }) {
   )
 }
 
-const time = (iso: string) =>
-  iso ? new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
-
 /**
  * One recorded conversation, built to the shape `.card` actually expects: a
  * two-column grid of stripe and inner. An earlier version put a button inside
@@ -275,7 +272,7 @@ function Conversation({ session }: { session: Session }) {
     } catch { /* metadata is still worth showing */ } finally { setBusy(false) }
   }
 
-  const failed = session.failed_count ?? 0
+  const failed = failedCount(session)
 
   return (
     <div className="convo">
@@ -284,7 +281,7 @@ function Conversation({ session }: { session: Session }) {
               data-state={failed > 0 ? 'failed' : undefined} />
         <span className="inner">
           <span className="row1">
-            <time dateTime={session.started}>{time(session.started)}</time>
+            <time dateTime={session.started}>{formatTime(session.started)}</time>
             <span className="project">{session.project}</span>
             <span className="who">
               {session.provider}
@@ -307,8 +304,8 @@ function Conversation({ session }: { session: Session }) {
 
       {open && (
         <div className="convo-detail">
-          {busy && <p className="empty">Fetching commands…</p>}
-          {!busy && !full.commands?.length && <p className="empty">No commands recorded.</p>}
+          {busy && <Loading>Fetching commands…</Loading>}
+          {!busy && !full.commands?.length && <Nothing>No commands recorded.</Nothing>}
           {!!full.commands?.length && (
             <ol className="cmdlist">
               {full.commands.map((c, i) => (

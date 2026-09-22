@@ -21,8 +21,15 @@ signed-out visitor who reads this source learns nothing they can act on.
 ## Stack
 
 React 18 · TypeScript · Vite · React Router · **TanStack Query** (server state) ·
-Redux Toolkit (UI state only) · **Tailwind v4** · Framer Motion · react-calendar ·
-react-hook-form · react-icons · Firebase.
+**TanStack Table v9** (the session archive) · Redux Toolkit (UI state only) ·
+**Tailwind v4** · three.js (lazy, Catchup only) · react-helmet-async ·
+Framer Motion · react-calendar · react-hook-form · react-icons · Firebase.
+
+**Not here, and each for a reason** — `redux-thunk` needs no install: Redux
+Toolkit already depends on it and `configureStore` enables it, so a thunk
+dispatches today. `axios` has no call site: there is no `fetch` or
+`XMLHttpRequest` anywhere in `src/`, because every byte arrives through the
+Firebase SDK, which axios cannot speak to.
 
 ## Layout
 
@@ -38,12 +45,16 @@ src/
 │   ├── Catchup.tsx     activity calendar; public counts, private detail
 │   └── Admin.tsx  ContentAdmin.tsx      signed-in
 ├── components/         Markdown, CodeBlock, Media, Login, SessionDetail,
-│                       Tree, shared
-├── lib/                queryClient (+ query keys), useContent, sections,
+│                       SessionTable (TanStack Table v9), CatchupScene (three.js,
+│                       lazy), Title, State (Loading/Nothing/Failure/Chip),
+│                       Facet, LinkRow, Tree, shared
+├── lib/                queryClient (+ query keys), queries (every server read
+│                       as a hook), format, sessions, useContent, sections,
 │                       source (DataSource), firestore, published,
 │                       fixtures.json (git-ignored)
 ├── store/              uiSlice only — search text, tag filter, nav state
-└── styles/             index.css imports the rest in cascade order
+└── styles/             index.css imports the rest in cascade order;
+                        tailwind-plus.css is scoped preflight, appended last
 ```
 
 No `web/`, no mkdocs, no `src/data`, and **no bundled content**.
@@ -78,6 +89,32 @@ in a slice, that is what the query client is for.
 | `sessions` (collection group) + `commands` | `lib/source.ts` | no |
 | `context` | `lib/source.ts` | no |
 | `public/{slug}` | `lib/published.ts` | yes |
+
+### Where shared code goes
+
+Four modules exist so the same thing is not computed two ways. Reach for them
+before writing a local helper:
+
+| | |
+|---|---|
+| `lib/queries.ts` | **every** server read, as a hook. Admin and Catchup share `useArchive`, so the second screen costs no request. |
+| `lib/format.ts` | dates, times, word counts, truncation. |
+| `lib/sessions.ts` | values derived from a session: `failedCount`, `commandState`, `subagentCounts`, `mergeContext`, `countBy`. |
+| `components/State.tsx` | `Loading`, `Nothing`, `Failure`, `Chip` — the states every data-backed screen renders. |
+
+Two traps these were extracted from, both of which had already bitten:
+
+- **`toDayKey`, never `toISOString().slice(0,10)`.** The latter converts to UTC
+  first, so an evening in New York files under tomorrow and lands in the wrong
+  calendar square.
+- **`failedCount(session)`, never `failed_count ?? 0`.** Catchup used the latter
+  and reported zero failures for any record predating the field, while the table
+  and detail panel counted the commands and reported the real number. One
+  session, two answers.
+
+`shared.tsx` keeps `Empty`, which is a different thing from `State.tsx`'s
+`Nothing`: `Empty` is about a *filter* matching nothing and offers to clear the
+search.
 
 ## Visibility: `visibility`, never `status`
 
@@ -117,6 +154,59 @@ Hand-written CSS in `styles/`, with Tailwind available for new work.
   out of. Reordering silently changes the cascade.
 - Markdown renders through Tailwind's `prose` plus `prose-doc`, which points the
   prose variables at the tokens.
+
+### Tailwind Plus: `.tw-scope`, never global preflight
+
+Plus components are pasted markup that assumes preflight has run. Preflight is
+not imported globally here and must not be — this project's own reset and
+~1500 lines of CSS stand on it. `styles/tailwind-plus.css` carries the subset
+Plus actually depends on, scoped to `.tw-scope`:
+
+```jsx
+<div className="tw-scope">{/* Plus markup, unmodified */}</div>
+```
+
+Nothing outside that subtree is touched. Plus is a **paid licence** and this
+repository is **public** — do not commit Plus component source here.
+
+## The session table is TanStack Table **v9**
+
+v9 is not v8, and every example in circulation is v8. Features are registered
+explicitly through `tableFeatures()`, the row models are slots on that same
+object, and `getCoreRowModel()` no longer exists:
+
+```ts
+const features = tableFeatures({
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: { basic: sortFn_basic },       // registered by name, so unused ones tree-shake
+})
+useTable({ features, columns, data })      // no getCoreRowModel
+```
+
+Register a feature and its row model or **sorting silently does nothing** —
+`getIsSorted()` still reports a direction while `getRowModel()` hands back the
+rows in input order. Column values are precomputed in `toRows()` rather than
+derived in an accessor, so a column sorts by what it displays.
+
+Because preflight is absent, `SessionTable` sets `border-collapse` itself; a
+`<table>` here still carries the browser default.
+
+## three.js is lazy, and must stay lazy
+
+`CatchupScene` is reached only through `React.lazy`, which gives it its own
+~547 kB chunk. A static `import * as THREE` anywhere would fold that into the
+entry chunk and make every reader of a text page download a renderer. Check it
+after touching Catchup:
+
+```bash
+npm run build && grep -c "WebGLRenderer" dist/assets/index-*.js   # must be 0
+```
+
+The scene renders **on demand** — no permanent `requestAnimationFrame` loop —
+and reads its colours from the CSS tokens via `getComputedStyle`, so it follows
+`[data-section="catchup"]`. It draws only the public `daily` totals; nothing
+from the private archive is in scope.
 
 ## Markdown
 

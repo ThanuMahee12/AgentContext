@@ -1,7 +1,18 @@
 import { useState } from 'react'
+
+import { Nothing } from './State'
+import { commandState, failedCount } from '../lib/sessions'
 import type { Session } from '../types'
 
 type Tab = 'commands' | 'files' | 'meta'
+
+/** How a command's outcome is drawn. `unknown` is deliberately not a tick: the
+ *  result was never seen in the transcript, which is not the same as success. */
+const MARKS = {
+  failed:  { className: 'err', glyph: '✗', title: 'returned an error' },
+  ok:      { className: 'ok',  glyph: '✓', title: 'completed' },
+  unknown: { className: '',    glyph: '·', title: 'result not recorded' },
+} as const
 
 export default function SessionDetail({
   session,
@@ -12,7 +23,7 @@ export default function SessionDetail({
 }) {
   const [tab, setTab] = useState<Tab>('commands')
 
-  const failed = session.failed_count ?? session.commands.filter((c) => c.exit_status === 1).length
+  const failed = failedCount(session)
 
   return (
     <aside className="detail">
@@ -45,35 +56,30 @@ export default function SessionDetail({
       <div className="pane">
         {tab === 'commands' &&
           (session.commands.length === 0 ? (
-            <p className="empty">No commands ran in this session.</p>
+            <Nothing>No commands ran in this session.</Nothing>
           ) : (
-            session.commands.map((c, i) => (
-              <div className="cmd" key={c.tool_id || i}>
-                <span
-                  className={
-                    'mark ' + (c.exit_status === 1 ? 'err' : c.exit_status === 0 ? 'ok' : '')
-                  }
-                  title={
-                    c.exit_status === 1
-                      ? 'returned an error'
-                      : c.exit_status === 0
-                        ? 'completed'
-                        : 'result not recorded'
-                  }
-                >
-                  {c.exit_status === 1 ? '✗' : c.exit_status === 0 ? '✓' : '·'}
-                </span>
-                <div style={{ minWidth: 0 }}>
-                  <code>{c.command}</code>
-                  {c.description && <div className="desc">{c.description}</div>}
+            session.commands.map((c, i) => {
+              // One lookup instead of the same three-way ternary written out
+              // three times - which is how the glyph, the class and the tooltip
+              // get to disagree about what happened.
+              const mark = MARKS[commandState(c.exit_status)]
+              return (
+                <div className="cmd" key={c.tool_id || i}>
+                  <span className={'mark ' + mark.className} title={mark.title}>
+                    {mark.glyph}
+                  </span>
+                  <div style={{ minWidth: 0 }}>
+                    <code>{c.command}</code>
+                    {c.description && <div className="desc">{c.description}</div>}
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            })
           ))}
 
         {tab === 'files' &&
           (session.files.length === 0 ? (
-            <p className="empty">No files were touched.</p>
+            <Nothing>No files were touched.</Nothing>
           ) : (
             session.files.map((f, i) => (
               <div className="filerow" key={i}>

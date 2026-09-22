@@ -1,0 +1,159 @@
+/* Scoped preflight, for pasting Tailwind Plus components into this project.
+ *
+ * The problem this solves
+ * ----------------------
+ * Tailwind Plus components are markup you paste, not a package you install, and
+ * every one of them is written assuming Tailwind's preflight has already run.
+ * Preflight is what makes `<h2 class="text-lg">` actually 1.125rem, `<ul>` have
+ * no bullets and `<button>` have no chrome - the utilities set one property
+ * each and trust the reset for the rest.
+ *
+ * This project deliberately does not import preflight (see tailwind.css): it has
+ * its own reset in tokens.css and ~1500 lines of hand-written CSS standing on
+ * it. Importing preflight globally would restyle every heading, list and form
+ * control on the site at once.
+ *
+ * So the reset is scoped instead. Wrap pasted markup in `.tw-scope` and it gets
+ * the reset it expects; nothing outside that subtree is touched.
+ *
+ *     <div className="tw-scope">
+ *       … Tailwind Plus markup, unmodified …
+ *     </div>
+ *
+ * This is the subset of preflight that Plus components actually depend on, not
+ * a copy of the whole thing. Anything that can only apply to the document root
+ * - `html` line-height, font smoothing, tab-size - is left out, because a
+ * scoped rule could not apply it anyway.
+ *
+ * Licensing note: Tailwind Plus is a paid licence. This file makes pasted
+ * components render correctly; it does not contain any of them, and none should
+ * be committed here without checking the licence terms for a public repository.
+ * This repository is public.
+ */
+
+.tw-scope,
+.tw-scope *,
+.tw-scope *::before,
+.tw-scope *::after {
+  box-sizing: border-box;
+  /* Preflight's border reset. Utilities like `border` set only the WIDTH and
+     assume style and colour are already there; without this a `border`
+     class draws nothing at all. */
+  border: 0 solid var(--line);
+}
+
+/* Block elements arrive with no margin, exactly as preflight leaves them.
+   Plus components do all their spacing with utilities. */
+.tw-scope h1,
+.tw-scope h2,
+.tw-scope h3,
+.tw-scope h4,
+.tw-scope h5,
+.tw-scope h6,
+.tw-scope p,
+.tw-scope blockquote,
+.tw-scope figure,
+.tw-scope pre,
+.tw-scope dl,
+.tw-scope dd,
+.tw-scope hr {
+  margin: 0;
+}
+
+/* Headings inherit; the utility on the element is what sizes it. */
+.tw-scope h1,
+.tw-scope h2,
+.tw-scope h3,
+.tw-scope h4,
+.tw-scope h5,
+.tw-scope h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.tw-scope ol,
+.tw-scope ul,
+.tw-scope menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Form controls do not inherit type from their ancestor on their own, which is
+   why an unreset <input> renders in the browser's own font at 13.33px. */
+.tw-scope button,
+.tw-scope input,
+.tw-scope optgroup,
+.tw-scope select,
+.tw-scope textarea {
+  font: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+  letter-spacing: inherit;
+}
+
+.tw-scope button,
+.tw-scope [type='button'],
+.tw-scope [type='reset'],
+.tw-scope [type='submit'] {
+  appearance: button;
+  background-image: none;
+  cursor: pointer;
+}
+
+.tw-scope :disabled {
+  cursor: default;
+}
+
+.tw-scope textarea {
+  resize: vertical;
+}
+
+.tw-scope input::placeholder,
+.tw-scope textarea::placeholder {
+  color: var(--text-3);
+  opacity: 1;
+}
+
+/* Replaced elements as blocks: the inline default leaves the notorious few
+   pixels of descender space under every image. */
+.tw-scope img,
+.tw-scope svg,
+.tw-scope video,
+.tw-scope canvas,
+.tw-scope audio,
+.tw-scope iframe,
+.tw-scope embed,
+.tw-scope object {
+  display: block;
+  vertical-align: middle;
+}
+
+.tw-scope img,
+.tw-scope video {
+  max-width: 100%;
+  height: auto;
+}
+
+.tw-scope a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+.tw-scope table {
+  border-collapse: collapse;
+  border-color: inherit;
+  text-indent: 0;
+}
+
+.tw-scope hr {
+  height: 0;
+  color: inherit;
+  border-top-width: 1px;
+}
+
+.tw-scope summary {
+  display: list-item;
+}

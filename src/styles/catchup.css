@@ -20,6 +20,11 @@
   align-items: start;
 }
 
+/* The 3D view replaces the calendar, so the day panel is the only child left.
+   Hiding .cal alone is not enough: it leaves the two-column track in place and
+   auto-places the day panel into the 340px column with 1fr sitting empty. */
+.catchup-grid.solo { grid-template-columns: minmax(0, 1fr); }
+
 /* react-calendar ships a light theme and fixed widths. Its variables are
    overridden here rather than its markup fought with, and `minmax(0, …)` above
    is what actually lets it shrink - a grid column defaults to min-content,
@@ -165,4 +170,12 @@
   .catchup-head h1 { font-size: 26px; }
   .totals li { padding: 11px 12px; }
   .totals b { font-size: 19px; }
+}
+
+/* View switch above the calendar. `.tag` already carries the pill styling and
+   its `.on` state, so this only has to place the row. */
+.cal-views {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 14px;
 }

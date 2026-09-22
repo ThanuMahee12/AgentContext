@@ -5,6 +5,8 @@ import { useAppDispatch, useAppSelector } from '../store'
 import { useContent } from '../lib/useContent'
 import { toggleTag } from '../store/uiSlice'
 import Markdown from '../components/Markdown'
+import { readingMinutes } from '../lib/format'
+import Title from '../components/Title'
 import Tree from '../components/Tree'
 import { matches, TagRow, Empty } from '../components/shared'
 
@@ -75,6 +77,8 @@ function Browse({ id, meta, items, at }: { id: Key; meta: any; items: any[]; at:
 
   return (
     <div className="page" data-section={id}>
+      {/* Inside a folder the folder is the page, so it names the tab. */}
+      <Title>{at ? at.split('/').pop() : meta.label}</Title>
       <Crumbs meta={meta} at={at} />
       <h1 className="pagetitle">{at ? at.split('/').pop() : meta.label}</h1>
       <p className="standfirst">{at ? `${shown.length} in ${at}` : meta.blurb}</p>
@@ -132,6 +136,7 @@ function Detail({ item, section, meta }: { item: any; section: Key; meta: any })
 
   return (
     <article className="page reading" data-section={section}>
+      <Title>{item.title}</Title>
       <Crumbs meta={meta} at={item.parent ?? ''} />
 
       <h1 className="pagetitle">{item.title}</h1>
@@ -197,6 +202,5 @@ function firstLine(body?: string): string {
 }
 
 function readingTime(item: any): string {
-  const words = (item.body ?? item.summary ?? '').trim().split(/\s+/).filter(Boolean).length
-  return `${Math.max(1, Math.round(words / 220))} min`
+  return `${readingMinutes(item.body ?? item.summary)} min`
 }

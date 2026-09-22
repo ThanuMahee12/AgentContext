@@ -24,8 +24,11 @@ export const queryClient = new QueryClient({
 
 /** Query keys in one place, so a cache entry is never invalidated by guesswork. */
 export const keys = {
+  /** Sessions and extracted links, read together - see `useArchive`. */
+  archive: ['archive'] as const,
   sessions: ['sessions'] as const,
   context: ['context'] as const,
   daily: ['daily'] as const,
   docs: ['docs'] as const,
+  published: (slug: string) => ['published', slug] as const,
 }

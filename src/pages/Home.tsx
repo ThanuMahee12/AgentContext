@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 
+import Title from '../components/Title'
+import { countWords, formatCompact } from '../lib/format'
 import { SECTION_KEY, sections, type SectionId } from '../lib/sections'
 import { useContent } from '../lib/useContent'
 
@@ -41,6 +43,8 @@ export default function Home() {
 
   return (
     <div className="page dash">
+      {/* Home is the brand alone - "AgentContext · AgentContext" helps nobody. */}
+      <Title />
       <h1 className="pagetitle">Working knowledge</h1>
       <p className="standfirst">
         Notes, reference and half-finished ideas from building data pipelines — kept where they
@@ -54,7 +58,7 @@ export default function Home() {
         </div>
         <div>
           <dt>Words</dt>
-          <dd>{formatK(totalWords)}</dd>
+          <dd>{formatCompact(totalWords)}</dd>
         </div>
         <div>
           <dt>Topics</dt>
@@ -79,7 +83,7 @@ export default function Home() {
                   <span className="fill" style={{ width: `${Math.max(2, (r.words / widest) * 100)}%` }} />
                 </span>
                 <span className="barvalue">
-                  {r.count}<span className="sep">·</span>{formatK(r.words)}w
+                  {r.count}<span className="sep">·</span>{formatCompact(r.words)}w
                 </span>
               </Link>
             </li>
@@ -120,8 +124,6 @@ export default function Home() {
 
 // ---------------------------------------------------------------------------
 
-const countWords = (s: string) => (s ? s.trim().split(/\s+/).length : 0)
-const formatK = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
 
 function tagCounts(content: any) {
   const counts = new Map<string, number>()

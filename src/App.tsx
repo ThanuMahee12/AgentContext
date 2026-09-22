@@ -3,6 +3,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import Login from './components/Login'
+import { Loading } from './components/State'
 import Admin from './pages/Admin'
 import Catchup from './pages/Catchup'
 import ContentAdmin from './pages/ContentAdmin'
@@ -77,7 +78,7 @@ function RequireAuth({ render }: { render: (user: User | null) => JSX.Element })
     })
   }, [])
 
-  if (!ready) return <p className="empty" style={{ paddingTop: 80 }}>Checking sign-in…</p>
+  if (!ready) return <Loading page>Checking sign-in…</Loading>
   if (NEEDS_AUTH && !user) return <Login />
   return render(user)
 }

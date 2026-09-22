@@ -1,26 +1,24 @@
-import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
-import { getPublished } from '../lib/published'
-import type { PublishedPage } from '../types'
+import Title from '../components/Title'
+import { Chip, Loading } from '../components/State'
+import { formatDate } from '../lib/format'
+import { usePublishedPage } from '../lib/queries'
 
 /** A single published page, readable by anyone with the link. */
 export default function Published() {
   const { slug = '' } = useParams()
-  const [page, setPage] = useState<PublishedPage | null>(null)
-  const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading')
+  const { data: page, isPending, isError } = usePublishedPage(slug)
 
-  useEffect(() => {
-    getPublished(slug)
-      .then((p) => {
-        setPage(p)
-        setState(p ? 'ready' : 'missing')
-      })
-      .catch(() => setState('missing'))
-  }, [slug])
+  // A missing slug and a refused read are the same thing to a reader: there is
+  // nothing here to see. Retries are off, so isError is a settled answer.
+  const missing = isError || (!isPending && !page)
 
   return (
     <div className="app">
+      {/* The only route people are handed as a bare link, so the tab it opens
+          should say which document it is rather than just the site name. */}
+      <Title>{page ? page.title : missing ? 'Not found' : undefined}</Title>
       <div className="topbar">
         <Link className="brand" to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
           <span className="dot" />
@@ -30,9 +28,9 @@ export default function Published() {
 
       <main className="main">
         <div className="prose">
-          {state === 'loading' && <p className="empty">Loading…</p>}
+          {isPending && <Loading />}
 
-          {state === 'missing' && (
+          {missing && (
             <>
               <h1>Not found</h1>
               <p className="lede">
@@ -42,13 +40,13 @@ export default function Published() {
             </>
           )}
 
-          {state === 'ready' && page && (
+          {page && (
             <article>
               <h1>{page.title}</h1>
               <div className="pubmeta" style={{ marginBottom: 22 }}>
                 <time dateTime={page.published_at}>{formatDate(page.published_at)}</time>
                 {page.tags?.map((t) => (
-                  <span className="chip" key={t}>{t}</span>
+                  <Chip key={t}>{t}</Chip>
                 ))}
               </div>
               {/* Rendered as text, not HTML: published content is reviewed by a
@@ -61,10 +59,4 @@ export default function Published() {
       </main>
     </div>
   )
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso ?? ''
-  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 }

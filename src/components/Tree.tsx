@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 
+import { countWords } from '../lib/format'
+
 import { useAppDispatch, useAppSelector } from '../store'
 import { toggleFolder } from '../store/uiSlice'
 
@@ -114,7 +116,7 @@ function Branch({
 }
 
 function Leaf({ doc, basePath, depth }: { doc: any; basePath: string; depth: number }) {
-  const words = (doc.body ?? '').trim().split(/\s+/).filter(Boolean).length
+  const words = countWords(doc.body)
   return (
     <Link
       className="leaf"
