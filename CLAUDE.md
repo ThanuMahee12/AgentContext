@@ -41,6 +41,7 @@ src/
 ├── types.ts            Session, Command, ContextItem, Day, …
 ├── pages/              one file per route
 │   ├── Layout.tsx      public shell: nav, search, outlet
+│   ├── AdminShell.tsx  signed-in shell: nav, sign-out, aside + panel slots
 │   ├── Home.tsx  Section.tsx  Published.tsx
 │   ├── Catchup.tsx     activity calendar; public counts, private detail
 │   └── Admin.tsx  ContentAdmin.tsx      signed-in
@@ -207,6 +208,68 @@ The scene renders **on demand** — no permanent `requestAnimationFrame` loop �
 and reads its colours from the CSS tokens via `getComputedStyle`, so it follows
 `[data-section="catchup"]`. It draws only the public `daily` totals; nothing
 from the private archive is in scope.
+
+## Two shells, and every signed-in screen uses one
+
+`Layout.tsx` wraps the public routes; `AdminShell.tsx` wraps `/admin` and
+`/content`. Before it existed, Admin built its own copy of the sidebar, and
+three things were wrong at once: **`/content` was orphaned** — nothing linked to
+it, so the screen that publishes a draft to the internet was reachable only by
+typing the URL — the sidebar existed twice and the copies had drifted, and
+sign-out lived on one screen.
+
+It composes by props, not as a route layout. Admin's search and facets belong
+*in* the sidebar, and a child cannot render into its parent's `<aside>` through
+an `<Outlet>` without a portal or a context dance:
+
+```tsx
+<AdminShell user={user} here="Session archive" aside={<Facets/>} panel={<SessionDetail/>}>
+```
+
+`panel` is a sibling of `<main>`, never a child: `.detail` is
+`flex: 0 0 min(52%, 720px)` against `.site`, so nesting it inside `.sheet`
+collapses it into the scrolling body instead of splitting the row.
+
+A new signed-in screen goes in the `PRIVATE` array in that file and is reachable
+immediately. Do not add another `<aside className="sidenav">`.
+
+## Sign-in: three modes, still no self-registration
+
+`components/Login.tsx` is sign in, password reset and request access on one
+panel. It is the only screen a stranger can reach, so two things are load-bearing:
+
+- **Wrong email and wrong password give the same message.** Distinguishing them
+  tells an attacker which addresses have accounts.
+- **"Request access" creates nothing and sends nothing.** Access is an
+  allow-list of addresses in `firestore.rules`, and sign-up is switched off in
+  the Firebase console — `createUserWithEmailAndPassword` would fail with
+  `auth/admin-restricted-operation`, and an account that did get created could
+  sign in and read nothing. The panel says so and copies a line to the
+  clipboard instead.
+
+If sign-up is ever switched back on, `firestore.rules` says what must happen
+first: put `email_verified` back into `canView()`. Read the comment at the top
+of that file before touching the console setting.
+
+`components/AgentField.tsx` is the animated backdrop: roots that periodically
+emit children on a tether, which is the one relationship the data model is
+built around — a session spawning subagents. It is **decoration and must stay
+decoration**: lazy-loaded, `aria-hidden`, `pointer-events: none`, wrapped in an
+error boundary so a WebGL failure costs a backdrop and never the ability to
+sign in, one static frame under `prefers-reduced-motion`, and stopped entirely
+while the tab is hidden.
+
+Two dynamic imports now use three.js, so Rollup hoists it into a shared chunk —
+`CatchupScene` fell from 547 kB to 24 kB. The entry chunk still carries none of
+it, and the check in the three.js section covers both.
+
+Styling lives in `styles/auth.css`, not `ui.css` — it is the one screen that is
+not the dashboard. It sets `data-section="dashboard"` so `--hue` resolves to the
+dashboard magenta, and it uses sentence-case field labels rather than the
+tracked-out uppercase the dashboard uses for its forty-odd micro-labels.
+
+`react-hook-form` earns its place here and nowhere else yet: validation, error
+messages and `isSubmitting` on three forms that share two fields.
 
 ## Markdown
 

@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { signOut, type User } from 'firebase/auth'
-import { Link } from 'react-router-dom'
+import type { User } from 'firebase/auth'
 
+import AdminShell from './AdminShell'
 import Facet from '../components/Facet'
 import LinkRow from '../components/LinkRow'
 import SessionDetail from '../components/SessionDetail'
 import SessionTable, { toRows } from '../components/SessionTable'
 import Title from '../components/Title'
 import { FIRESTORE_HINT, Failure, Loading, Nothing } from '../components/State'
-import { auth } from '../firebase'
 import { FirestoreSource } from '../lib/firestore'
 import { useArchive } from '../lib/queries'
 import { countBy, mergeContext, subagentCounts } from '../lib/sessions'
@@ -81,54 +80,37 @@ export default function Admin({ user }: { user: User | null }) {
   )
 
   return (
-    <div className="site admin">
+    <AdminShell
+      user={user}
+      here="Session archive"
+      panel={selected && <SessionDetail session={selected} onClose={() => setSelected(null)} />}
+      aside={
+        <>
+          <label className="find">
+            <span className="sr">Search</span>
+            <input
+              ref={searchRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search commands, files…"
+              aria-label="Search sessions"
+            />
+          </label>
+
+          <nav aria-label="Filters" className="facets">
+            <Facet title="Project" options={f.projects} selected={projects} onChange={setProjects}
+              counts={countBy(sessions, (s) => s.project)} />
+            <Facet title="Provider" options={f.providers} selected={providers} onChange={setProviders}
+              counts={countBy(sessions, (s) => s.provider)} />
+            <Facet title="User" options={f.users} selected={users} onChange={setUsers}
+              counts={countBy(sessions, (s) => s.os_user)} />
+          </nav>
+        </>
+      }
+    >
       <Title>Session archive</Title>
-      <aside className="sidenav">
-        <Link to="/" className="wordmark">
-          <span className="glyph" aria-hidden />
-          AgentContext
-        </Link>
 
-        <p className="here">
-          Session archive
-          <span className="src">{source.name}</span>
-        </p>
-
-        <label className="find">
-          <span className="sr">Search</span>
-          <input
-            ref={searchRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search commands, files…"
-            aria-label="Search sessions"
-          />
-        </label>
-
-        <nav aria-label="Filters" className="facets">
-          <Facet title="Project" options={f.projects} selected={projects} onChange={setProjects}
-            counts={countBy(sessions, (s) => s.project)} />
-          <Facet title="Provider" options={f.providers} selected={providers} onChange={setProviders}
-            counts={countBy(sessions, (s) => s.provider)} />
-          <Facet title="User" options={f.users} selected={users} onChange={setUsers}
-            counts={countBy(sessions, (s) => s.os_user)} />
-        </nav>
-
-        <div className="navfoot">
-          {/* A dashboard with no way back to the site it belongs to is a dead end. */}
-          <Link className="navitem dash" to="/">
-            <span className="label">Public site</span>
-          </Link>
-          {user && (
-            <button className="ghost" onClick={() => signOut(auth)} title={user.email ?? undefined}>
-              Sign out
-            </button>
-          )}
-        </div>
-      </aside>
-
-      <main className="sheet">
-        {source.name === 'not-connected' && (
+      {source.name === 'not-connected' && (
           <div className="banner">
             No data source configured. Firestore is not wired up yet, so this dashboard is empty.
           </div>
@@ -160,9 +142,6 @@ export default function Admin({ user }: { user: User | null }) {
             )}
           </>
         )}
-      </main>
-
-      {selected && <SessionDetail session={selected} onClose={() => setSelected(null)} />}
-    </div>
+    </AdminShell>
   )
 }

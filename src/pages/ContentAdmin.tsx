@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom'
+import type { User } from 'firebase/auth'
 
+import AdminShell from './AdminShell'
 import Title from '../components/Title'
 import { Chip, Failure, Loading, Nothing } from '../components/State'
 import { DRAFT, PUBLISHED, describeError, useDocs, useSetVisibility } from '../lib/queries'
@@ -15,7 +16,7 @@ import { DRAFT, PUBLISHED, describeError, useDocs, useSetVisibility } from '../l
  * Reading every document, drafts included, requires being signed in: the rule
  * on /docs allows an unpublished document only to `canView()`.
  */
-export default function ContentAdmin() {
+export default function ContentAdmin({ user }: { user: User | null }) {
   const { data: docs = [], isPending, error } = useDocs()
   const setVisibility = useSetVisibility()
 
@@ -30,18 +31,25 @@ export default function ContentAdmin() {
    *  than tracked in a second piece of state beside it. */
   const saving = setVisibility.isPending ? setVisibility.variables?.id : undefined
 
-  if (isPending) return <Loading page>Loading documents…</Loading>
+  // Inside the shell, so the nav and sign-out stay reachable while it loads.
+  if (isPending) {
+    return (
+      <AdminShell user={user} here="Content">
+        <Loading page>Loading documents…</Loading>
+      </AdminShell>
+    )
+  }
 
   return (
-    <div className="admin">
+    <AdminShell user={user} here="Content">
       <Title>Content</Title>
       <header className="dayhead" style={{ marginBottom: 16 }}>
         <div>
           <h1 style={{ margin: 0 }}>Content</h1>
+          {/* Navigation moved to the shell. This line is about the documents
+              now, not about how to leave the page. */}
           <p className="lede" style={{ margin: '4px 0 0' }}>
             {docs.length} document{docs.length === 1 ? '' : 's'} · <strong>{live} public</strong>
-            {' · '}<Link to="/catchup">Daily Catchup</Link>
-            {' · '}<Link to="/admin">Dashboard</Link>
           </p>
         </div>
       </header>
@@ -89,6 +97,6 @@ export default function ContentAdmin() {
         immediately — no deploy. Re-running <code>publish-docs</code> keeps this choice
         unless the markdown itself declares a <code>visibility</code>.
       </p>
-    </div>
+    </AdminShell>
   )
 }

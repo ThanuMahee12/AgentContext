@@ -59,7 +59,7 @@ export default function App() {
 
         <Route path="/s/:slug" element={<Published />} />
         <Route path="/admin" element={<RequireAuth render={(u) => <Admin user={u} />} />} />
-        <Route path="/content" element={<RequireAuth render={() => <ContentAdmin />} />} />
+        <Route path="/content" element={<RequireAuth render={(u) => <ContentAdmin user={u} />} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
