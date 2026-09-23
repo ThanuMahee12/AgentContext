@@ -5,6 +5,7 @@ import 'react-calendar/dist/Calendar.css'
 
 import Title from '../components/Title'
 import { Loading, Nothing } from '../components/State'
+import { banner } from '../lib/ui'
 import type { DayBar } from '../components/CatchupScene'
 
 /** three.js is bigger than the rest of this app combined, so it is fetched only
@@ -40,7 +41,14 @@ export default function Catchup() {
   const [picked, setPicked] = useState<Date | null>(null)
   const [view, setView] = useState<'calendar' | '3d'>('calendar')
 
-  useEffect(() => onAuthStateChanged(auth, (u) => { setUser(u); setAuthReady(true) }), [])
+  useEffect(
+    () =>
+      onAuthStateChanged(auth, (u) => {
+        setUser(u)
+        setAuthReady(true)
+      }),
+    [],
+  )
 
   // Public half - everyone gets this, signed in or not.
   const totalsQuery = useDailyTotals()
@@ -70,14 +78,17 @@ export default function Catchup() {
   }, [totals, picked])
 
   const busiest = useMemo(
-    () => Math.max(1, ...Object.values(totals).map((t) => t.sessions)), [totals])
+    () => Math.max(1, ...Object.values(totals).map((t) => t.sessions)),
+    [totals],
+  )
 
   /** Every recorded day, oldest first - the 3D field shows the whole archive at
    *  once rather than one month, which is the thing the calendar cannot do. */
   const series = useMemo<DayBar[]>(
-    () => Object.values(totals)
-      .map((t) => ({ date: t.date, sessions: t.sessions, commands: t.commands }))
-      .sort((a, b) => a.date.localeCompare(b.date)),
+    () =>
+      Object.values(totals)
+        .map((t) => ({ date: t.date, sessions: t.sessions, commands: t.commands }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
     [totals],
   )
 
@@ -117,7 +128,7 @@ export default function Catchup() {
         </p>
       </header>
 
-      {note && <p className="banner failure">{note}</p>}
+      {note && <p className={`${banner} failure`}>{note}</p>}
 
       <div className="cal-views" role="group" aria-label="View">
         {(['calendar', '3d'] as const).map((v) => (
@@ -144,26 +155,31 @@ export default function Catchup() {
 
       <div className={'catchup-grid' + (view === '3d' ? ' solo' : '')}>
         <div className="cal" hidden={view === '3d'}>
-        <Calendar
-          onChange={(v) => setPicked(v as Date)}
-          value={picked}
-          maxDate={new Date()}
-          tileClassName={({ date, view }) => {
-            if (view !== 'month') return null
-            const t = totals[toDayKey(date)]
-            if (!t?.sessions) return null
-            // Four steps rather than a continuous ramp: a reader compares days
-            // at a glance, they do not read a value off a scale.
-            return `work-${Math.min(4, Math.ceil((t.sessions / busiest) * 4))}`
-          }}
-        />
-        <p className="cal-key">
-          <span>quiet</span>
-          {[1, 2, 3, 4].map((n) => (
-            <i key={n} style={{ background: `color-mix(in srgb, var(--hue) ${[14, 28, 44, 62][n - 1]}%, transparent)` }} />
-          ))}
-          <span>busy</span>
-        </p>
+          <Calendar
+            onChange={(v) => setPicked(v as Date)}
+            value={picked}
+            maxDate={new Date()}
+            tileClassName={({ date, view }) => {
+              if (view !== 'month') return null
+              const t = totals[toDayKey(date)]
+              if (!t?.sessions) return null
+              // Four steps rather than a continuous ramp: a reader compares days
+              // at a glance, they do not read a value off a scale.
+              return `work-${Math.min(4, Math.ceil((t.sessions / busiest) * 4))}`
+            }}
+          />
+          <p className="cal-key">
+            <span>quiet</span>
+            {[1, 2, 3, 4].map((n) => (
+              <i
+                key={n}
+                style={{
+                  background: `color-mix(in srgb, var(--hue) ${[14, 28, 44, 62][n - 1]}%, transparent)`,
+                }}
+              />
+            ))}
+            <span>busy</span>
+          </p>
         </div>
 
         <section className="catchup-day">
@@ -174,15 +190,32 @@ export default function Catchup() {
               <h2>{selected}</h2>
               {dayTotals ? (
                 <ul className="totals">
-                  <li><b>{dayTotals.sessions}</b><span>conversations</span></li>
-                  <li><b>{dayTotals.messages}</b><span>messages</span></li>
-                  <li><b>{dayTotals.commands}</b><span>commands</span></li>
-                  <li><b>{dayTotals.files}</b><span>files</span></li>
+                  <li>
+                    <b>{dayTotals.sessions}</b>
+                    <span>conversations</span>
+                  </li>
+                  <li>
+                    <b>{dayTotals.messages}</b>
+                    <span>messages</span>
+                  </li>
+                  <li>
+                    <b>{dayTotals.commands}</b>
+                    <span>commands</span>
+                  </li>
+                  <li>
+                    <b>{dayTotals.files}</b>
+                    <span>files</span>
+                  </li>
                   {dayTotals.failed > 0 && (
-                    <li className="bad"><b>{dayTotals.failed}</b><span>failed</span></li>
+                    <li className="bad">
+                      <b>{dayTotals.failed}</b>
+                      <span>failed</span>
+                    </li>
                   )}
                 </ul>
-              ) : <Nothing>Nothing recorded on this day.</Nothing>}
+              ) : (
+                <Nothing>Nothing recorded on this day.</Nothing>
+              )}
 
               {!user && dayTotals && (
                 <p className="signin-hint">
@@ -199,14 +232,18 @@ export default function Catchup() {
                 <section className="monthsum">
                   <h3>{month.label}</h3>
                   <p>
-                    Active on <b>{month.days}</b> day{month.days === 1 ? '' : 's'},
-                    {' '}<b>{month.sessions}</b> conversation{month.sessions === 1 ? '' : 's'},
-                    {' '}<b>{month.commands}</b> command{month.commands === 1 ? '' : 's'}.
-                    {' '}Busiest was{' '}
-                    <button className="linkish" onClick={() => {
-                      const [y, m, d] = month.busiest.date.split('-').map(Number)
-                      setPicked(new Date(y, m - 1, d))
-                    }}>{month.busiest.date}</button>{' '}
+                    Active on <b>{month.days}</b> day{month.days === 1 ? '' : 's'},{' '}
+                    <b>{month.sessions}</b> conversation{month.sessions === 1 ? '' : 's'},{' '}
+                    <b>{month.commands}</b> command{month.commands === 1 ? '' : 's'}. Busiest was{' '}
+                    <button
+                      className="linkish"
+                      onClick={() => {
+                        const [y, m, d] = month.busiest.date.split('-').map(Number)
+                        setPicked(new Date(y, m - 1, d))
+                      }}
+                    >
+                      {month.busiest.date}
+                    </button>{' '}
                     with {month.busiest.sessions}.
                   </p>
                 </section>
@@ -225,7 +262,9 @@ function DayHistory({ day }: { day: Day }) {
     <div style={{ marginTop: 20 }}>
       <h3>Conversations</h3>
       <div className="cards">
-        {day.sessions.map((s) => <Conversation key={s.session_id} session={s} />)}
+        {day.sessions.map((s) => (
+          <Conversation key={s.session_id} session={s} />
+        ))}
       </div>
 
       {day.context.length > 0 && (
@@ -269,7 +308,11 @@ function Conversation({ session }: { session: Session }) {
     setBusy(true)
     try {
       setFull({ ...full, commands: await source.commands(session) })
-    } catch { /* metadata is still worth showing */ } finally { setBusy(false) }
+    } catch {
+      /* metadata is still worth showing */
+    } finally {
+      setBusy(false)
+    }
   }
 
   const failed = failedCount(session)
@@ -277,8 +320,11 @@ function Conversation({ session }: { session: Session }) {
   return (
     <div className="convo">
       <button className="card" onClick={toggle} aria-expanded={open}>
-        <span className="stripe" data-provider={session.provider}
-              data-state={failed > 0 ? 'failed' : undefined} />
+        <span
+          className="stripe"
+          data-provider={session.provider}
+          data-state={failed > 0 ? 'failed' : undefined}
+        />
         <span className="inner">
           <span className="row1">
             <time dateTime={session.started}>{formatTime(session.started)}</time>
@@ -286,17 +332,29 @@ function Conversation({ session }: { session: Session }) {
             <span className="who">
               {session.provider}
               {session.os_user ? ` · ${session.os_user}` : ''}
-              {session.git_branch && session.git_branch !== 'HEAD' ? ` · ${session.git_branch}` : ''}
+              {session.git_branch && session.git_branch !== 'HEAD'
+                ? ` · ${session.git_branch}`
+                : ''}
             </span>
           </span>
 
           {session.preview && <span className="preview">{session.preview}</span>}
 
           <span className="stats">
-            <span className="stat"><b>{session.message_count}</b> msg</span>
-            <span className="stat"><b>{session.command_count}</b> cmd</span>
-            {failed > 0 && <span className="stat err"><b>{failed}</b> failed</span>}
-            <span className="stat"><b>{session.file_count}</b> files</span>
+            <span className="stat">
+              <b>{session.message_count}</b> msg
+            </span>
+            <span className="stat">
+              <b>{session.command_count}</b> cmd
+            </span>
+            {failed > 0 && (
+              <span className="stat err">
+                <b>{failed}</b> failed
+              </span>
+            )}
+            <span className="stat">
+              <b>{session.file_count}</b> files
+            </span>
             <span className="stat">{open ? 'hide commands' : 'show commands'}</span>
           </span>
         </span>

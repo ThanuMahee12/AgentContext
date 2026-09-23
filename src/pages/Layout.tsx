@@ -63,28 +63,30 @@ export default function PublicLayout() {
           {sections
             .filter((s) => s.id === 'home' || content[SECTION_KEY[s.id]].length > 0)
             .map((s) => (
-            <NavLink
-              key={s.id}
-              to={s.path}
-              end={s.path === '/'}
-              className={({ isActive }) => 'navitem' + (isActive ? ' on' : '')}
-              data-section={s.id}
-            >
-              {({ isActive }) => (
-                <>
-                  {isActive && (
-                    <motion.span
-                      className="navmark"
-                      layoutId="navmark"
-                      transition={still ? { duration: 0 } : { type: 'spring', stiffness: 520, damping: 42 }}
-                    />
-                  )}
-                  <span className="label">{s.label}</span>
-                  {s.id !== 'home' && (
-                    <span className="n">{content[SECTION_KEY[s.id]].length}</span>
-                  )}
-                </>
-              )}
+              <NavLink
+                key={s.id}
+                to={s.path}
+                end={s.path === '/'}
+                className={({ isActive }) => 'navitem' + (isActive ? ' on' : '')}
+                data-section={s.id}
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <motion.span
+                        className="navmark"
+                        layoutId="navmark"
+                        transition={
+                          still ? { duration: 0 } : { type: 'spring', stiffness: 520, damping: 42 }
+                        }
+                      />
+                    )}
+                    <span className="label">{s.label}</span>
+                    {s.id !== 'home' && (
+                      <span className="n">{content[SECTION_KEY[s.id]].length}</span>
+                    )}
+                  </>
+                )}
               </NavLink>
             ))}
 
@@ -122,7 +124,12 @@ export default function PublicLayout() {
         </div>
       </aside>
 
-      <button className="scrim" onClick={() => dispatch(setNavOpen(false))} tabIndex={-1} aria-hidden />
+      <button
+        className="scrim"
+        onClick={() => dispatch(setNavOpen(false))}
+        tabIndex={-1}
+        aria-hidden
+      />
 
       <main className="sheet tw-scope">
         {/* Top right, out of the sidebar. It leaves the public site for an
@@ -134,7 +141,14 @@ export default function PublicLayout() {
             href="/admin"
             className="inline-flex items-center gap-2 rounded-s border border-field-line px-3 py-1.5 text-[12.5px] font-medium text-text-2 no-underline hover:border-hue hover:text-text"
           >
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" aria-hidden className="flex-none">
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden
+              className="flex-none"
+            >
               <path
                 d="M4.5 7V5a3.5 3.5 0 1 1 7 0v2"
                 stroke="currentColor"

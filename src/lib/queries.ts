@@ -145,7 +145,9 @@ export function useDocs() {
           description: v.description || '',
         }
       })
-      rows.sort((a, b) => (b.date || '').localeCompare(a.date || '') || a.title.localeCompare(b.title))
+      rows.sort(
+        (a, b) => (b.date || '').localeCompare(a.date || '') || a.title.localeCompare(b.title),
+      )
       return rows
     },
   })

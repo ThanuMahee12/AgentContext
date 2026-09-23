@@ -44,14 +44,21 @@ function parse(iso: string): Date | null {
 /** `18 Sep 2026` — a date the reader is expected to remember. */
 export function formatDate(iso: string): string {
   const d = parse(iso)
-  return d ? d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : iso || ''
+  return d
+    ? d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+    : iso || ''
 }
 
 /** `Fri 18 Sep 2026` — a heading for a day's worth of activity. */
 export function formatDayHeading(iso: string): string {
   const d = parse(iso)
   return d
-    ? d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+    ? d.toLocaleDateString(undefined, {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
     : iso || ''
 }
 
@@ -64,7 +71,9 @@ export function formatMonth(d: Date): string {
  *  width of a column that appears once per row. */
 export function formatTime(iso: string): string {
   const d = parse(iso)
-  return d ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false }) : ''
+  return d
+    ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
+    : ''
 }
 
 /** `18 Sep 14:05` — date and time in one cell.

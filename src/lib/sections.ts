@@ -71,7 +71,6 @@ export interface Content {
   kt: Doc[]
 }
 
-
 export type SectionId = 'home' | 'brainstorms' | 'kt' | 'discussions' | 'notes'
 
 export interface Section {
@@ -83,7 +82,10 @@ export interface Section {
 }
 
 /** Which slice of content a section lists. `home` lists none. */
-export const SECTION_KEY: Record<Exclude<SectionId, 'home'>, 'brainstorms' | 'discussions' | 'kt' | 'notes'> = {
+export const SECTION_KEY: Record<
+  Exclude<SectionId, 'home'>,
+  'brainstorms' | 'discussions' | 'kt' | 'notes'
+> = {
   brainstorms: 'brainstorms',
   kt: 'kt',
   discussions: 'discussions',

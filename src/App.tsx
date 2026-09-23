@@ -1,16 +1,16 @@
-import { lazy, Suspense, useEffect, useState } from "react";
-import { onAuthStateChanged, type User } from "firebase/auth";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { onAuthStateChanged, type User } from 'firebase/auth'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
-import Login from "./components/Login";
-import { Loading } from "./components/State";
-import Catchup from "./pages/Catchup";
-import Published from "./pages/Published";
-import PublicLayout from "./pages/Layout";
-import Home from "./pages/Home";
-import Section from "./pages/Section";
-import { auth } from "./firebase";
-import { getSource } from "./lib/source";
+import Login from './components/Login'
+import { Loading } from './components/State'
+import Catchup from './pages/Catchup'
+import Published from './pages/Published'
+import PublicLayout from './pages/Layout'
+import Home from './pages/Home'
+import Section from './pages/Section'
+import { auth } from './firebase'
+import { getSource } from './lib/source'
 
 /** The signed-in screens are split out of the entry chunk.
  *
@@ -18,12 +18,12 @@ import { getSource } from "./lib/source";
  *  - TanStack Table, Headless UI, floating-ui - none of which a signed-out
  *  visitor reading a document has any use for. The public site was downloading
  *  the whole archive UI to render a page of markdown. */
-const Admin = lazy(() => import("./pages/Admin"));
-const ContentAdmin = lazy(() => import("./pages/ContentAdmin"));
+const Admin = lazy(() => import('./pages/Admin'))
+const ContentAdmin = lazy(() => import('./pages/ContentAdmin'))
 
 /** Only the Firestore source needs a signed-in user. With fixtures or the empty
  *  source everything is local, and gating it would just obstruct development. */
-const NEEDS_AUTH = getSource().name === "firestore";
+const NEEDS_AUTH = getSource().name === 'firestore'
 
 /**
  * Two sites behind one app.
@@ -51,10 +51,7 @@ export default function App() {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/brainstorm" element={<Section id="brainstorms" />} />
-            <Route
-              path="/brainstorm/*"
-              element={<Section id="brainstorms" />}
-            />
+            <Route path="/brainstorm/*" element={<Section id="brainstorms" />} />
             <Route path="/kt" element={<Section id="kt" />} />
             <Route path="/kt/*" element={<Section id="kt" />} />
             <Route path="/ideas" element={<Section id="discussions" />} />
@@ -64,29 +61,14 @@ export default function App() {
             <Route path="/tech-commands/*" element={<Section id="notes" />} />
 
             {/* Older paths stay working; they are linked from the repository. */}
-            <Route
-              path="/brainstorms"
-              element={<Navigate to="/brainstorm" replace />}
-            />
-            <Route
-              path="/discussions"
-              element={<Navigate to="/ideas" replace />}
-            />
-            <Route
-              path="/notes"
-              element={<Navigate to="/tech-commands" replace />}
-            />
-            <Route
-              path="/notes/*"
-              element={<Navigate to="/tech-commands" replace />}
-            />
+            <Route path="/brainstorms" element={<Navigate to="/brainstorm" replace />} />
+            <Route path="/discussions" element={<Navigate to="/ideas" replace />} />
+            <Route path="/notes" element={<Navigate to="/tech-commands" replace />} />
+            <Route path="/notes/*" element={<Navigate to="/tech-commands" replace />} />
           </Route>
 
           <Route path="/s/:slug" element={<Published />} />
-          <Route
-            path="/admin"
-            element={<RequireAuth render={(u) => <Admin user={u} />} />}
-          />
+          <Route path="/admin" element={<RequireAuth render={(u) => <Admin user={u} />} />} />
           <Route
             path="/content"
             element={<RequireAuth render={(u) => <ContentAdmin user={u} />} />}
@@ -95,26 +77,22 @@ export default function App() {
         </Routes>
       </Suspense>
     </BrowserRouter>
-  );
+  )
 }
 
-function RequireAuth({
-  render,
-}: {
-  render: (user: User | null) => JSX.Element;
-}) {
-  const [user, setUser] = useState<User | null>(null);
-  const [ready, setReady] = useState(!NEEDS_AUTH);
+function RequireAuth({ render }: { render: (user: User | null) => JSX.Element }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [ready, setReady] = useState(!NEEDS_AUTH)
 
   useEffect(() => {
-    if (!NEEDS_AUTH) return;
+    if (!NEEDS_AUTH) return
     return onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setReady(true);
-    });
-  }, []);
+      setUser(u)
+      setReady(true)
+    })
+  }, [])
 
-  if (!ready) return <Loading page>Checking sign-in…</Loading>;
-  if (NEEDS_AUTH && !user) return <Login />;
-  return render(user);
+  if (!ready) return <Loading page>Checking sign-in…</Loading>
+  if (NEEDS_AUTH && !user) return <Login />
+  return render(user)
 }

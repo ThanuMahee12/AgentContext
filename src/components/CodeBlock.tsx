@@ -28,7 +28,9 @@ export default function CodeBlock({ code, lang }: { code: string; lang?: string 
     <div className="codeblock">
       <div className="bar">
         {lang && <span className="lang">{lang}</span>}
-        <span className="lines">{lines} line{lines === 1 ? '' : 's'}</span>
+        <span className="lines">
+          {lines} line{lines === 1 ? '' : 's'}
+        </span>
         <button className="copy" onClick={copy} data-state={state}>
           {state === 'copied' ? 'Copied' : state === 'failed' ? 'Press ⌘C' : 'Copy'}
         </button>

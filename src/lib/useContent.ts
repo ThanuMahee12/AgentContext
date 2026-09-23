@@ -33,7 +33,8 @@ export function useContent() {
     queryKey: keys.docs,
     queryFn: async (): Promise<Sections> => {
       const snap = await getDocs(
-        query(collection(db, 'docs'), where('visibility', '==', 'published')))
+        query(collection(db, 'docs'), where('visibility', '==', 'published')),
+      )
       const out: Sections = { brainstorms: [], discussions: [], kt: [], notes: [] }
       snap.docs.forEach((d) => {
         const raw = d.data() as Record<string, unknown>
@@ -61,6 +62,7 @@ export function tagCounts(content: Sections): Array<{ tag: string; count: number
       for (const t of d.tags ?? []) n.set(t, (n.get(t) ?? 0) + 1)
     }
   }
-  return [...n.entries()].map(([tag, count]) => ({ tag, count }))
+  return [...n.entries()]
+    .map(([tag, count]) => ({ tag, count }))
     .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
 }

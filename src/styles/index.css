@@ -5,13 +5,12 @@
  * unchanged - a reordering would silently alter the page.
  */
 
-@import "./tokens.css";
+@import "./tokens.scss";
 @import "./tailwind.css";
-@import "./shell.css";
-@import "./dashboard.css";
-@import "./ui.css";
-@import "./content.css";
-@import "./catchup.css";
+@import "./shell.scss";
+@import "./dashboard.scss";
+@import "./content.scss";
+@import "./catchup.scss";
 
 /* Appended, never inserted: the order above is load-bearing (see the note at
    the top of this file). Position does not decide this one anyway - its rules

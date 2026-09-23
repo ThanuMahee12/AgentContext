@@ -34,8 +34,8 @@ export default function Published() {
             <>
               <h1>Not found</h1>
               <p className="lede">
-                This page is not published, or the link is wrong. If you expected private
-                session history, that lives behind <Link to="/admin">sign-in</Link>.
+                This page is not published, or the link is wrong. If you expected private session
+                history, that lives behind <Link to="/admin">sign-in</Link>.
               </p>
             </>
           )}

@@ -38,6 +38,10 @@
   --color-text-muted: var(--text-muted);
 
   --color-accent: var(--accent);
+  /* the tinted ground and edge a banner sits on. Without these `bg-accent-soft`
+     is not a class and the notice renders with no fill. */
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
   --color-ok: var(--ok);
   --color-err: var(--err);
   /* The tinted grounds those two sit on. Without these, `bg-ok-soft` is not a

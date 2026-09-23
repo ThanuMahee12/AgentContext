@@ -216,3 +216,10 @@
 }
 
 /* --------------------------------------------------------------- misc --- */
+
+/* Overrides for .rail and .detail, which are defined above and in shell.scss.
+   They lived in a separate file, two removes from what they change. */
+@media (max-width: 900px) {
+  .rail { display: none; }
+  .detail { position: fixed; inset: 52px 0 0; flex: none; z-index: 10; }
+}

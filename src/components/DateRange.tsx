@@ -1,7 +1,7 @@
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 // After the library's stylesheet, never before: same specificity, last wins.
-import '../styles/datepicker.css'
+import '../styles/datepicker.scss'
 
 import { parseDayKey, toDayKey } from '../lib/format'
 import { inputSm, linkButton } from '../lib/ui'

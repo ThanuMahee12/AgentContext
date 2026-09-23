@@ -1,7 +1,12 @@
 /** Pieces every public section needs, kept together so the sections stay
  *  about their content rather than repeating chrome. */
 
-export function matches(query: string, tag: string | null, haystack: string[], tags: string[]): boolean {
+export function matches(
+  query: string,
+  tag: string | null,
+  haystack: string[],
+  tags: string[],
+): boolean {
   if (tag && !tags.includes(tag)) return false
   const q = query.trim().toLowerCase()
   if (!q) return true

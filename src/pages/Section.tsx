@@ -53,7 +53,12 @@ function Browse({ id, meta, items, at }: { id: Key; meta: any; items: any[]; at:
 
   const scope = at ? items.filter((i) => (i.path ?? '').startsWith(at + '/')) : items
   const shown = scope.filter((i) =>
-    matches(query, tag, [i.title, i.description ?? '', i.body ?? '', ...(i.tags ?? [])], i.tags ?? []),
+    matches(
+      query,
+      tag,
+      [i.title, i.description ?? '', i.body ?? '', ...(i.tags ?? [])],
+      i.tags ?? [],
+    ),
   )
 
   // At the section root, where the content has folders, show the whole tree
@@ -150,16 +155,30 @@ function Detail({ item, section, meta }: { item: any; section: Key; meta: any })
 
       {(item.url || item.gist || item.notion) && (
         <p className="out">
-          {item.url && <a href={item.url} target="_blank" rel="noreferrer noopener">Original thread</a>}
-          {item.gist && <a href={item.gist} target="_blank" rel="noreferrer noopener">Gist</a>}
-          {item.notion && <a href={item.notion} target="_blank" rel="noreferrer noopener">Notion</a>}
+          {item.url && (
+            <a href={item.url} target="_blank" rel="noreferrer noopener">
+              Original thread
+            </a>
+          )}
+          {item.gist && (
+            <a href={item.gist} target="_blank" rel="noreferrer noopener">
+              Gist
+            </a>
+          )}
+          {item.notion && (
+            <a href={item.notion} target="_blank" rel="noreferrer noopener">
+              Notion
+            </a>
+          )}
         </p>
       )}
 
       {toc.length > 2 && (
         <nav className="toc" aria-label="On this page">
           {toc.map((h: any) => (
-            <a key={h.text} href={`#${slugify(h.text)}`}>{h.text}</a>
+            <a key={h.text} href={`#${slugify(h.text)}`}>
+              {h.text}
+            </a>
           ))}
         </nav>
       )}
@@ -179,7 +198,9 @@ function Crumbs({ meta, at }: { meta: any; at: string }) {
       <Link to={meta.path}>{meta.label}</Link>
       {parts.map((p, n) => (
         <span key={p}>
-          <span className="sep" aria-hidden>›</span>
+          <span className="sep" aria-hidden>
+            ›
+          </span>
           <Link to={`${meta.path}/${parts.slice(0, n + 1).join('/')}`}>{p}</Link>
         </span>
       ))}
@@ -189,7 +210,11 @@ function Crumbs({ meta, at }: { meta: any; at: string }) {
 
 // ---------------------------------------------------------------------------
 
-const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
 
 function firstLine(body?: string): string {
   if (!body) return ''

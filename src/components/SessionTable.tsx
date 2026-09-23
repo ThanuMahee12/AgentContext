@@ -91,7 +91,9 @@ const columns: ColumnDef<typeof features, SessionRow, any>[] = [
   col.accessor('started', {
     header: 'Started',
     sortFn: 'basic',
-    cell: (c) => <span className="whitespace-nowrap tabular-nums">{formatStamp(c.getValue())}</span>,
+    cell: (c) => (
+      <span className="whitespace-nowrap tabular-nums">{formatStamp(c.getValue())}</span>
+    ),
   }),
   col.accessor('project', { header: 'Project', sortFn: 'alphanumeric' }),
   col.accessor('preview', {
@@ -116,7 +118,11 @@ const columns: ColumnDef<typeof features, SessionRow, any>[] = [
     // Zero failures is the normal case and does not need drawing attention to;
     // a column of grey zeroes would bury the rows that do matter.
     cell: (c) =>
-      c.getValue() > 0 ? <b className="text-err">{c.getValue()}</b> : <span className="text-text-3">0</span>,
+      c.getValue() > 0 ? (
+        <b className="text-err">{c.getValue()}</b>
+      ) : (
+        <span className="text-text-3">0</span>
+      ),
   }),
   col.accessor('agents', {
     header: 'Agents',
@@ -161,7 +167,8 @@ export default function SessionTable({
           <tr className="border-b border-line">
             {table.getHeaderGroups()[0].headers.map((header) => {
               const sorted = header.column.getIsSorted()
-              const numeric = (header.column.columnDef.meta as { numeric?: boolean } | undefined)?.numeric
+              const numeric = (header.column.columnDef.meta as { numeric?: boolean } | undefined)
+                ?.numeric
               return (
                 <th
                   key={header.id}
@@ -169,14 +176,16 @@ export default function SessionTable({
                   // aria-sort is what tells a screen reader the table is
                   // ordered and by which column; the arrow alone is invisible
                   // to one.
-                  aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'}
+                  aria-sort={
+                    sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'
+                  }
                   className={'p-0 font-medium' + (numeric ? ' text-right' : '')}
                 >
                   <button
                     type="button"
                     onClick={header.column.getToggleSortingHandler()}
                     className={
-                      'w-full cursor-pointer bg-transparent px-2 py-2 text-[11px] uppercase tracking-wide ' +
+                      'w-full cursor-pointer bg-transparent px-2 py-2 text-[11px] tracking-wide uppercase ' +
                       'text-text-3 hover:text-text ' +
                       (numeric ? 'text-right' : 'text-left') +
                       (sorted ? ' text-text' : '')
@@ -220,11 +229,14 @@ export default function SessionTable({
                 }
               >
                 {row.getVisibleCells().map((cell) => {
-                  const numeric = (cell.column.columnDef.meta as { numeric?: boolean } | undefined)?.numeric
+                  const numeric = (cell.column.columnDef.meta as { numeric?: boolean } | undefined)
+                    ?.numeric
                   return (
                     <td
                       key={cell.id}
-                      className={'px-2 py-1.5 align-middle' + (numeric ? ' text-right tabular-nums' : '')}
+                      className={
+                        'px-2 py-1.5 align-middle' + (numeric ? ' text-right tabular-nums' : '')
+                      }
                     >
                       <table.FlexRender cell={cell} />
                     </td>

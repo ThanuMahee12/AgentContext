@@ -34,8 +34,7 @@ export const inputLg =
 
 /** A button that reads as a link. hue-lit, not hue: the base accent is 4.46:1
  *  on a --surface card and fails AA. */
-export const linkButton =
-  'cursor-pointer text-[12.5px] font-medium text-hue-lit hover:text-text'
+export const linkButton = 'cursor-pointer text-[12.5px] font-medium text-hue-lit hover:text-text'
 
 /** A bordered button: sign out, the facet trigger, anything secondary. */
 export const outlineButton =
@@ -52,3 +51,13 @@ export const primaryButton =
 export const menuPanel =
   'z-20 w-max min-w-[210px] max-w-[320px] rounded border border-line-lit bg-surface p-2 ' +
   'shadow-[0_14px_36px_-16px_rgb(0_0_0/0.9)]'
+
+/** A small square-ish button: close a panel, publish a row. */
+export const iconButton =
+  'h-[30px] min-w-[30px] cursor-pointer rounded border border-line bg-raised px-2 ' +
+  'text-[12px] font-medium text-text-2 hover:border-line-lit hover:text-text'
+
+/** A full-width notice above the content: a warning the page cannot fix. */
+export const banner =
+  'flex items-center gap-2 border-b border-accent-line bg-accent-soft px-3 py-[7px] ' +
+  'text-[12px] font-medium leading-snug text-accent'

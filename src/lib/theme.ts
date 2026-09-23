@@ -38,7 +38,10 @@ export function readToken(el: Element, name: ThemeToken): string {
 }
 
 /** Several at once, which is what a scene actually wants at startup. */
-export function readTheme<T extends ThemeToken>(el: Element, names: readonly T[]): Record<T, string> {
+export function readTheme<T extends ThemeToken>(
+  el: Element,
+  names: readonly T[],
+): Record<T, string> {
   const css = getComputedStyle(el)
   const out = {} as Record<T, string>
   for (const name of names) out[name] = css.getPropertyValue(name).trim() || FALLBACK[name]

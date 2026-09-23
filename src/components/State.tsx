@@ -16,11 +16,22 @@ import type { ReactNode } from 'react'
  *
  *  `page` lifts the message clear of the fixed header for a whole-screen wait;
  *  leave it off inside a panel that is already positioned. */
-export function Loading({ children = 'Loading…', page = false }: { children?: ReactNode; page?: boolean }) {
+export function Loading({
+  children = 'Loading…',
+  page = false,
+}: {
+  children?: ReactNode
+  page?: boolean
+}) {
   return (
     // aria-busy + role=status so a screen reader announces the wait instead of
     // sitting silent until content appears.
-    <p className="empty" role="status" aria-busy="true" style={page ? { paddingTop: 80 } : undefined}>
+    <p
+      className="empty"
+      role="status"
+      aria-busy="true"
+      style={page ? { paddingTop: 80 } : undefined}
+    >
       {children}
     </p>
   )
@@ -61,9 +72,8 @@ export function Failure({
 /** The standing explanation for a failed Firestore read on this project. */
 export const FIRESTORE_HINT = (
   <>
-    A permission error means the signed-in account is not the one named in
-    firestore.rules. A failed-precondition error means a query needs an index that has not been
-    built.
+    A permission error means the signed-in account is not the one named in firestore.rules. A
+    failed-precondition error means a query needs an index that has not been built.
   </>
 )
 

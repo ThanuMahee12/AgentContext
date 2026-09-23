@@ -73,7 +73,7 @@ export default function Facet({
       >
         {title}
         {selected.length > 0 && (
-          <span className="min-w-4 rounded-full bg-hue px-[5px] font-mono text-[10.5px] font-semibold leading-normal tabular-nums text-ground">
+          <span className="min-w-4 rounded-full bg-hue px-[5px] font-mono text-[10.5px] leading-normal font-semibold text-ground tabular-nums">
             {selected.length}
           </span>
         )}
@@ -118,7 +118,7 @@ export default function Facet({
                 />
                 {/* The value can be long; the count must never be pushed out of sight. */}
                 <span className="min-w-0 grow truncate">{o}</span>
-                <span className="flex-none font-mono text-[11px] tabular-nums text-text-muted">
+                <span className="flex-none font-mono text-[11px] text-text-muted tabular-nums">
                   {counts[o] ?? 0}
                 </span>
               </label>

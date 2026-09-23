@@ -34,8 +34,12 @@ class FixtureSource implements DataSource {
  *  real Firestore source is configured. */
 class EmptySource implements DataSource {
   readonly name = 'not-connected'
-  async sessions(): Promise<Session[]> { return [] }
-  async context(): Promise<ContextItem[]> { return [] }
+  async sessions(): Promise<Session[]> {
+    return []
+  }
+  async context(): Promise<ContextItem[]> {
+    return []
+  }
 }
 
 // --------------------------------------------------------------------------
@@ -117,10 +121,16 @@ export function applyFilters(days: Day[], f: Filters): Day[] {
     // Commands are searched too — "what was that firestore curl" is the single
     // most useful query this dashboard can answer.
     const hay = [
-      s.preview, s.project, s.cwd, s.os_user, s.git_branch,
+      s.preview,
+      s.project,
+      s.cwd,
+      s.os_user,
+      s.git_branch,
       ...s.commands.map((c) => c.command + ' ' + c.description),
       ...s.files.map((x) => x.path),
-    ].join(' ').toLowerCase()
+    ]
+      .join(' ')
+      .toLowerCase()
     return terms.every((t) => hay.includes(t))
   }
 
@@ -128,21 +138,24 @@ export function applyFilters(days: Day[], f: Filters): Day[] {
     if (f.projects.length && !f.projects.includes(c.project)) return false
     if (!terms.length) return true
     const hay = [c.url, c.title, c.body, c.source, c.external_id, ...c.keywords, ...c.tags]
-      .join(' ').toLowerCase()
+      .join(' ')
+      .toLowerCase()
     return terms.every((t) => hay.includes(t))
   }
 
-  return days
-    // Date first: a day outside the range is dropped whole, so the per-session
-    // and per-link predicates never run for it. `day.date` is already a
-    // YYYY-MM-DD key, which compares correctly as a string.
-    .filter((d) => (!f.from || d.date >= f.from) && (!f.to || d.date <= f.to))
-    .map((d) => ({
-      date: d.date,
-      sessions: d.sessions.filter(sessionMatches),
-      context: d.context.filter(contextMatches),
-    }))
-    .filter((d) => d.sessions.length || d.context.length)
+  return (
+    days
+      // Date first: a day outside the range is dropped whole, so the per-session
+      // and per-link predicates never run for it. `day.date` is already a
+      // YYYY-MM-DD key, which compares correctly as a string.
+      .filter((d) => (!f.from || d.date >= f.from) && (!f.to || d.date <= f.to))
+      .map((d) => ({
+        date: d.date,
+        sessions: d.sessions.filter(sessionMatches),
+        context: d.context.filter(contextMatches),
+      }))
+      .filter((d) => d.sessions.length || d.context.length)
+  )
 }
 
 export function facets(sessions: Session[]) {

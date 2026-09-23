@@ -3,7 +3,7 @@ import type { User } from 'firebase/auth'
 
 import AdminShell from './AdminShell'
 import DateRange from '../components/DateRange'
-import { inputSm } from '../lib/ui'
+import { banner, inputSm } from '../lib/ui'
 import Facet from '../components/Facet'
 import LinkRow from '../components/LinkRow'
 import SessionDetail from '../components/SessionDetail'
@@ -68,7 +68,11 @@ export default function Admin({ user }: { user: User | null }) {
   const days = useMemo(
     () =>
       applyFilters(groupByDay(sessions, context), {
-        projects, users, providers, query, ...range,
+        projects,
+        users,
+        providers,
+        query,
+        ...range,
       }),
     [sessions, context, projects, users, providers, query, range],
   )
@@ -81,7 +85,11 @@ export default function Admin({ user }: { user: User | null }) {
   const links = useMemo(() => mergeContext(days), [days])
 
   const rows = useMemo(
-    () => toRows(days.flatMap((d) => d.sessions), agentCounts),
+    () =>
+      toRows(
+        days.flatMap((d) => d.sessions),
+        agentCounts,
+      ),
     [days, agentCounts],
   )
 
@@ -106,12 +114,27 @@ export default function Admin({ user }: { user: User | null }) {
           <DateRange from={range.from} to={range.to} onChange={setRange} />
 
           <nav aria-label="Filters" className="facets">
-            <Facet title="Project" options={f.projects} selected={projects} onChange={setProjects}
-              counts={countBy(sessions, (s) => s.project)} />
-            <Facet title="Provider" options={f.providers} selected={providers} onChange={setProviders}
-              counts={countBy(sessions, (s) => s.provider)} />
-            <Facet title="User" options={f.users} selected={users} onChange={setUsers}
-              counts={countBy(sessions, (s) => s.os_user)} />
+            <Facet
+              title="Project"
+              options={f.projects}
+              selected={projects}
+              onChange={setProjects}
+              counts={countBy(sessions, (s) => s.project)}
+            />
+            <Facet
+              title="Provider"
+              options={f.providers}
+              selected={providers}
+              onChange={setProviders}
+              counts={countBy(sessions, (s) => s.provider)}
+            />
+            <Facet
+              title="User"
+              options={f.users}
+              selected={users}
+              onChange={setUsers}
+              counts={countBy(sessions, (s) => s.os_user)}
+            />
           </nav>
         </>
       }
@@ -119,37 +142,44 @@ export default function Admin({ user }: { user: User | null }) {
       <Title>Session archive</Title>
 
       {source.name === 'not-connected' && (
-          <div className="banner">
-            No data source configured. Firestore is not wired up yet, so this dashboard is empty.
-          </div>
-        )}
+        <div className={banner}>
+          No data source configured. Firestore is not wired up yet, so this dashboard is empty.
+        </div>
+      )}
 
-        {isPending ? (
-          <Loading />
-        ) : problems.length ? (
-          <Failure detail={problems.join(' · ')} hint={FIRESTORE_HINT} />
-        ) : days.length === 0 ? (
-          <Nothing>{query ? `Nothing matches “${query}”.` : 'No sessions captured yet.'}</Nothing>
-        ) : (
-          <>
-            <p style={{ color: 'var(--text-3)', fontSize: 12, marginTop: 0 }}>
-              {shown} session{shown === 1 ? '' : 's'} across {days.length} day
-              {days.length === 1 ? '' : 's'}
-              {' · click a column to sort, a row to open it'}
-            </p>
+      {isPending ? (
+        <Loading />
+      ) : problems.length ? (
+        <Failure detail={problems.join(' · ')} hint={FIRESTORE_HINT} />
+      ) : days.length === 0 ? (
+        <Nothing>{query ? `Nothing matches “${query}”.` : 'No sessions captured yet.'}</Nothing>
+      ) : (
+        <>
+          <p style={{ color: 'var(--text-3)', fontSize: 12, marginTop: 0 }}>
+            {shown} session{shown === 1 ? '' : 's'} across {days.length} day
+            {days.length === 1 ? '' : 's'}
+            {' · click a column to sort, a row to open it'}
+          </p>
 
-            <SessionTable rows={rows} selectedId={selected?.session_id} onOpen={openSession} />
+          <SessionTable rows={rows} selectedId={selected?.session_id} onOpen={openSession} />
 
-            {links.length > 0 && (
-              <section style={{ marginTop: 20 }}>
-                <h2 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-3)' }}>
-                  Links in view
-                </h2>
-                <LinkRow items={links} />
-              </section>
-            )}
-          </>
-        )}
+          {links.length > 0 && (
+            <section style={{ marginTop: 20 }}>
+              <h2
+                style={{
+                  fontSize: 12,
+                  textTransform: 'uppercase',
+                  letterSpacing: '.06em',
+                  color: 'var(--text-3)',
+                }}
+              >
+                Links in view
+              </h2>
+              <LinkRow items={links} />
+            </section>
+          )}
+        </>
+      )}
     </AdminShell>
   )
 }

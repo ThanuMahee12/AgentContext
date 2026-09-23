@@ -27,9 +27,9 @@ import { readTheme } from '../lib/theme'
  * three children are alive at any moment (CHILD_LIFE / SPAWN_EVERY), each one
  * crossing its arc over five seconds. */
 const ROOTS = 11
-const CHILDREN = 64          // pool, reused - nothing is allocated per spawn
-const SPAWN_EVERY = 1.4      // seconds between spawns
-const CHILD_LIFE = 5.0       // seconds from spawn to gone
+const CHILDREN = 64 // pool, reused - nothing is allocated per spawn
+const SPAWN_EVERY = 1.4 // seconds between spawns
+const CHILD_LIFE = 5.0 // seconds from spawn to gone
 const FIELD = 15
 
 export default function AgentField() {
@@ -68,13 +68,21 @@ export default function AgentField() {
     for (let i = 0; i < ROOTS; i++) {
       const a = (i / ROOTS) * Math.PI * 2 + Math.random() * 0.4
       const r = FIELD * (0.55 + Math.random() * 0.45)
-      roots.push(new THREE.Vector3(Math.cos(a) * r * 1.5, Math.sin(a) * r, (Math.random() - 0.5) * 10))
+      roots.push(
+        new THREE.Vector3(Math.cos(a) * r * 1.5, Math.sin(a) * r, (Math.random() - 0.5) * 10),
+      )
     }
 
     const rootGeo = new THREE.BufferGeometry().setFromPoints(roots)
     const rootPts = new THREE.Points(
       rootGeo,
-      new THREE.PointsMaterial({ color: idle, size: 0.46, transparent: true, opacity: 0.6, sizeAttenuation: true }),
+      new THREE.PointsMaterial({
+        color: idle,
+        size: 0.46,
+        transparent: true,
+        opacity: 0.6,
+        sizeAttenuation: true,
+      }),
     )
     scene.add(rootPts)
 
@@ -92,7 +100,13 @@ export default function AgentField() {
     childGeo.setAttribute('alpha', new THREE.BufferAttribute(cAlpha, 1))
     const childPts = new THREE.Points(
       childGeo,
-      new THREE.PointsMaterial({ color: hue, size: 0.3, transparent: true, opacity: 0.8, sizeAttenuation: true }),
+      new THREE.PointsMaterial({
+        color: hue,
+        size: 0.3,
+        transparent: true,
+        opacity: 0.8,
+        sizeAttenuation: true,
+      }),
     )
     scene.add(childPts)
 
@@ -113,7 +127,9 @@ export default function AgentField() {
       cursor = (cursor + 1) % CHILDREN
       const a = Math.random() * Math.PI * 2
       const reach = 2.4 + Math.random() * 3.6
-      from[i * 3] = parent.x; from[i * 3 + 1] = parent.y; from[i * 3 + 2] = parent.z
+      from[i * 3] = parent.x
+      from[i * 3 + 1] = parent.y
+      from[i * 3 + 2] = parent.z
       to[i * 3] = parent.x + Math.cos(a) * reach
       to[i * 3 + 1] = parent.y + Math.sin(a) * reach
       to[i * 3 + 2] = parent.z + (Math.random() - 0.5) * 3
@@ -123,7 +139,11 @@ export default function AgentField() {
     const step = (t: number) => {
       for (let i = 0; i < CHILDREN; i++) {
         const age = t - born[i]
-        if (age < 0 || age > CHILD_LIFE) { cAlpha[i] = 0; linePos.fill(0, i * 6, i * 6 + 6); continue }
+        if (age < 0 || age > CHILD_LIFE) {
+          cAlpha[i] = 0
+          linePos.fill(0, i * 6, i * 6 + 6)
+          continue
+        }
         const k = age / CHILD_LIFE
         // Quadratic, not cubic. The cubic version launched each child hard
         // enough to catch the eye away from the form; this crosses the same
@@ -132,10 +152,16 @@ export default function AgentField() {
         const x = from[i * 3] + (to[i * 3] - from[i * 3]) * ease
         const y = from[i * 3 + 1] + (to[i * 3 + 1] - from[i * 3 + 1]) * ease
         const z = from[i * 3 + 2] + (to[i * 3 + 2] - from[i * 3 + 2]) * ease
-        cPos[i * 3] = x; cPos[i * 3 + 1] = y; cPos[i * 3 + 2] = z
+        cPos[i * 3] = x
+        cPos[i * 3 + 1] = y
+        cPos[i * 3 + 2] = z
         cAlpha[i] = Math.sin(k * Math.PI)
-        linePos[i * 6] = from[i * 3]; linePos[i * 6 + 1] = from[i * 3 + 1]; linePos[i * 6 + 2] = from[i * 3 + 2]
-        linePos[i * 6 + 3] = x; linePos[i * 6 + 4] = y; linePos[i * 6 + 5] = z
+        linePos[i * 6] = from[i * 3]
+        linePos[i * 6 + 1] = from[i * 3 + 1]
+        linePos[i * 6 + 2] = from[i * 3 + 2]
+        linePos[i * 6 + 3] = x
+        linePos[i * 6 + 4] = y
+        linePos[i * 6 + 5] = z
       }
       childGeo.attributes.position.needsUpdate = true
       lineGeo.attributes.position.needsUpdate = true
@@ -153,7 +179,10 @@ export default function AgentField() {
       const dt = Math.min(last ? now - last : 0, 0.05) // a backgrounded tab must not jump
       last = now
       clock += dt
-      if (clock >= nextSpawn) { spawn(clock); nextSpawn = clock + SPAWN_EVERY * (0.6 + Math.random()) }
+      if (clock >= nextSpawn) {
+        spawn(clock)
+        nextSpawn = clock + SPAWN_EVERY * (0.6 + Math.random())
+      }
       step(clock)
       // Half the amplitude and two-thirds the rate of the first pass: enough
       // parallax that the field is not flat, not enough to register as motion.
@@ -161,8 +190,18 @@ export default function AgentField() {
       renderer.render(scene, camera)
     }
 
-    const start = () => { if (!frame && !still) { last = 0; frame = requestAnimationFrame(draw) } }
-    const stop = () => { if (frame) { cancelAnimationFrame(frame); frame = 0 } }
+    const start = () => {
+      if (!frame && !still) {
+        last = 0
+        frame = requestAnimationFrame(draw)
+      }
+    }
+    const stop = () => {
+      if (frame) {
+        cancelAnimationFrame(frame)
+        frame = 0
+      }
+    }
     const onVisibility = () => (document.hidden ? stop() : start())
 
     if (still) {
@@ -189,7 +228,9 @@ export default function AgentField() {
       stop()
       document.removeEventListener('visibilitychange', onVisibility)
       resize.disconnect()
-      rootGeo.dispose(); childGeo.dispose(); lineGeo.dispose()
+      rootGeo.dispose()
+      childGeo.dispose()
+      lineGeo.dispose()
       ;(rootPts.material as THREE.Material).dispose()
       ;(childPts.material as THREE.Material).dispose()
       ;(lines.material as THREE.Material).dispose()

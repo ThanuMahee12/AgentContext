@@ -104,7 +104,13 @@ function Branch({
       {open && (
         <div className="kids">
           {node.children.map((c) => (
-            <Branch key={c.path} node={c} basePath={basePath} depth={depth + 1} searching={searching} />
+            <Branch
+              key={c.path}
+              node={c}
+              basePath={basePath}
+              depth={depth + 1}
+              searching={searching}
+            />
           ))}
           {node.docs.map((d) => (
             <Leaf key={d.path ?? d.id} doc={d} basePath={basePath} depth={depth + 1} />

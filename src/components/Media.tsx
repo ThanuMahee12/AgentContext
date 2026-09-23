@@ -34,7 +34,10 @@ const EMBEDS: Array<{ test: RegExp; src: (u: URL) => string | null; title: strin
   {
     title: 'Loom',
     test: /(^|\.)loom\.com$/i,
-    src: (u) => u.pathname.replace('/share/', '/embed/') ? `https://www.loom.com${u.pathname.replace('/share/', '/embed/')}` : null,
+    src: (u) =>
+      u.pathname.replace('/share/', '/embed/')
+        ? `https://www.loom.com${u.pathname.replace('/share/', '/embed/')}`
+        : null,
   },
   {
     title: 'CodePen',

@@ -68,7 +68,10 @@ export default function AdminShell({
             from moving around inside it. */}
         <div className="ml-auto flex items-center gap-[14px] border-l border-line pl-4">
           {/* A dashboard with no way back to the site it belongs to is a dead end. */}
-          <Link className="text-[13px] font-medium text-text-2 no-underline hover:text-hue" to="/catchup">
+          <Link
+            className="text-[13px] font-medium text-text-2 no-underline hover:text-hue"
+            to="/catchup"
+          >
             Daily Catchup
           </Link>
           <Link className="text-[13px] font-medium text-text-2 no-underline hover:text-hue" to="/">
@@ -95,7 +98,7 @@ export default function AdminShell({
       {/* The detail panel is a flex sibling of the main column, never a child:
           .detail is flex: 0 0 min(52%, 720px) against this row. */}
       <div className="flex min-h-0 min-w-0">
-        <main className="min-w-0 grow overflow-auto px-6 pb-[72px] pt-[22px]">{children}</main>
+        <main className="min-w-0 grow overflow-auto px-6 pt-[22px] pb-[72px]">{children}</main>
         {panel}
       </div>
     </div>

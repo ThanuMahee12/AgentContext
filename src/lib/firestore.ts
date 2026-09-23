@@ -12,14 +12,7 @@
  *  loaded per session when a card is opened.
  */
 
-import {
-  collection,
-  collectionGroup,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-} from 'firebase/firestore'
+import { collection, collectionGroup, getDocs, limit, orderBy, query } from 'firebase/firestore'
 
 import { db } from '../firebase'
 import type { Command, ContextItem, Session } from '../types'

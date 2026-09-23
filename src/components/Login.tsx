@@ -107,9 +107,7 @@ export default function Login() {
   const copyRequest = handleSubmit(async ({ email }) => {
     setFailure('')
     try {
-      await navigator.clipboard.writeText(
-        `Please add ${email.trim()} to the Agentix viewer list.`,
-      )
+      await navigator.clipboard.writeText(`Please add ${email.trim()} to the Agentix viewer list.`)
       setCopied(true)
     } catch {
       setFailure('Could not reach the clipboard. Select the address and copy it by hand.')
@@ -146,8 +144,8 @@ export default function Login() {
             Every session your agents run, kept where you can read it back.
           </p>
           <p className="mt-[18px] max-w-[36ch] text-[13.5px] leading-[1.6] text-text-2">
-            Commands, files and transcripts from Claude Code, Gemini CLI and Antigravity.
-            Readable only by named addresses.
+            Commands, files and transcripts from Claude Code, Gemini CLI and Antigravity. Readable
+            only by named addresses.
           </p>
         </div>
       </aside>
@@ -163,115 +161,116 @@ export default function Login() {
 
           <section aria-labelledby="auth-heading">
             <h1
-              className="m-0 text-[24px] font-semibold leading-tight tracking-[-0.02em] text-text"
+              className="m-0 text-[24px] leading-tight font-semibold tracking-[-0.02em] text-text"
               id="auth-heading"
             >
-            {copy.title}
-          </h1>
-          {mode === 'signin' && (
-            <p className="mt-[7px] text-[13.5px] leading-[1.55] text-text-muted">
-              Access is limited to named addresses.
-            </p>
-          )}
-
-          {mode === 'request' ? (
-            <>
-              <p className={NOTE + ' mt-6'}>
-                Accounts are not created here. An owner adds your address to the viewer list,
-                and you sign in with it afterwards.
+              {copy.title}
+            </h1>
+            {mode === 'signin' && (
+              <p className="mt-[7px] text-[13.5px] leading-[1.55] text-text-muted">
+                Access is limited to named addresses.
               </p>
+            )}
 
-              <Field
-                label="Your email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                registration={register('email', {
-                  ...EMAIL_RULES,
-                  required: 'Enter the address you want added.',
-                })}
-                error={errors.email?.message}
-              />
-
-              {failure && (
-                <p className={MESSAGE + ' border-err/30 bg-err-soft text-err'} role="alert">
-                  {failure}
+            {mode === 'request' ? (
+              <>
+                <p className={NOTE + ' mt-6'}>
+                  Accounts are not created here. An owner adds your address to the viewer list, and
+                  you sign in with it afterwards.
                 </p>
-              )}
 
-              <button className={SUBMIT} type="button" onClick={copyRequest}>
-                {copied ? 'Copied' : copy.action}
-              </button>
-
-              <p className={NOTE + ' mb-0 mt-3'}>
-                Nothing is sent from this page. Copying puts one line on your clipboard to pass
-                to whoever runs the archive.
-              </p>
-            </>
-          ) : (
-            <form onSubmit={onSubmit} noValidate className="mt-6">
-              <Field
-                label="Email"
-                type="email"
-                autoComplete="username"
-                autoFocus
-                registration={register('email', EMAIL_RULES)}
-                error={errors.email?.message}
-              />
-
-              {mode === 'signin' && (
                 <Field
-                  label="Password"
-                  type="password"
-                  autoComplete="current-password"
-                  registration={register('password', { required: 'Enter your password.' })}
-                  error={errors.password?.message}
-                  action={
-                    <button type="button" className={LINK} onClick={() => go('reset')}>
-                      Forgot it?
-                    </button>
-                  }
+                  label="Your email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  registration={register('email', {
+                    ...EMAIL_RULES,
+                    required: 'Enter the address you want added.',
+                  })}
+                  error={errors.email?.message}
                 />
-              )}
 
-              {mode === 'reset' && !sentTo && (
-                <p className={NOTE}>
-                  We send a link to this address if an account uses it. The link expires in an hour.
+                {failure && (
+                  <p className={MESSAGE + ' border-err/30 bg-err-soft text-err'} role="alert">
+                    {failure}
+                  </p>
+                )}
+
+                <button className={SUBMIT} type="button" onClick={copyRequest}>
+                  {copied ? 'Copied' : copy.action}
+                </button>
+
+                <p className={NOTE + ' mt-3 mb-0'}>
+                  Nothing is sent from this page. Copying puts one line on your clipboard to pass to
+                  whoever runs the archive.
                 </p>
-              )}
+              </>
+            ) : (
+              <form onSubmit={onSubmit} noValidate className="mt-6">
+                <Field
+                  label="Email"
+                  type="email"
+                  autoComplete="username"
+                  autoFocus
+                  registration={register('email', EMAIL_RULES)}
+                  error={errors.email?.message}
+                />
 
-              {sentTo && (
-                <p className={MESSAGE + ' border-ok/30 bg-ok-soft text-ok'} role="status">
-                  Check {sentTo} for the reset link. It expires in an hour.
-                </p>
-              )}
+                {mode === 'signin' && (
+                  <Field
+                    label="Password"
+                    type="password"
+                    autoComplete="current-password"
+                    registration={register('password', { required: 'Enter your password.' })}
+                    error={errors.password?.message}
+                    action={
+                      <button type="button" className={LINK} onClick={() => go('reset')}>
+                        Forgot it?
+                      </button>
+                    }
+                  />
+                )}
 
-              {failure && (
-                <p className={MESSAGE + ' border-err/30 bg-err-soft text-err'} role="alert">
-                  {failure}
-                </p>
-              )}
+                {mode === 'reset' && !sentTo && (
+                  <p className={NOTE}>
+                    We send a link to this address if an account uses it. The link expires in an
+                    hour.
+                  </p>
+                )}
 
-              <button className={SUBMIT} type="submit" disabled={isSubmitting}>
-                {isSubmitting ? copy.busy : copy.action}
-              </button>
-            </form>
-          )}
+                {sentTo && (
+                  <p className={MESSAGE + ' border-ok/30 bg-ok-soft text-ok'} role="status">
+                    Check {sentTo} for the reset link. It expires in an hour.
+                  </p>
+                )}
 
-          {/* An only child pushes itself right, so a single link never sits
+                {failure && (
+                  <p className={MESSAGE + ' border-err/30 bg-err-soft text-err'} role="alert">
+                    {failure}
+                  </p>
+                )}
+
+                <button className={SUBMIT} type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? copy.busy : copy.action}
+                </button>
+              </form>
+            )}
+
+            {/* An only child pushes itself right, so a single link never sits
               off-centre under the divider. */}
-          <nav className="mt-[22px] flex justify-between gap-3 border-t border-line pt-[18px] [&>*:only-child]:ml-auto">
-            {mode !== 'signin' && (
-              <button type="button" className={LINK} onClick={() => go('signin')}>
-                Back to sign in
-              </button>
-            )}
-            {mode !== 'request' && (
-              <button type="button" className={LINK} onClick={() => go('request')}>
-                No account?
-              </button>
-            )}
-          </nav>
+            <nav className="mt-[22px] flex justify-between gap-3 border-t border-line pt-[18px] [&>*:only-child]:ml-auto">
+              {mode !== 'signin' && (
+                <button type="button" className={LINK} onClick={() => go('signin')}>
+                  Back to sign in
+                </button>
+              )}
+              {mode !== 'request' && (
+                <button type="button" className={LINK} onClick={() => go('request')}>
+                  No account?
+                </button>
+              )}
+            </nav>
           </section>
         </div>
       </main>

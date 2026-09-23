@@ -121,3 +121,10 @@ body {
 }
 
 /* ---------------------------------------------------------------- shell -- */
+
+/* Stays CSS, and has to: a utility cannot select `*`. Everything the site
+   animates is switched off in one rule rather than per component, which is the
+   only way a later component cannot forget to honour it. */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

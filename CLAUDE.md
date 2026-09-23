@@ -71,9 +71,11 @@ src/
 │                       source (DataSource), firestore, published,
 │                       fixtures.json (git-ignored)
 ├── store/              uiSlice only — search text, tag filter, nav state
-└── styles/             index.css imports the rest in cascade order;
-                        tailwind-plus.css is scoped preflight, in @layer base
-                        so utilities outrank it
+├── lib/ui.ts           shared control styles, as class strings
+└── styles/             .scss for what utilities cannot say; index.css imports
+                        them in cascade order. tailwind.css and
+                        tailwind-plus.css stay .css — their `@import … layer()`
+                        directives must not pass through Sass
 ```
 
 No `web/`, no mkdocs, no `src/data`, and **no bundled content**.
@@ -157,18 +159,50 @@ instead of leaking.
 
 ## Styling
 
-**Tailwind first. New UI is utilities; a stylesheet is the exception.** The
-hand-written CSS is being migrated out, not extended. `Login.tsx`,
-`AdminShell.tsx` and `Facet.tsx` are fully on utilities and `styles/auth.css`
-is deleted; what remains under `styles/` is the public site, the table and the
-tokens.
+### The order to reach for things
+
+1. **A Tailwind utility.** This is the default and covers most of it.
+2. **A shared string in `lib/ui.ts`** when the same control appears twice —
+   `inputSm`, `inputLg`, `linkButton`, `outlineButton`, `primaryButton`,
+   `iconButton`, `banner`, `menuPanel`. Six components were each spelling out
+   their own input and the three had already drifted by a pixel of padding and
+   a step of font size. Utilities do not prevent that; they move the
+   copy-paste from a stylesheet into JSX.
+   Strings, not components: `react-datepicker` takes a `className` and renders
+   its own `<input>`, so a `<TextInput>` could not be used there at all.
+3. **SCSS, only for what a utility cannot say.** The hand-written stylesheets
+   are `.scss` now. Legitimate reasons to be there:
+   - a global selector — `* { animation: none }` under
+     `prefers-reduced-motion`, which is the only way a later component cannot
+     forget to honour it;
+   - markup owned by a library, where there is nothing to put a `className` on
+     (`styles/datepicker.scss`);
+   - a multi-layer gradient like `.wordmark .glyph`;
+   - the token definitions themselves.
+
+   "It was easier" is not one of them. The stylesheets are shrinking, not
+   growing: 2003 lines when this started, and `auth.css` and `ui.scss` are
+   already gone.
 
 **A migrated subtree must carry `.tw-scope`.** Preflight is not global here, so
 outside it `border` draws nothing and an `<input>` renders in the browser's own
 font. That is the whole reason the class exists.
 
-Keep as CSS only what a utility genuinely cannot say: `.wordmark`/`.glyph` (a
-four-layer gradient, shared with the public shell) and the token definitions.
+**Check a new utility compiled.** A colour that is not mapped in
+`tailwind.css` is not a class, and a class that does not exist fails silently —
+it simply renders nothing. `bg-ok-soft`, `bg-err-soft`, `bg-navy` and
+`bg-accent-soft` all needed mapping before they worked:
+
+```bash
+npm run build && grep -o '\.bg-navy{[^}]*}' dist/assets/*.css
+```
+
+**Which chunk a stylesheet lands in decides the cascade.** `styles/datepicker.scss`
+is imported from `DateRange.tsx` immediately after the library's own sheet so
+both land in the lazy `/admin` chunk in that order. It first sat in the eager
+bundle while the library's CSS arrived lazily — so the light theme loaded
+second and won. Same failure as the scoped preflight: source order means
+nothing until you know which chunk each file is in.
 
 - **Tokens are the single source of truth.** `styles/tailwind.css` maps every
   Tailwind colour onto the variable that already defines it, so `bg-surface`
@@ -335,12 +369,23 @@ reads no `.md` files.
 Nothing is run by hand. `predev` and `prebuild` are npm lifecycle hooks.
 
 ```bash
-npm run dev        # fixtures if present
-npm run build      # typecheck + bundle
-npm run verify     # assert no local session data reached dist/
+npm run dev           # fixtures if present
+npm run build         # typecheck + bundle
+npm run verify        # assert no local session data reached dist/
 npm run typecheck
+npm run format        # prettier, incl. Tailwind class sorting
+npm run format:check
 ./scripts/export-fixtures.sh [path-to-AgentProbe]
 ```
+
+`prettier-plugin-tailwindcss` sorts the utilities in `className` — so a class
+list has one canonical order and two components cannot write the same set of
+utilities in two orders. It sorts **attributes**, not bare string constants, so
+the strings in `lib/ui.ts` are left alone; `tailwindFunctions` in
+`.prettierrc.json` is where to add a helper if one is ever introduced.
+
+The house style is in `.prettierrc.json`: no semicolons, single quotes, 100
+columns, trailing commas — which is what the code already was.
 
 `scripts/verify-bundle.mjs` is a security control, not a lint step: Hosting is
 public, and it fails the build if strings from `lib/fixtures.json` — real

@@ -72,7 +72,8 @@ export default function CatchupScene({
     } catch {
       // Software rendering, a blocked context, an old machine. A dead canvas
       // with no explanation is worse than the 2D view the page already has.
-      host.textContent = 'This browser cannot open a 3D context. The calendar view above still works.'
+      host.textContent =
+        'This browser cannot open a 3D context. The calendar view above still works.'
       return
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -190,13 +191,17 @@ export default function CatchupScene({
     const onMove = (e: PointerEvent) => {
       const i = hit(e)
       renderer.domElement.style.cursor = i == null ? 'grab' : 'pointer'
-      renderer.domElement.title = i == null ? '' :
-        `${bars[i].date} · ${bars[i].sessions} session${bars[i].sessions === 1 ? '' : 's'}` +
-        ` · ${bars[i].commands} command${bars[i].commands === 1 ? '' : 's'}`
+      renderer.domElement.title =
+        i == null
+          ? ''
+          : `${bars[i].date} · ${bars[i].sessions} session${bars[i].sessions === 1 ? '' : 's'}` +
+            ` · ${bars[i].commands} command${bars[i].commands === 1 ? '' : 's'}`
     }
     // Distinguish a click from the end of a drag: orbiting past a bar should
     // not select it.
-    const onDown = (e: PointerEvent) => { downAt = { x: e.clientX, y: e.clientY } }
+    const onDown = (e: PointerEvent) => {
+      downAt = { x: e.clientX, y: e.clientY }
+    }
     const onUp = (e: PointerEvent) => {
       if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 4) return
       const i = hit(e)
@@ -221,7 +226,10 @@ export default function CatchupScene({
     resize.observe(host)
 
     // Re-colour without rebuilding when the page's selected day changes.
-    const recolour = () => { layout(); invalidate() }
+    const recolour = () => {
+      layout()
+      invalidate()
+    }
     relayoutRef.current = recolour
 
     // --- teardown -----------------------------------------------------------
@@ -249,7 +257,9 @@ export default function CatchupScene({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data])
 
-  useEffect(() => { relayoutRef.current?.() }, [selected])
+  useEffect(() => {
+    relayoutRef.current?.()
+  }, [selected])
 
   return (
     <div

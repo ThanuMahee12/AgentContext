@@ -24,7 +24,7 @@ export default function Markdown({ source }: { source: string }) {
   // `prose` carries the document typography; `prose-doc` points its colours at
   // the design tokens. max-w-none because the column is already constrained by
   // the page, and prose would otherwise impose a second, narrower measure.
-  return <div className="md prose prose-doc max-w-none">{renderBlocks(source)}</div>
+  return <div className="md prose max-w-none prose-doc">{renderBlocks(source)}</div>
 }
 
 function renderBlocks(src: string): ReactNode[] {
@@ -36,7 +36,10 @@ function renderBlocks(src: string): ReactNode[] {
   while (i < lines.length) {
     const line = lines[i]
 
-    if (!line.trim()) { i++; continue }
+    if (!line.trim()) {
+      i++
+      continue
+    }
 
     // fenced code
     if (line.trimStart().startsWith('```')) {
@@ -69,28 +72,51 @@ function renderBlocks(src: string): ReactNode[] {
     const h = line.match(/^(#{1,6})\s+(.*)$/)
     if (h) {
       const depth = Math.min(h[1].length, 6)
-      const Tag = (`h${Math.min(depth + 1, 6)}`) as 'h2'
-      out.push(<Tag key={key++} id={slug(h[2])}>{inline(h[2])}</Tag>)
+      const Tag = `h${Math.min(depth + 1, 6)}` as 'h2'
+      out.push(
+        <Tag key={key++} id={slug(h[2])}>
+          {inline(h[2])}
+        </Tag>,
+      )
       i++
       continue
     }
 
     // horizontal rule
-    if (/^\s*([-*_])\1{2,}\s*$/.test(line)) { out.push(<hr key={key++} />); i++; continue }
+    if (/^\s*([-*_])\1{2,}\s*$/.test(line)) {
+      out.push(<hr key={key++} />)
+      i++
+      continue
+    }
 
     // table: a header row followed by a delimiter row
-    if (line.includes('|') && i + 1 < lines.length && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i + 1])) {
+    if (
+      line.includes('|') &&
+      i + 1 < lines.length &&
+      /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i + 1])
+    ) {
       const head = splitRow(line)
       i += 2
       const rows: string[][] = []
-      while (i < lines.length && lines[i].includes('|') && lines[i].trim()) rows.push(splitRow(lines[i++]))
+      while (i < lines.length && lines[i].includes('|') && lines[i].trim())
+        rows.push(splitRow(lines[i++]))
       out.push(
         <div className="md-tablewrap" key={key++}>
           <table>
-            <thead><tr>{head.map((c, n) => <th key={n}>{inline(c)}</th>)}</tr></thead>
+            <thead>
+              <tr>
+                {head.map((c, n) => (
+                  <th key={n}>{inline(c)}</th>
+                ))}
+              </tr>
+            </thead>
             <tbody>
               {rows.map((r, n) => (
-                <tr key={n}>{r.map((c, m) => <td key={m}>{inline(c)}</td>)}</tr>
+                <tr key={n}>
+                  {r.map((c, m) => (
+                    <td key={m}>{inline(c)}</td>
+                  ))}
+                </tr>
               ))}
             </tbody>
           </table>
@@ -119,21 +145,34 @@ function renderBlocks(src: string): ReactNode[] {
       while (i < lines.length && re.test(lines[i])) {
         let item = lines[i++].replace(re, '')
         // continuation lines belong to the item above
-        while (i < lines.length && lines[i].trim() && !re.test(lines[i]) &&
-               !/^(#{1,6}\s|```|>|\s*([-*_])\2{2,})/.test(lines[i])) {
+        while (
+          i < lines.length &&
+          lines[i].trim() &&
+          !re.test(lines[i]) &&
+          !/^(#{1,6}\s|```|>|\s*([-*_])\2{2,})/.test(lines[i])
+        ) {
           item += ' ' + lines[i++].trim()
         }
         items.push(item)
       }
       const List = ordered ? 'ol' : 'ul'
-      out.push(<List key={key++}>{items.map((t, n) => <li key={n}>{inline(t)}</li>)}</List>)
+      out.push(
+        <List key={key++}>
+          {items.map((t, n) => (
+            <li key={n}>{inline(t)}</li>
+          ))}
+        </List>,
+      )
       continue
     }
 
     // paragraph
     const para: string[] = []
-    while (i < lines.length && lines[i].trim() &&
-           !/^(#{1,6}\s|```|>|\s*[-*+]\s|\s*\d+[.)]\s)/.test(lines[i])) {
+    while (
+      i < lines.length &&
+      lines[i].trim() &&
+      !/^(#{1,6}\s|```|>|\s*[-*+]\s|\s*\d+[.)]\s)/.test(lines[i])
+    ) {
       para.push(lines[i++])
     }
     out.push(<p key={key++}>{inline(para.join(' '))}</p>)
@@ -143,18 +182,26 @@ function renderBlocks(src: string): ReactNode[] {
 }
 
 function splitRow(line: string): string[] {
-  return line.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map((c) => c.trim())
+  return line
+    .replace(/^\s*\|/, '')
+    .replace(/\|\s*$/, '')
+    .split('|')
+    .map((c) => c.trim())
 }
 
 export function slug(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
 }
 
 /** Inline spans: code, links, bold, italic. Code is matched first so markup
  *  inside a code span is left alone. */
 function inline(text: string): ReactNode {
   const parts: ReactNode[] = []
-  const re = /(`[^`]+`)|(!\[[^\]]*\]\([^)]+\))|(\[[^\]]+\]\([^)]+\))|(\*\*[^*]+\*\*)|(\*[^*]+\*|_[^_]+_)|(https?:\/\/[^\s<>()]+)/g
+  const re =
+    /(`[^`]+`)|(!\[[^\]]*\]\([^)]+\))|(\[[^\]]+\]\([^)]+\))|(\*\*[^*]+\*\*)|(\*[^*]+\*|_[^_]+_)|(https?:\/\/[^\s<>()]+)/g
   let last = 0
   let m: RegExpExecArray | null
   let key = 0
@@ -166,16 +213,26 @@ function inline(text: string): ReactNode {
       parts.push(<code key={key++}>{tok.slice(1, -1)}</code>)
     } else if (tok.startsWith('![')) {
       const img = tok.match(/^!\[([^\]]*)\]\(([^)]+)\)$/)!
-      parts.push(<img className="inline-img" key={key++} src={img[2]} alt={img[1]} loading="lazy" />)
+      parts.push(
+        <img className="inline-img" key={key++} src={img[2]} alt={img[1]} loading="lazy" />,
+      )
     } else if (tok.startsWith('[')) {
       const link = tok.match(/^\[([^\]]+)\]\(([^)]+)\)$/)!
-      parts.push(<a key={key++} href={link[2]} target="_blank" rel="noreferrer noopener">{link[1]}</a>)
+      parts.push(
+        <a key={key++} href={link[2]} target="_blank" rel="noreferrer noopener">
+          {link[1]}
+        </a>,
+      )
     } else if (tok.startsWith('**')) {
       parts.push(<strong key={key++}>{tok.slice(2, -2)}</strong>)
     } else if (tok.startsWith('*') || tok.startsWith('_')) {
       parts.push(<em key={key++}>{tok.slice(1, -1)}</em>)
     } else {
-      parts.push(<a key={key++} href={tok} target="_blank" rel="noreferrer noopener">{tok}</a>)
+      parts.push(
+        <a key={key++} href={tok} target="_blank" rel="noreferrer noopener">
+          {tok}
+        </a>,
+      )
     }
     last = m.index + tok.length
   }

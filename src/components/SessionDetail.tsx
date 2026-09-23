@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { Nothing } from './State'
 import { commandState, failedCount } from '../lib/sessions'
+import { iconButton } from '../lib/ui'
 import type { Session } from '../types'
 
 type Tab = 'commands' | 'files' | 'meta'
@@ -9,9 +10,9 @@ type Tab = 'commands' | 'files' | 'meta'
 /** How a command's outcome is drawn. `unknown` is deliberately not a tick: the
  *  result was never seen in the transcript, which is not the same as success. */
 const MARKS = {
-  failed:  { className: 'err', glyph: '✗', title: 'returned an error' },
-  ok:      { className: 'ok',  glyph: '✓', title: 'completed' },
-  unknown: { className: '',    glyph: '·', title: 'result not recorded' },
+  failed: { className: 'err', glyph: '✗', title: 'returned an error' },
+  ok: { className: 'ok', glyph: '✓', title: 'completed' },
+  unknown: { className: '', glyph: '·', title: 'result not recorded' },
 } as const
 
 export default function SessionDetail({
@@ -35,7 +36,7 @@ export default function SessionDetail({
               {session.session_id} · {session.cwd}
             </div>
           </div>
-          <button className="iconbtn" onClick={onClose} aria-label="Close detail">
+          <button className={iconButton} onClick={onClose} aria-label="Close detail">
             Close
           </button>
         </div>
@@ -90,7 +91,9 @@ export default function SessionDetail({
           ))}
 
         {tab === 'meta' && (
-          <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 14px' }}>
+          <dl
+            style={{ margin: 0, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 14px' }}
+          >
             {(
               [
                 ['Provider', session.provider],
@@ -102,13 +105,23 @@ export default function SessionDetail({
                 ['Ended', session.ended],
                 ['Messages', String(session.message_count)],
                 ['Commands', `${session.command_count}${failed ? ` (${failed} failed)` : ''}`],
-                ['Transcript', `${(session.transcript_bytes / 1024).toFixed(0)} KB · ${session.transcript_chunks} chunk(s)`],
+                [
+                  'Transcript',
+                  `${(session.transcript_bytes / 1024).toFixed(0)} KB · ${session.transcript_chunks} chunk(s)`,
+                ],
                 ['Checksum', session.transcript_sha256.slice(0, 16) + '…'],
               ] as const
             ).map(([k, v]) => (
               <div key={k} style={{ display: 'contents' }}>
                 <dt style={{ color: 'var(--text-3)', fontSize: 12 }}>{k}</dt>
-                <dd style={{ margin: 0, fontFamily: 'var(--mono)', fontSize: 12, wordBreak: 'break-all' }}>
+                <dd
+                  style={{
+                    margin: 0,
+                    fontFamily: 'var(--mono)',
+                    fontSize: 12,
+                    wordBreak: 'break-all',
+                  }}
+                >
                   {v}
                 </dd>
               </div>
