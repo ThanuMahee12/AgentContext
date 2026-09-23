@@ -97,7 +97,7 @@ export default function Admin({ user }: { user: User | null }) {
     <AdminShell
       user={user}
       panel={selected && <SessionDetail session={selected} onClose={() => setSelected(null)} />}
-      toolbar={
+      aside={
         <>
           <label className="shrink basis-[300px]">
             <span className="sr">Search</span>

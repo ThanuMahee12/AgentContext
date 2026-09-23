@@ -281,32 +281,34 @@ The scene renders **on demand** — no permanent `requestAnimationFrame` loop �
 and takes its colours from `lib/theme.ts`, never from the component. It draws
 only the public `daily` totals; nothing from the private archive is in scope.
 
-## Two shells, and every signed-in screen uses one
+## One shell, two sets of slots
 
-`Layout.tsx` wraps the public routes; `AdminShell.tsx` wraps `/admin` and
-`/content`. Before it existed, Admin built its own copy of the sidebar, and
-three things were wrong at once: **`/content` was orphaned** — nothing linked to
-it, so the screen that publishes a draft to the internet was reachable only by
-typing the URL — the sidebar existed twice and the copies had drifted, and
-sign-out lived on one screen.
-
-There is no sidebar. A 250px column was taking a fifth of every screen to hold
-six links, on a page whose job is an eleven-column table; the nav is a row now,
-and the filters are a `toolbar` row under it, owned by the page because search
-and facets mean nothing on `/content`.
-
-It composes by props, not as a route layout:
+`components/Shell.tsx` is the frame for **both** halves. `Layout.tsx` fills its
+slots for the public routes, `AdminShell.tsx` for `/admin` and `/content`:
 
 ```tsx
-<AdminShell user={user} toolbar={<Facets/>} panel={<SessionDetail/>}>
+<Shell nav={…} aside={<Facets/>} foot={…} panel={<SessionDetail/>}>
 ```
+
+They had drifted into different shapes — a sidebar on one, a top bar on the
+other — and only the public one had a mobile drawer, so **on a phone the admin
+nav was unreachable**. One component means the drawer, the scrim, the Escape
+handler and close-on-navigate are written once and both halves get them.
+
+Slots, not variants: what differs is only *what* goes in the sidebar, never how
+the sidebar behaves. `aside` belongs to the page rather than the shell, because
+search and facets mean nothing on `/content`.
 
 `panel` is a sibling of `<main>`, never a child: `.detail` is
 `flex: 0 0 min(52%, 720px)` against the row they share, so nesting it in the
 main column collapses it into the scrolling body instead of splitting the row.
 
-A new signed-in screen goes in the `PRIVATE` array in that file and is reachable
-immediately. Do not add another `<aside className="sidenav">`.
+A new signed-in screen goes in the `PRIVATE` array in `AdminShell.tsx` and is
+reachable immediately. Do not build a second frame.
+
+**`/content` was orphaned once** — nothing linked to it, so the screen that
+publishes a draft to the internet was reachable only by typing the URL. That is
+what the shared nav prevents.
 
 ## Sign-in: three modes, still no self-registration
 

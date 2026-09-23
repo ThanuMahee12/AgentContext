@@ -1,13 +1,11 @@
-import { useEffect } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
-
-import Mark from '../components/Mark'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
+import Shell from '../components/Shell'
 import { SECTION_KEY, sections } from '../lib/sections'
 import { useAppDispatch, useAppSelector } from '../store'
 import { useContent } from '../lib/useContent'
-import { setNavOpen, setQuery } from '../store/uiSlice'
+import { setQuery } from '../store/uiSlice'
 
 /** The public shell.
  *
@@ -22,41 +20,14 @@ import { setNavOpen, setQuery } from '../store/uiSlice'
  */
 export default function PublicLayout() {
   const dispatch = useAppDispatch()
-  const { query, navOpen } = useAppSelector((s) => s.ui)
+  const { query } = useAppSelector((s) => s.ui)
   const { content } = useContent()
   const location = useLocation()
   const still = useReducedMotion()
 
-  useEffect(() => {
-    window.scrollTo(0, 0)
-    dispatch(setNavOpen(false))
-  }, [location.pathname, dispatch])
-
-  useEffect(() => {
-    if (!navOpen) return
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && dispatch(setNavOpen(false))
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [navOpen, dispatch])
-
   return (
-    <div className={'site' + (navOpen ? ' navopen' : '')}>
-      <button
-        className="drawertoggle"
-        onClick={() => dispatch(setNavOpen(!navOpen))}
-        aria-expanded={navOpen}
-        aria-controls="sidenav"
-      >
-        <span className="bars" aria-hidden />
-        {navOpen ? 'Close' : 'Menu'}
-      </button>
-
-      <aside className="sidenav" id="sidenav">
-        <Link to="/" className="wordmark">
-          <Mark />
-          Agentix
-        </Link>
-
+    <Shell
+      nav={
         <nav aria-label="Sections">
           {/* A section with nothing in it is a link to an empty page. Hide it
               until it has content, so the nav describes what is actually here. */}
@@ -101,78 +72,69 @@ export default function PublicLayout() {
             <span className="label">Daily Catchup</span>
           </NavLink>
         </nav>
-
-        <div className="navfoot">
-          <label className="find">
-            <span className="sr">Search</span>
-            <input
-              type="search"
-              value={query}
-              placeholder="Search"
-              onChange={(e) => dispatch(setQuery(e.target.value))}
-            />
-          </label>
-
-          <a
-            className="src"
-            href="https://github.com/ThanuMahee12/AgentContext"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            Source
-          </a>
-        </div>
-      </aside>
-
-      <button
-        className="scrim"
-        onClick={() => dispatch(setNavOpen(false))}
-        tabIndex={-1}
-        aria-hidden
-      />
-
-      <main className="sheet tw-scope">
-        {/* Top right, out of the sidebar. It leaves the public site for an
+      }
+      aside={
+        <label className="find">
+          <span className="sr">Search</span>
+          <input
+            type="search"
+            value={query}
+            placeholder="Search"
+            onChange={(e) => dispatch(setQuery(e.target.value))}
+          />
+        </label>
+      }
+      foot={
+        <a
+          className="src"
+          href="https://github.com/ThanuMahee12/AgentContext"
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          Source
+        </a>
+      }
+    >
+      {/* Top right, out of the sidebar. It leaves the public site for an
             authenticated one, so it does not belong in a list of sections -
             and in the footer it read as a fourth utility beside search and
             the source link rather than the way in. */}
-        <div className="mb-7 flex justify-end">
-          <a
-            href="/admin"
-            className="inline-flex items-center gap-2 rounded-s border border-field-line px-3 py-1.5 text-[12.5px] font-medium text-text-2 no-underline hover:border-hue hover:text-text"
+      <div className="mb-7 flex justify-end">
+        <a
+          href="/admin"
+          className="inline-flex items-center gap-2 rounded-s border border-field-line px-3 py-1.5 text-[12.5px] font-medium text-text-2 no-underline hover:border-hue hover:text-text"
+        >
+          <svg
+            width="11"
+            height="11"
+            viewBox="0 0 16 16"
+            fill="none"
+            aria-hidden
+            className="flex-none"
           >
-            <svg
-              width="11"
-              height="11"
-              viewBox="0 0 16 16"
-              fill="none"
-              aria-hidden
-              className="flex-none"
-            >
-              <path
-                d="M4.5 7V5a3.5 3.5 0 1 1 7 0v2"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-              />
-              <rect x="3" y="7" width="10" height="7" rx="1.6" fill="currentColor" />
-            </svg>
-            Sign in
-          </a>
-        </div>
+            <path
+              d="M4.5 7V5a3.5 3.5 0 1 1 7 0v2"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+            <rect x="3" y="7" width="10" height="7" rx="1.6" fill="currentColor" />
+          </svg>
+          Sign in
+        </a>
+      </div>
 
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={location.pathname}
-            initial={still ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={still ? undefined : { opacity: 0, y: -6 }}
-            transition={{ duration: still ? 0 : 0.22, ease: [0.2, 0.7, 0.3, 1] }}
-          >
-            <Outlet />
-          </motion.div>
-        </AnimatePresence>
-      </main>
-    </div>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={location.pathname}
+          initial={still ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={still ? undefined : { opacity: 0, y: -6 }}
+          transition={{ duration: still ? 0 : 0.22, ease: [0.2, 0.7, 0.3, 1] }}
+        >
+          <Outlet />
+        </motion.div>
+      </AnimatePresence>
+    </Shell>
   )
 }
