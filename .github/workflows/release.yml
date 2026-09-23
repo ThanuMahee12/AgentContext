@@ -68,7 +68,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Same npm major as the lockfile's author - see the note in ci.yml.
+          # This job runs `npm version`, which rewrites package-lock.json, so a
+          # mismatch here would commit a lock the gate cannot install.
+          node-version: '24'
 
       # Written before the version is bumped, so the "Release vX.Y.Z" commit
       # never appears in its own changelog.
