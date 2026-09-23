@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { User } from 'firebase/auth'
 
 import AdminShell from './AdminShell'
+import DateRange from '../components/DateRange'
 import Facet from '../components/Facet'
 import LinkRow from '../components/LinkRow'
 import SessionDetail from '../components/SessionDetail'
@@ -25,6 +26,7 @@ export default function Admin({ user }: { user: User | null }) {
 
   const [query, setQuery] = useState('')
   const [users, setUsers] = useState<string[]>([])
+  const [range, setRange] = useState<{ from?: string; to?: string }>({})
   const [projects, setProjects] = useState<string[]>([])
   const [providers, setProviders] = useState<string[]>([])
   const [selected, setSelected] = useState<Session | null>(null)
@@ -63,8 +65,11 @@ export default function Admin({ user }: { user: User | null }) {
   const agentCounts = useMemo(() => subagentCounts(sessions), [sessions])
 
   const days = useMemo(
-    () => applyFilters(groupByDay(sessions, context), { projects, users, providers, query }),
-    [sessions, context, projects, users, providers, query],
+    () =>
+      applyFilters(groupByDay(sessions, context), {
+        projects, users, providers, query, ...range,
+      }),
+    [sessions, context, projects, users, providers, query, range],
   )
 
   const shown = days.reduce((n, d) => n + d.sessions.length, 0)
@@ -96,6 +101,8 @@ export default function Admin({ user }: { user: User | null }) {
               className="h-8 w-full rounded-s border border-field-line bg-surface px-2.5 text-[13px] text-text outline-none placeholder:text-text-muted focus:border-hue"
             />
           </label>
+
+          <DateRange from={range.from} to={range.to} onChange={setRange} />
 
           <nav aria-label="Filters" className="facets">
             <Facet title="Project" options={f.projects} selected={projects} onChange={setProjects}

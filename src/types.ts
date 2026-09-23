@@ -83,6 +83,9 @@ export interface Filters {
   users: string[]
   providers: string[]
   query: string
+  /** Inclusive `YYYY-MM-DD` bounds. Either may be empty for an open end. */
+  from?: string
+  to?: string
 }
 
 /** A curated page published for public viewing.

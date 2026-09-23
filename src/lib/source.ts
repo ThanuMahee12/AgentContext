@@ -133,6 +133,10 @@ export function applyFilters(days: Day[], f: Filters): Day[] {
   }
 
   return days
+    // Date first: a day outside the range is dropped whole, so the per-session
+    // and per-link predicates never run for it. `day.date` is already a
+    // YYYY-MM-DD key, which compares correctly as a string.
+    .filter((d) => (!f.from || d.date >= f.from) && (!f.to || d.date <= f.to))
     .map((d) => ({
       date: d.date,
       sessions: d.sessions.filter(sessionMatches),

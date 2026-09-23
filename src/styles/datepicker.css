@@ -1,0 +1,46 @@
+/* react-datepicker, dressed in the tokens.
+ *
+ * Imported by components/DateRange.tsx, immediately AFTER the library's own
+ * stylesheet, and that order is the whole point. The library ships a light
+ * theme; these rules are the same specificity, so whichever loads last wins.
+ *
+ * This file lived in the eager bundle at first while the library's CSS arrived
+ * with the lazy /admin chunk - so the light theme loaded second and overrode
+ * the dark one. Both belong in the same chunk, in this order.
+ *
+ * It stays CSS rather than utilities because the markup belongs to the library:
+ * there is nothing to put a className on.
+ */
+.react-datepicker {
+  background: var(--surface);
+  border: 1px solid var(--line-lit);
+  border-radius: var(--r);
+  font-family: var(--plex-sans);
+  color: var(--text);
+}
+.react-datepicker__header {
+  background: var(--raised);
+  border-bottom: 1px solid var(--line);
+}
+.react-datepicker__current-month,
+.react-datepicker__day-name,
+.react-datepicker__day {
+  color: var(--text-2);
+}
+.react-datepicker__day:hover { background: var(--raised); color: var(--text); }
+.react-datepicker__day--selected,
+.react-datepicker__day--range-start,
+.react-datepicker__day--range-end {
+  background: var(--hue);
+  color: var(--ground);
+}
+.react-datepicker__day--in-range,
+.react-datepicker__day--in-selecting-range {
+  background: color-mix(in srgb, var(--hue) 26%, transparent);
+  color: var(--text);
+}
+/* A disabled day must still be legible enough to read as a date, and
+   --text-3 is 3.59:1 here. */
+.react-datepicker__day--disabled { color: var(--text-muted); opacity: 0.45; }
+.react-datepicker__triangle { display: none; }
+.react-datepicker-popper { z-index: 30; }

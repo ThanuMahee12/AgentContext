@@ -1,4 +1,5 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 
 /**
  * A multi-select filter as a dropdown.
@@ -7,11 +8,17 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
  * fell apart at eighteen: the toolbar became a wall of chips and the table
  * below it lost the space. A menu costs one click and gives the row back.
  *
- * Three things the chip row could not do, all of which matter at that size:
- *   - the busiest values come first, by count rather than alphabetically, so
- *     the one holding most of the archive is not somewhere in the middle
- *   - a long list is searchable rather than scrolled
- *   - the button says how many are active without showing all of them
+ * The open/close behaviour is Headless UI's, not ours. This component used to
+ * hand-roll it: a ref on the wrapper, a `pointerdown` listener to catch clicks
+ * outside, a `keydown` listener for Escape, and a manual `focus()` back onto
+ * the button afterwards. All of that is what `Popover` is, and the library's
+ * version also does the focus handling we never wrote.
+ *
+ * What stays ours is the part that is about this data rather than about menus:
+ *   - the busiest values first, by count rather than alphabetically, so the one
+ *     holding most of the archive is not somewhere in the middle
+ *   - a long list searchable rather than scrolled
+ *   - the button saying how many are active without showing all of them
  */
 export default function Facet({
   title,
@@ -29,32 +36,7 @@ export default function Facet({
   counts: Record<string, number>
   searchAbove?: number
 }) {
-  const [open, setOpen] = useState(false)
   const [needle, setNeedle] = useState('')
-  const wrap = useRef<HTMLDivElement>(null)
-  const menuId = useId()
-
-  // Close on a click anywhere else, and on Escape. Both are what a menu is
-  // expected to do; neither happens for free on a div.
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e: PointerEvent) => {
-      if (!wrap.current?.contains(e.target as Node)) setOpen(false)
-    }
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOpen(false)
-        // Back to the button, or focus is left on a node that just vanished.
-        wrap.current?.querySelector('button')?.focus()
-      }
-    }
-    document.addEventListener('pointerdown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('pointerdown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
 
   /** Busiest first. Alphabetical put the value holding most of the archive
    *  wherever its name happened to fall. */
@@ -76,27 +58,22 @@ export default function Facet({
     )
 
   return (
-    <div className="relative" ref={wrap}>
-      <button
-        type="button"
+    <Popover className="relative">
+      <PopoverButton
+        // Clearing the search on open, not on close: a menu that reopens
+        // still filtered by something typed a minute ago looks empty for no
+        // visible reason.
+        onClick={() => setNeedle('')}
         className={
           'inline-flex cursor-pointer items-center gap-[7px] rounded-s px-[11px] py-1.5 ' +
           'text-[12.5px] font-medium hover:border-hue hover:text-text ' +
           // field-line, not line: a control's edge needs 3:1 and --line is
           // 1.37:1 against the ground.
-          'border border-field-line aria-expanded:border-hue aria-expanded:text-text ' +
+          'border border-field-line data-[open]:border-hue data-[open]:text-text ' +
           (selected.length ? 'border-hue bg-hue/15 text-text' : 'text-text-2')
         }
-        aria-expanded={open}
-        aria-haspopup="true"
-        aria-controls={open ? menuId : undefined}
-        onClick={() => {
-          setOpen((v) => !v)
-          setNeedle('')
-        }}
       >
         {title}
-        {/* The button says how many are active without listing them. */}
         {selected.length > 0 && (
           <span className="min-w-4 rounded-full bg-hue px-[5px] font-mono text-[10.5px] font-semibold leading-normal tabular-nums text-ground">
             {selected.length}
@@ -106,24 +83,25 @@ export default function Facet({
           aria-hidden
           className="border-x-[3.5px] border-t-4 border-x-transparent border-t-current"
         />
-      </button>
+      </PopoverButton>
 
-      {open && (
-        <div
-          className="absolute left-0 top-[calc(100%+6px)] z-20 w-max min-w-[210px] max-w-[320px] rounded border border-line-lit bg-surface p-2 shadow-[0_14px_36px_-16px_rgb(0_0_0/0.9)]"
-          id={menuId}
-          role="group"
-          aria-label={title}
-        >
+      <PopoverPanel
+        // anchor places it against the button and keeps it on screen; the hand
+        // -rolled version was absolutely positioned and would have run off the
+        // edge for the last filter in the row.
+        anchor={{ to: 'bottom start', gap: 6 }}
+        className="z-20 w-max min-w-[210px] max-w-[320px] rounded border border-line-lit bg-surface p-2 shadow-[0_14px_36px_-16px_rgb(0_0_0/0.9)]"
+      >
+        <div role="group" aria-label={title}>
           {options.length > searchAbove && (
             <input
               type="search"
-              className="mb-1.5 h-8 w-full rounded-s border border-field-line bg-raised px-[9px] text-[13px] text-text outline-none focus:border-hue"
               value={needle}
               autoFocus
               placeholder={`Filter ${title.toLowerCase()}…`}
               aria-label={`Filter ${title.toLowerCase()}`}
               onChange={(e) => setNeedle(e.target.value)}
+              className="mb-1.5 h-8 w-full rounded-s border border-field-line bg-raised px-[9px] text-[13px] text-text outline-none focus:border-hue"
             />
           )}
 
@@ -162,7 +140,7 @@ export default function Facet({
             </button>
           )}
         </div>
-      )}
-    </div>
+      </PopoverPanel>
+    </Popover>
   )
 }
