@@ -101,11 +101,6 @@ export default function PublicLayout() {
         </nav>
 
         <div className="navfoot">
-          <a className="navitem dash" href="/admin" data-section="dashboard">
-            <span className="label">Dashboard</span>
-            <span className="lock" aria-hidden>sign in</span>
-          </a>
-
           <label className="find">
             <span className="sr">Search</span>
             <input
@@ -129,7 +124,29 @@ export default function PublicLayout() {
 
       <button className="scrim" onClick={() => dispatch(setNavOpen(false))} tabIndex={-1} aria-hidden />
 
-      <main className="sheet">
+      <main className="sheet tw-scope">
+        {/* Top right, out of the sidebar. It leaves the public site for an
+            authenticated one, so it does not belong in a list of sections -
+            and in the footer it read as a fourth utility beside search and
+            the source link rather than the way in. */}
+        <div className="mb-7 flex justify-end">
+          <a
+            href="/admin"
+            className="inline-flex items-center gap-2 rounded-s border border-field-line px-3 py-1.5 text-[12.5px] font-medium text-text-2 no-underline hover:border-hue hover:text-text"
+          >
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" aria-hidden className="flex-none">
+              <path
+                d="M4.5 7V5a3.5 3.5 0 1 1 7 0v2"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
+              <rect x="3" y="7" width="10" height="7" rx="1.6" fill="currentColor" />
+            </svg>
+            Sign in
+          </a>
+        </div>
+
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname}
