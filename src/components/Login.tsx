@@ -6,6 +6,7 @@ import Decorative from './Decorative'
 import Field from './Field'
 import { auth } from '../firebase'
 import { describeAuthError } from '../lib/authErrors'
+import { linkButton, primaryButton } from '../lib/ui'
 
 /** three.js is ~547 kB and this is a page two people visit. Lazy, like
  *  CatchupScene - the backdrop arrives after the form is already usable, and
@@ -22,12 +23,8 @@ const AgentField = lazy(() => import('./AgentField'))
  *  would be worse than not reacting. */
 const WIDE = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches
 
-const SUBMIT =
-  'mt-[22px] h-11 w-full cursor-pointer rounded-s bg-hue text-[14px] font-semibold ' +
-  'tracking-[0.01em] text-ground transition-[filter] duration-150 ' +
-  'hover:brightness-110 disabled:cursor-default disabled:opacity-55'
-/* hue-lit, not hue: the base hue is 4.46:1 on a --surface card and fails AA. */
-const LINK = 'cursor-pointer text-[13px] font-medium text-hue-lit hover:underline'
+const SUBMIT = `mt-[22px] ${primaryButton}`
+const LINK = `${linkButton} text-[13px] hover:underline`
 const NOTE = 'mb-[14px] text-[12.5px] leading-[1.6] text-text-muted'
 const MESSAGE = 'mb-[14px] rounded-s border px-[11px] py-[9px] text-[12.5px] leading-[1.5]'
 

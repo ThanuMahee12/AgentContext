@@ -3,6 +3,7 @@ import type { User } from 'firebase/auth'
 
 import AdminShell from './AdminShell'
 import DateRange from '../components/DateRange'
+import { inputSm } from '../lib/ui'
 import Facet from '../components/Facet'
 import LinkRow from '../components/LinkRow'
 import SessionDetail from '../components/SessionDetail'
@@ -98,7 +99,7 @@ export default function Admin({ user }: { user: User | null }) {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search commands, files…"
               aria-label="Search sessions"
-              className="h-8 w-full rounded-s border border-field-line bg-surface px-2.5 text-[13px] text-text outline-none placeholder:text-text-muted focus:border-hue"
+              className={`${inputSm} w-full bg-surface`}
             />
           </label>
 

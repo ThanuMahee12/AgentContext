@@ -1,6 +1,8 @@
 import { useId, type InputHTMLAttributes, type ReactNode } from 'react'
 import type { UseFormRegisterReturn } from 'react-hook-form'
 
+import { inputLg } from '../lib/ui'
+
 /**
  * A labelled text input with its validation message.
  *
@@ -14,17 +16,6 @@ import type { UseFormRegisterReturn } from 'react-hook-form'
  * screen would otherwise point at the same element.
  */
 const LABEL = 'mb-[7px] block text-[13px] font-medium text-text-2'
-
-/* field-line, not line: --line is 1.15:1 against the fill it outlines, so the
-   border is drawn and cannot be seen. WCAG 1.4.11 asks 3:1 for a control's
-   boundary; --field-line gives 3.44:1. */
-const INPUT =
-  'h-11 w-full rounded-s border border-field-line bg-raised px-[13px] text-[15px] text-text ' +
-  'outline-none transition-[border-color,box-shadow] duration-150 ' +
-  'placeholder:text-text-muted ' +
-  'focus:border-hue focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--hue)_22%,transparent)] ' +
-  'aria-[invalid=true]:border-err ' +
-  'aria-[invalid=true]:focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--err)_22%,transparent)]'
 
 /* not-italic because <em> is the right element for an inline emphasis the
    browser italicises by default; the meaning is wanted, the slant is not. */
@@ -56,7 +47,7 @@ export default function Field({
       <input
         {...registration}
         {...input}
-        className={INPUT}
+        className={inputLg}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
       />

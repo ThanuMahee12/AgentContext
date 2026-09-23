@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 
+import { inputSm, linkButton, menuPanel, outlineButton } from '../lib/ui'
+
 /**
  * A multi-select filter as a dropdown.
  *
@@ -65,12 +67,8 @@ export default function Facet({
         // visible reason.
         onClick={() => setNeedle('')}
         className={
-          'inline-flex cursor-pointer items-center gap-[7px] rounded-s px-[11px] py-1.5 ' +
-          'text-[12.5px] font-medium hover:border-hue hover:text-text ' +
-          // field-line, not line: a control's edge needs 3:1 and --line is
-          // 1.37:1 against the ground.
-          'border border-field-line data-[open]:border-hue data-[open]:text-text ' +
-          (selected.length ? 'border-hue bg-hue/15 text-text' : 'text-text-2')
+          `${outlineButton} data-[open]:border-hue data-[open]:text-text ` +
+          (selected.length ? 'border-hue bg-hue/15 text-text' : '')
         }
       >
         {title}
@@ -90,7 +88,7 @@ export default function Facet({
         // -rolled version was absolutely positioned and would have run off the
         // edge for the last filter in the row.
         anchor={{ to: 'bottom start', gap: 6 }}
-        className="z-20 w-max min-w-[210px] max-w-[320px] rounded border border-line-lit bg-surface p-2 shadow-[0_14px_36px_-16px_rgb(0_0_0/0.9)]"
+        className={menuPanel}
       >
         <div role="group" aria-label={title}>
           {options.length > searchAbove && (
@@ -101,7 +99,7 @@ export default function Facet({
               placeholder={`Filter ${title.toLowerCase()}…`}
               aria-label={`Filter ${title.toLowerCase()}`}
               onChange={(e) => setNeedle(e.target.value)}
-              className="mb-1.5 h-8 w-full rounded-s border border-field-line bg-raised px-[9px] text-[13px] text-text outline-none focus:border-hue"
+              className={`${inputSm} mb-1.5 w-full bg-raised`}
             />
           )}
 
@@ -133,7 +131,7 @@ export default function Facet({
           {selected.length > 0 && (
             <button
               type="button"
-              className="mt-1.5 w-full cursor-pointer border-0 border-t border-line bg-transparent p-[7px] text-[12.5px] font-medium text-hue-lit hover:text-text"
+              className={`${linkButton} mt-1.5 w-full border-0 border-t border-line bg-transparent p-[7px]`}
               onClick={() => onChange([])}
             >
               Clear {selected.length} selected

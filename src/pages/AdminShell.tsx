@@ -5,6 +5,7 @@ import { signOut, type User } from 'firebase/auth'
 import Mark from '../components/Mark'
 
 import { auth } from '../firebase'
+import { outlineButton } from '../lib/ui'
 
 /** The signed-in shell: a top bar, and the page under it.
  *
@@ -75,7 +76,7 @@ export default function AdminShell({
           </Link>
           {user && (
             <button
-              className="cursor-pointer rounded-s border border-line px-2.5 py-1.5 text-[12.5px] text-text-2 hover:border-field-line hover:text-text"
+              className={outlineButton}
               onClick={() => signOut(auth)}
               title={user.email ?? undefined}
             >

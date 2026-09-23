@@ -4,6 +4,7 @@ import 'react-datepicker/dist/react-datepicker.css'
 import '../styles/datepicker.css'
 
 import { parseDayKey, toDayKey } from '../lib/format'
+import { inputSm, linkButton } from '../lib/ui'
 
 /**
  * The archive filtered to a span of days.
@@ -44,14 +45,14 @@ export default function DateRange({
         // The archive is append-only and read backwards, so a range is almost
         // always recent; opening on the current month saves a click.
         showPopperArrow={false}
-        className="h-8 w-[150px] cursor-pointer rounded-s border border-field-line bg-surface px-2.5 text-[12.5px] text-text outline-none placeholder:text-text-muted focus:border-hue"
+        className={`${inputSm} w-[150px] cursor-pointer bg-surface`}
         aria-label="Filter by date range"
       />
       {(from || to) && (
         <button
           type="button"
           onClick={() => onChange({ from: undefined, to: undefined })}
-          className="cursor-pointer text-[12.5px] font-medium text-hue-lit hover:text-text"
+          className={linkButton}
         >
           Clear dates
         </button>
