@@ -21,6 +21,9 @@
 
 @theme inline {
   --color-ground: var(--ground);
+  /* the fill navy. Without this `bg-navy` is not a class at all, and the admin
+     bar renders with no background - which it did for exactly one build. */
+  --color-navy: var(--navy);
   --color-surface: var(--surface);
   --color-raised: var(--raised);
   --color-line: var(--line);

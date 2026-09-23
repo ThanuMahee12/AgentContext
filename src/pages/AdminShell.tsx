@@ -30,52 +30,69 @@ export default function AdminShell({
   user: User | null
   /** Screen-specific controls - search, filters - in a row under the bar. */
   toolbar?: ReactNode
-  /** A panel beside the main column, not inside it. `.detail` is
-   *  `flex: 0 0 min(52%, 720px)` against `.adminbody`, so nesting it in
-   *  `.sheet` would collapse it into the scrolling body. */
+  /** A panel beside the main column, not inside it. */
   panel?: ReactNode
   children: ReactNode
 }) {
   return (
-    <div className="site admin">
-      <header className="adminbar">
-        <Link to="/" className="wordmark">
+    /* tw-scope carries the preflight subset these utilities assume - this
+       project does not import preflight globally. See styles/tailwind-plus.css. */
+    <div className="tw-scope admin grid min-h-dvh grid-rows-[auto_auto_minmax(0,1fr)] content-start bg-ground">
+      <header className="flex h-14 items-center gap-[18px] border-b border-line bg-navy px-6">
+        {/* .wordmark and .glyph stay as CSS: the glyph is a four-layer
+            gradient, and both are shared with the public shell. */}
+        <Link to="/" className="wordmark !m-0">
           <span className="glyph" aria-hidden />
           AgentContext
         </Link>
 
-        <nav aria-label="Signed in">
+        <nav aria-label="Signed in" className="flex gap-1">
           {PRIVATE.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
-              className={({ isActive }) => 'navitem' + (isActive ? ' on' : '')}
+              className={({ isActive }) =>
+                'rounded-s px-[11px] py-1.5 text-[13px] font-medium no-underline hover:bg-raised hover:text-text ' +
+                (isActive ? 'bg-raised text-text' : 'text-text-2')
+              }
             >
               {item.label}
             </NavLink>
           ))}
         </nav>
 
-        <div className="adminbar-end">
+        {/* Pushed to the far end; the rule is what separates leaving the app
+            from moving around inside it. */}
+        <div className="ml-auto flex items-center gap-[14px] border-l border-line pl-4">
           {/* A dashboard with no way back to the site it belongs to is a dead end. */}
-          <Link className="navitem dash" to="/catchup">
+          <Link className="text-[13px] font-medium text-text-2 no-underline hover:text-hue" to="/catchup">
             Daily Catchup
           </Link>
-          <Link className="navitem dash" to="/">
+          <Link className="text-[13px] font-medium text-text-2 no-underline hover:text-hue" to="/">
             Public site
           </Link>
           {user && (
-            <button className="ghost" onClick={() => signOut(auth)} title={user.email ?? undefined}>
+            <button
+              className="cursor-pointer rounded-s border border-line px-2.5 py-1.5 text-[12.5px] text-text-2 hover:border-field-line hover:text-text"
+              onClick={() => signOut(auth)}
+              title={user.email ?? undefined}
+            >
               Sign out
             </button>
           )}
         </div>
       </header>
 
-      {toolbar && <div className="admintools">{toolbar}</div>}
+      {toolbar && (
+        <div className="flex flex-wrap items-center gap-x-[18px] gap-y-2.5 border-b border-line px-6 py-3">
+          {toolbar}
+        </div>
+      )}
 
-      <div className="adminbody">
-        <main className="sheet">{children}</main>
+      {/* The detail panel is a flex sibling of the main column, never a child:
+          .detail is flex: 0 0 min(52%, 720px) against this row. */}
+      <div className="flex min-h-0 min-w-0">
+        <main className="min-w-0 grow overflow-auto px-6 pb-[72px] pt-[22px]">{children}</main>
         {panel}
       </div>
     </div>

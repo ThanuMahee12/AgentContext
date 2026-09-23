@@ -122,7 +122,11 @@ export default function Login() {
   const copy = MODES[mode]
 
   return (
-    <div className="auth tw-scope">
+    /* The whole page is utilities: no stylesheet of its own. Two columns once
+       there is room for the brand panel to say something without squeezing the
+       form; below that the panel is hidden and the form takes the width. `lg`
+       is 1024px and WIDE must agree with it. */
+    <div className="tw-scope grid min-h-dvh grid-cols-1 bg-ground lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)]">
       {/* Two columns: what this is, and the way in. The brand column is where
           the backdrop lives now - contained beside the form rather than behind
           it, which is what stopped it competing with the labels. */}

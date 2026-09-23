@@ -85,7 +85,7 @@ export default function Admin({ user }: { user: User | null }) {
       panel={selected && <SessionDetail session={selected} onClose={() => setSelected(null)} />}
       toolbar={
         <>
-          <label className="find">
+          <label className="shrink basis-[300px]">
             <span className="sr">Search</span>
             <input
               ref={searchRef}
@@ -93,6 +93,7 @@ export default function Admin({ user }: { user: User | null }) {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search commands, files…"
               aria-label="Search sessions"
+              className="h-8 w-full rounded-s border border-field-line bg-surface px-2.5 text-[13px] text-text outline-none placeholder:text-text-muted focus:border-hue"
             />
           </label>
 

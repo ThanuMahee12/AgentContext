@@ -198,5 +198,15 @@ export default function AgentField() {
     }
   }, [])
 
-  return <div ref={hostRef} className="auth-bg" aria-hidden />
+  return (
+    // Absolute inside the brand column, not fixed to the viewport: the split is
+    // what made the backdrop workable - it is beside the form now instead of
+    // underneath it, so it needs no mask and cannot reduce a label's contrast.
+    // pointer-events-none so it never eats a click meant for the form.
+    <div
+      ref={hostRef}
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-0 [&>canvas]:opacity-[0.42] motion-reduce:[&>canvas]:opacity-30"
+    />
+  )
 }

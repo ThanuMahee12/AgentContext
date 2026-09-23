@@ -56,7 +56,8 @@ src/
 │                       fixtures.json (git-ignored)
 ├── store/              uiSlice only — search text, tag filter, nav state
 └── styles/             index.css imports the rest in cascade order;
-                        tailwind-plus.css is scoped preflight, appended last
+                        tailwind-plus.css is scoped preflight, in @layer base
+                        so utilities outrank it
 ```
 
 No `web/`, no mkdocs, no `src/data`, and **no bundled content**.
@@ -140,7 +141,18 @@ instead of leaking.
 
 ## Styling
 
-Hand-written CSS in `styles/`, with Tailwind available for new work.
+**Tailwind first. New UI is utilities; a stylesheet is the exception.** The
+hand-written CSS is being migrated out, not extended. `Login.tsx`,
+`AdminShell.tsx` and `Facet.tsx` are fully on utilities and `styles/auth.css`
+is deleted; what remains under `styles/` is the public site, the table and the
+tokens.
+
+**A migrated subtree must carry `.tw-scope`.** Preflight is not global here, so
+outside it `border` draws nothing and an `<input>` renders in the browser's own
+font. That is the whole reason the class exists.
+
+Keep as CSS only what a utility genuinely cannot say: `.wordmark`/`.glyph` (a
+four-layer gradient, shared with the public shell) and the token definitions.
 
 - **Tokens are the single source of truth.** `styles/tailwind.css` maps every
   Tailwind colour onto the variable that already defines it, so `bg-surface`
@@ -216,9 +228,8 @@ npm run build && grep -c "WebGLRenderer" dist/assets/index-*.js   # must be 0
 ```
 
 The scene renders **on demand** — no permanent `requestAnimationFrame` loop —
-and reads its colours from the CSS tokens via `getComputedStyle`, so it follows
-`[data-section="catchup"]`. It draws only the public `daily` totals; nothing
-from the private archive is in scope.
+and takes its colours from `lib/theme.ts`, never from the component. It draws
+only the public `daily` totals; nothing from the private archive is in scope.
 
 ## Two shells, and every signed-in screen uses one
 
@@ -229,17 +240,20 @@ it, so the screen that publishes a draft to the internet was reachable only by
 typing the URL — the sidebar existed twice and the copies had drifted, and
 sign-out lived on one screen.
 
-It composes by props, not as a route layout. Admin's search and facets belong
-*in* the sidebar, and a child cannot render into its parent's `<aside>` through
-an `<Outlet>` without a portal or a context dance:
+There is no sidebar. A 250px column was taking a fifth of every screen to hold
+six links, on a page whose job is an eleven-column table; the nav is a row now,
+and the filters are a `toolbar` row under it, owned by the page because search
+and facets mean nothing on `/content`.
+
+It composes by props, not as a route layout:
 
 ```tsx
-<AdminShell user={user} here="Session archive" aside={<Facets/>} panel={<SessionDetail/>}>
+<AdminShell user={user} toolbar={<Facets/>} panel={<SessionDetail/>}>
 ```
 
 `panel` is a sibling of `<main>`, never a child: `.detail` is
-`flex: 0 0 min(52%, 720px)` against `.site`, so nesting it inside `.sheet`
-collapses it into the scrolling body instead of splitting the row.
+`flex: 0 0 min(52%, 720px)` against the row they share, so nesting it in the
+main column collapses it into the scrolling body instead of splitting the row.
 
 A new signed-in screen goes in the `PRIVATE` array in that file and is reachable
 immediately. Do not add another `<aside className="sidenav">`.
@@ -274,10 +288,9 @@ Two dynamic imports now use three.js, so Rollup hoists it into a shared chunk �
 `CatchupScene` fell from 547 kB to 24 kB. The entry chunk still carries none of
 it, and the check in the three.js section covers both.
 
-Styling lives in `styles/auth.css`, not `ui.css` — it is the one screen that is
-not the dashboard. It sets `data-section="dashboard"` so `--hue` resolves to the
-dashboard magenta, and it uses sentence-case field labels rather than the
-tracked-out uppercase the dashboard uses for its forty-odd micro-labels.
+The page is entirely utilities — it has no stylesheet. It uses sentence-case
+field labels rather than the tracked-out uppercase the public site uses for its
+micro-labels.
 
 `react-hook-form` earns its place here and nowhere else yet: validation, error
 messages and `isSubmitting` on three forms that share two fields.
