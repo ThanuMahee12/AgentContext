@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async'
 /** The document title for a route.
  *
  * Seven routes shared one static <title> from index.html, so every tab, every
- * bookmark and every back-button entry read "AgentContext" and nothing else.
+ * bookmark and every back-button entry read "Agentix" and nothing else.
  * A screen reader announces the same string on each navigation too - in a SPA
  * the title IS the page-change announcement, because no document load happens.
  *
@@ -21,7 +21,7 @@ export default function Title({ children }: { children?: string }) {
   const text = children?.trim()
   return (
     <Helmet>
-      <title>{text ? `${text} · AgentContext` : 'AgentContext'}</title>
+      <title>{text ? `${text} · Agentix` : 'Agentix'}</title>
     </Helmet>
   )
 }

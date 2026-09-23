@@ -98,18 +98,6 @@
   color: var(--text);
   text-decoration: none;
 }
-/* Four strata - the pipeline layers this content is about. They were one
-   section hue each; with a single accent the shape carries the idea and
-   opacity carries the depth, which is what the colours were doing anyway. */
-.wordmark .glyph {
-  width: 13px; height: 17px; flex: none;
-  background:
-    linear-gradient(var(--hue) 0 0) 0 0    / 100% 3px no-repeat,
-    linear-gradient(var(--hue) 0 0) 0 5px  / 100% 3px no-repeat,
-    linear-gradient(var(--hue) 0 0) 0 10px / 100% 3px no-repeat,
-    linear-gradient(var(--hue) 0 0) 0 15px / 100% 2px no-repeat;
-  opacity: 0.9;
-}
 
 .sidenav nav { display: flex; flex-direction: column; }
 

@@ -1,11 +1,27 @@
 # CLAUDE.md
 
-AgentContext is the **reading half** of a pair. [AgentProbe](https://github.com/ThanuMahee12/AgentProbe)
+Agentix is the **reading half** of a pair. [AgentProbe](https://github.com/ThanuMahee12/AgentProbe)
 captures agent sessions and publishes documents; this app displays them. It
 authors nothing and stores nothing of its own — every byte it renders comes from
 Firestore at runtime.
 
 **Live:** https://agentcontext-sessions.web.app
+
+### Three names, and only one of them is the brand
+
+| | | |
+|---|---|---|
+| **Agentix** | the product | what every visible string says |
+| `AgentContext` | the GitHub repo | `github.com/ThanuMahee12/AgentContext` |
+| `agentcontext-sessions` | the Firebase project | `projectId`, `authDomain`, `storageBucket`, `.firebaserc`, the deploy workflow, the live URL |
+
+Renaming the brand is cheap and done. The other two are not the same job: a
+**Firebase project id cannot be renamed**, so moving off `agentcontext-sessions`
+means standing up a new project and migrating Firestore data and auth — a
+migration, not a rename. Until then the URL says the old name, and a custom
+domain is the cheap way to close that gap. The repo can be renamed on GitHub
+whenever you like; GitHub redirects the old URL, and the one link in
+`Layout.tsx` would need updating with it.
 
 Two halves behind one deployment, and the split is enforced by the database
 rather than by which component the router mounts:
@@ -303,7 +319,7 @@ one did: the third copy set `aria-invalid` and rendered no message.
 
 **Every action goes through `handleSubmit`, including the ones that are not
 form submissions.** "Copy request" read the field directly and copied whatever
-was in it, so an empty field produced *"Please add  to the AgentContext viewer
+was in it, so an empty field produced *"Please add  to the Agentix viewer
 list."* — a broken sentence, copied happily. Routing it through `handleSubmit`
 is what validates the address and what gives that field its error message at
 all.

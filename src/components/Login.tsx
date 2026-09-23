@@ -104,14 +104,14 @@ export default function Login() {
 
   /* Through handleSubmit, so the address is validated before it is copied.
    * Reading the field directly would copy whatever is there - an empty field
-   * produced "Please add  to the AgentContext viewer list.", a broken sentence
+   * produced "Please add  to the Agentix viewer list.", a broken sentence
    * with a blank in it, and copied it happily. This also gives the field its
    * error message, since nothing else in this mode ever ran validation. */
   const copyRequest = handleSubmit(async ({ email }) => {
     setFailure('')
     try {
       await navigator.clipboard.writeText(
-        `Please add ${email.trim()} to the AgentContext viewer list.`,
+        `Please add ${email.trim()} to the Agentix viewer list.`,
       )
       setCopied(true)
     } catch {
@@ -141,7 +141,7 @@ export default function Login() {
 
         <div className="relative z-[1] flex items-center gap-[9px] text-[15px] font-semibold tracking-[-0.012em] text-text">
           <span className="size-[9px] rounded-full bg-hue" aria-hidden />
-          AgentContext
+          Agentix
         </div>
 
         <div className="relative z-[1] mt-auto">
@@ -161,7 +161,7 @@ export default function Login() {
               so the page is never nameless and never says it twice. */}
           <div className="mb-9 flex items-center gap-[9px] text-[15px] font-semibold tracking-[-0.012em] text-text lg:hidden">
             <span className="size-[9px] rounded-full bg-hue" aria-hidden />
-            AgentContext
+            Agentix
           </div>
 
           <section aria-labelledby="auth-heading">

@@ -22,7 +22,7 @@ export default function Published() {
       <div className="topbar">
         <Link className="brand" to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
           <span className="dot" />
-          AgentContext
+          Agentix
         </Link>
       </div>
 

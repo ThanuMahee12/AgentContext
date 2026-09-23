@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { signOut, type User } from 'firebase/auth'
 
+import Mark from '../components/Mark'
+
 import { auth } from '../firebase'
 
 /** The signed-in shell: a top bar, and the page under it.
@@ -42,8 +44,8 @@ export default function AdminShell({
         {/* .wordmark and .glyph stay as CSS: the glyph is a four-layer
             gradient, and both are shared with the public shell. */}
         <Link to="/" className="wordmark !m-0">
-          <span className="glyph" aria-hidden />
-          AgentContext
+          <Mark />
+          Agentix
         </Link>
 
         <nav aria-label="Signed in" className="flex gap-1">

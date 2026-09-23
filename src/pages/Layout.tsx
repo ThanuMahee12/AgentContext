@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+
+import Mark from '../components/Mark'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
 import { SECTION_KEY, sections } from '../lib/sections'
@@ -51,8 +53,8 @@ export default function PublicLayout() {
 
       <aside className="sidenav" id="sidenav">
         <Link to="/" className="wordmark">
-          <span className="glyph" aria-hidden />
-          AgentContext
+          <Mark />
+          Agentix
         </Link>
 
         <nav aria-label="Sections">

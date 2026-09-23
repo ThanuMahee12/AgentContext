@@ -43,7 +43,7 @@ export default function Home() {
 
   return (
     <div className="page dash">
-      {/* Home is the brand alone - "AgentContext · AgentContext" helps nobody. */}
+      {/* Home is the brand alone - "Agentix · Agentix" helps nobody. */}
       <Title />
       <h1 className="pagetitle">Working knowledge</h1>
       <p className="standfirst">
