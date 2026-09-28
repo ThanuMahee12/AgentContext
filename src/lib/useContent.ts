@@ -56,6 +56,42 @@ const SECTION_OF: Record<string, keyof Sections> = {
  * on visibility is rejected outright rather than filtered - so a missing
  * `where` here fails loudly instead of leaking.
  */
+/**
+ * Drop the dated prefix from a document's path.
+ *
+ * Documents are stored under a UTC-dated path - `content/ideas/2026/09/28/slug.md`
+ * - so a document arrives with `segments: ["2026","09","28","slug"]`. The
+ * section page builds its folder tree from those segments, which rendered as a
+ * folder `2026` holding a folder `09` holding a folder `28` holding the one
+ * document: three navigations to reach a page that should be sitting at the
+ * section root. The date is already in `date`, where it can be sorted and
+ * displayed; in the path it is filing, not structure.
+ *
+ * Only a LEADING run of all-numeric segments goes, and never the filename
+ * itself, so a document genuinely filed under a folder - `agentprobe/parallelism`
+ * - still nests where its author put it.
+ */
+const DATEISH = /^\d{2,4}$/
+
+function undate(raw: Record<string, unknown>): Record<string, unknown> {
+  const segments = (Array.isArray(raw.segments) ? raw.segments : []).map(String)
+  let i = 0
+  while (i < segments.length - 1 && DATEISH.test(segments[i])) i++
+  if (i === 0) return raw
+
+  const rest = segments.slice(i)
+  return {
+    ...raw,
+    segments: rest,
+    path: rest.join('/'),
+    parent: rest.slice(0, -1).join('/'),
+    depth: rest.length - 1,
+    // `project` is derived by the publisher from the first segment, which for a
+    // dated path is the year. A year is not a project.
+    project: DATEISH.test(String(raw.project ?? '')) ? '' : raw.project,
+  }
+}
+
 export function useContent() {
   const q = useQuery({
     queryKey: keys.docs,
@@ -81,7 +117,7 @@ export function useContent() {
           return
         }
         // `comments` is optional in Firestore but the discussion views index it
-        const v = { ...raw, comments: (raw.comments as unknown[]) ?? [] }
+        const v = { ...undate(raw), comments: (raw.comments as unknown[]) ?? [] }
         ;(out[section] as unknown[]).push(v)
       })
       out.brainstorms.sort((a, b) => (b.date || '').localeCompare(a.date || ''))

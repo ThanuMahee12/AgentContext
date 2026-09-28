@@ -459,8 +459,14 @@ from the directory you point it at. More than one source publishes into `docs`,
 so pointing it at a partial tree destroys the rest.
 
 **Documents are published under a UTC-dated path** — `content/ideas/2026/09/18/slug.md`
-— so the section page lists `2026` and `09` as folders instead of documents.
-The date belongs in frontmatter, not in the path. **This is unfixed.**
+— so they arrive carrying `segments: ["2026","09","18","slug"]` and the section
+page listed `2026` as a folder holding `09` holding `18` holding one document.
+The date belongs in frontmatter, where it already is. `undate()` in
+`useContent.ts` drops a **leading** run of all-numeric segments on read, so a
+document sits at the section root; a genuine folder like `agentprobe/parallelism`
+still nests, and a document whose own filename is numeric is never stripped.
+Fixed in the reading half deliberately — the publisher is shared, and how a
+document is filed is not how it has to be shown.
 
 **This repository is public.** Anything committed is published, including
 commit messages. Two internal documents reached its history this way. Check
