@@ -2,6 +2,8 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
 import Shell from '../components/Shell'
+import { FIRESTORE_HINT, Failure } from '../components/State'
+import { describeError } from '../lib/queries'
 import { SECTION_KEY, sections } from '../lib/sections'
 import { useAppDispatch, useAppSelector } from '../store'
 import { useContent } from '../lib/useContent'
@@ -21,7 +23,7 @@ import { setQuery } from '../store/uiSlice'
 export default function PublicLayout() {
   const dispatch = useAppDispatch()
   const { query } = useAppSelector((s) => s.ui)
-  const { content } = useContent()
+  const { content, error } = useContent()
   const location = useLocation()
   const still = useReducedMotion()
 
@@ -29,37 +31,40 @@ export default function PublicLayout() {
     <Shell
       nav={
         <nav aria-label="Sections">
-          {/* A section with nothing in it is a link to an empty page. Hide it
-              until it has content, so the nav describes what is actually here. */}
-          {sections
-            .filter((s) => s.id === 'home' || content[SECTION_KEY[s.id]].length > 0)
-            .map((s) => (
-              <NavLink
-                key={s.id}
-                to={s.path}
-                end={s.path === '/'}
-                className={({ isActive }) => 'navitem' + (isActive ? ' on' : '')}
-                data-section={s.id}
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive && (
-                      <motion.span
-                        className="navmark"
-                        layoutId="navmark"
-                        transition={
-                          still ? { duration: 0 } : { type: 'spring', stiffness: 520, damping: 42 }
-                        }
-                      />
-                    )}
-                    <span className="label">{s.label}</span>
-                    {s.id !== 'home' && (
-                      <span className="n">{content[SECTION_KEY[s.id]].length}</span>
-                    )}
-                  </>
-                )}
-              </NavLink>
-            ))}
+          {/* Every section is listed, empty ones included, with its count beside
+              it. Hiding a section until it had content made the nav describe
+              what is *published* rather than what the site holds - so a reader
+              waiting on a document saw no Discussions entry at all, with
+              nothing to say whether the section was empty or the read had
+              failed. The section page answers that itself: "Nothing here
+              yet." */}
+          {sections.map((s) => (
+            <NavLink
+              key={s.id}
+              to={s.path}
+              end={s.path === '/'}
+              className={({ isActive }) => 'navitem' + (isActive ? ' on' : '')}
+              data-section={s.id}
+            >
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      className="navmark"
+                      layoutId="navmark"
+                      transition={
+                        still ? { duration: 0 } : { type: 'spring', stiffness: 520, damping: 42 }
+                      }
+                    />
+                  )}
+                  <span className="label">{s.label}</span>
+                  {s.id !== 'home' && (
+                    <span className="n">{content[SECTION_KEY[s.id]].length}</span>
+                  )}
+                </>
+              )}
+            </NavLink>
+          ))}
 
           {/* Not a content section - it reads the activity archive rather than
               markdown - but it belongs beside them in the nav, because to a
@@ -123,6 +128,20 @@ export default function PublicLayout() {
           Sign in
         </a>
       </div>
+
+      {/* Every public page is this one query. It used to fail into an empty
+          site with no message at all - a denied read, a missing index and
+          "nothing published yet" were indistinguishable. Shown once here
+          rather than per page, because they all depend on it. */}
+      {error && (
+        <div className="mb-8">
+          <Failure
+            title="Could not load documents."
+            detail={describeError(error)}
+            hint={FIRESTORE_HINT}
+          />
+        </div>
+      )}
 
       <AnimatePresence mode="wait" initial={false}>
         <motion.div

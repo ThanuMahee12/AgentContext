@@ -1,6 +1,12 @@
 # Temp files
 tmpclaude-*
 
+# Local env. Vite inlines every VITE_-prefixed value into the browser bundle,
+# and this repository is public - a committed .env is a published .env.
+.env
+.env.*
+!.env.example
+
 # Python / uv
 .venv/
 __pycache__/

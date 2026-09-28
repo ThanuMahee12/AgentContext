@@ -15,6 +15,34 @@ export type Sections = {
 const EMPTY: Sections = { brainstorms: [], discussions: [], kt: [], notes: [] }
 
 /**
+ * What a document's `section` may say.
+ *
+ * Three names exist for the same thing and only one of them is the key this app
+ * stores documents under:
+ *
+ *   key           authoring folder        URL
+ *   brainstorms   content/brainstorm/     /brainstorm
+ *   discussions   content/ideas/          /ideas
+ *   notes         content/tech-commands/  /tech-commands
+ *   kt            content/kt/             /kt
+ *
+ * A publisher naming the section after the folder or the URL gets it right
+ * once out of four. Accepting all three spellings costs nothing and removes a
+ * class of "the document published but never appeared" that has no visible
+ * symptom - the old code dropped an unrecognised section with a bare `return`.
+ */
+const SECTION_OF: Record<string, keyof Sections> = {
+  brainstorms: 'brainstorms',
+  brainstorm: 'brainstorms',
+  discussions: 'discussions',
+  ideas: 'discussions',
+  idea: 'discussions',
+  notes: 'notes',
+  'tech-commands': 'notes',
+  kt: 'kt',
+}
+
+/**
  * Documents, from Firestore.
  *
  * There is no bundled copy any more. Content is authored outside this
@@ -36,10 +64,22 @@ export function useContent() {
         query(collection(db, 'docs'), where('visibility', '==', 'published')),
       )
       const out: Sections = { brainstorms: [], discussions: [], kt: [], notes: [] }
+      const unplaced: string[] = []
+
       snap.docs.forEach((d) => {
         const raw = d.data() as Record<string, unknown>
-        const section = raw.section as keyof Sections | undefined
-        if (!section || !(section in out)) return
+        const section =
+          SECTION_OF[
+            String(raw.section ?? '')
+              .trim()
+              .toLowerCase()
+          ]
+        if (!section) {
+          // A published document with a section nobody recognises used to
+          // vanish here. Collect it instead, so the reason is findable.
+          unplaced.push(`${d.id} (section: ${JSON.stringify(raw.section) ?? 'missing'})`)
+          return
+        }
         // `comments` is optional in Firestore but the discussion views index it
         const v = { ...raw, comments: (raw.comments as unknown[]) ?? [] }
         ;(out[section] as unknown[]).push(v)
@@ -48,6 +88,17 @@ export function useContent() {
       out.discussions.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
       out.kt.sort((a, b) => a.title.localeCompare(b.title))
       out.notes.sort((a, b) => a.title.localeCompare(b.title))
+
+      if (unplaced.length) {
+        // Not thrown: one mislabelled document must not blank the whole site.
+        console.warn(
+          `useContent: ${unplaced.length} published document(s) have a section this app does ` +
+            `not recognise, so they are not shown. Expected one of ` +
+            `${Object.keys(SECTION_OF).join(', ')}.\n  ` +
+            unplaced.join('\n  '),
+        )
+      }
+
       return out
     },
   })

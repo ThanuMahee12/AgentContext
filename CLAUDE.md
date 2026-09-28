@@ -152,6 +152,23 @@ future workflow rename became a security change.
 An agent writes a draft and stops. Promoting is a human decision, made at
 `/content`.
 
+**A document needs `visibility: "published"` AND a `section` this app knows.**
+Both gates are silent when they fail — the query returns fewer rows, and an
+unrecognised section used to be dropped with a bare `return`. If something is
+published but not showing:
+
+1. sign in at `/content`, which lists every document with its section and
+   visibility — that is the ground truth;
+2. check the browser console, which now names any document whose section was
+   not recognised.
+
+Three names exist for each section and only one is the storage key:
+`brainstorms` / `content/brainstorm/` / `/brainstorm`, `discussions` /
+`content/ideas/` / `/ideas`, `notes` / `content/tech-commands/` /
+`/tech-commands`, `kt` / `kt` / `/kt`. A publisher naming the section after the
+folder gets it right once in four, so `useContent.ts` accepts all three
+spellings.
+
 **A public list query must carry `where('visibility','==','published')`.** The
 rule is a per-document condition, so an unconstrained query is *rejected*, not
 filtered. That is deliberate: a query that forgets the filter fails loudly
