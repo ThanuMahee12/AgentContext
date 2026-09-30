@@ -468,6 +468,16 @@ still nests, and a document whose own filename is numeric is never stripped.
 Fixed in the reading half deliberately — the publisher is shared, and how a
 document is filed is not how it has to be shown.
 
+**A page must not decide a document is missing before the read settles.**
+`useContent()` returns `EMPTY` until Firestore answers, so `Section` treated
+every reloaded document URL as unknown and redirected to the section root. Check
+`ready` first. Relatedly, two queries on one collection with different shapes
+need different keys - `publicDocs` and `allDocs` once shared `['docs']`.
+
+**Legacy class names collide with Tailwind's.** A dead `.group { margin-bottom:
+30px }` in `content.scss` matched every `group`/`group-hover` link. Before adding
+a bare class to a stylesheet, check it is not a utility name.
+
 **This repository is public.** Anything committed is published, including
 commit messages. Two internal documents reached its history this way. Check
 before adding anything that names hosts, datasets, tickets or people.

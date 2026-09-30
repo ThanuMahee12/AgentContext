@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 
 import Shell from '../components/Shell'
 import { FIRESTORE_HINT, Failure } from '../components/State'
@@ -23,7 +23,7 @@ import { setQuery } from '../store/uiSlice'
 export default function PublicLayout() {
   const dispatch = useAppDispatch()
   const { query } = useAppSelector((s) => s.ui)
-  const { content, error } = useContent()
+  const { content, ready, error } = useContent()
   const location = useLocation()
   const still = useReducedMotion()
 
@@ -59,7 +59,9 @@ export default function PublicLayout() {
                   )}
                   <span className="label">{s.label}</span>
                   {s.id !== 'home' && (
-                    <span className="n">{content[SECTION_KEY[s.id]].length}</span>
+                    // A dash until the read lands: "0" before it does claims every
+                    // section is empty, which is exactly what a failed read looks like.
+                    <span className="n">{ready ? content[SECTION_KEY[s.id]].length : '–'}</span>
                   )}
                 </>
               )}
@@ -143,17 +145,17 @@ export default function PublicLayout() {
         </div>
       )}
 
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={location.pathname}
-          initial={still ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={still ? undefined : { opacity: 0, y: -6 }}
-          transition={{ duration: still ? 0 : 0.22, ease: [0.2, 0.7, 0.3, 1] }}
-        >
-          <Outlet />
-        </motion.div>
-      </AnimatePresence>
+      {/* Enter only, no exit. `mode="wait"` held every navigation until the
+          outgoing page had finished animating away, so each click paid ~220ms
+          before the next page could even start to render. */}
+      <motion.div
+        key={location.pathname}
+        initial={still ? false : { opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: still ? 0 : 0.18, ease: [0.2, 0.7, 0.3, 1] }}
+      >
+        <Outlet />
+      </motion.div>
     </Shell>
   )
 }

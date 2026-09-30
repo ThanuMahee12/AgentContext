@@ -127,7 +127,7 @@ export interface DocRow {
  *  `docs` allows an unpublished document only to `canView()`. */
 export function useDocs() {
   return useQuery({
-    queryKey: keys.docs,
+    queryKey: keys.allDocs,
     queryFn: async (): Promise<DocRow[]> => {
       const snap = await getDocs(collection(db, 'docs'))
       const rows = snap.docs.map((d) => {
@@ -167,9 +167,12 @@ export function useSetVisibility() {
       return { id, visibility }
     },
     onSuccess: ({ id, visibility }) => {
-      client.setQueryData<DocRow[]>(keys.docs, (cur) =>
+      client.setQueryData<DocRow[]>(keys.allDocs, (cur) =>
         cur?.map((d) => (d.id === id ? { ...d, visibility } : d)),
       )
+      // The public list is a different query; promoting or pulling a document
+      // changes what it holds, so it must be re-read rather than served stale.
+      client.invalidateQueries({ queryKey: keys.publicDocs })
     },
   })
 }

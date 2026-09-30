@@ -18,8 +18,38 @@ import { getSource } from './lib/source'
  *  - TanStack Table, Headless UI, floating-ui - none of which a signed-out
  *  visitor reading a document has any use for. The public site was downloading
  *  the whole archive UI to render a page of markdown. */
-const Admin = lazy(() => import('./pages/Admin'))
-const ContentAdmin = lazy(() => import('./pages/ContentAdmin'))
+const Admin = lazy(() => fresh(() => import('./pages/Admin')))
+const ContentAdmin = lazy(() => fresh(() => import('./pages/ContentAdmin')))
+
+/** A lazy chunk that survives a deploy.
+ *
+ *  Chunk names are content hashes. A tab opened before a deploy still holds the
+ *  old entry, so its first visit to /admin asks for a chunk that no longer
+ *  exists - and the `**` rewrite answers with index.html, which `nosniff`
+ *  refuses to run as a script. The import rejects and the page goes blank.
+ *  Reloading once fetches the new entry; the flag stops a genuinely missing
+ *  chunk from looping. */
+function fresh<T>(load: () => Promise<T>): Promise<T> {
+  const flag = 'agentix:chunk-reload'
+  return load().then(
+    (m) => {
+      try {
+        sessionStorage.removeItem(flag)
+      } catch {}
+      return m
+    },
+    (err) => {
+      try {
+        if (!sessionStorage.getItem(flag)) {
+          sessionStorage.setItem(flag, '1')
+          window.location.reload()
+          return new Promise<T>(() => {})
+        }
+      } catch {}
+      throw err
+    },
+  )
+}
 
 /** Only the Firestore source needs a signed-in user. With fixtures or the empty
  *  source everything is local, and gating it would just obstruct development. */
@@ -29,7 +59,7 @@ const NEEDS_AUTH = getSource().name === 'firestore'
  * Two sites behind one app.
  *
  *   /            public  - the knowledge base: home, brainstorms, KT,
- *                          discussions, notes. Content ships in the bundle.
+ *                          discussions, notes. Content is read from Firestore.
  *   /s/:slug     public  - a published page from Firestore
  *   /admin       private - the session archive, sign-in required
  *   /catchup     public  - a calendar of activity; counts for anyone, the

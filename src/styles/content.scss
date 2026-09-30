@@ -399,6 +399,7 @@
 }
 .cards a:hover .t { color: var(--hue); }
 .cards .d { color: var(--text-2); font-size: 14px; line-height: 1.55; }
+.cards .ftag { color: var(--text-muted); }
 .cards .foot {
   display: flex;
   flex-wrap: wrap;
@@ -476,34 +477,6 @@
 }
 
 /* ------------------------------------------------------------ grouped list */
-
-/* A project heading is a path, not a label: the section is the root and the
-   project is where you turn off it. */
-.group { margin-bottom: 30px; }
-.group h2 {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin: 0 0 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
-  font: 500 13px/1 var(--plex-mono);
-  color: var(--text-2);
-}
-.group h2::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 1px;
-  background: var(--hue);
-}
-.group h2 .proj { letter-spacing: -0.01em; }
-.group h2 .count {
-  margin-left: auto;
-  font: 400 12px/1 var(--plex-mono);
-  color: var(--text-3);
-  font-variant-numeric: tabular-nums;
-}
 
 /* --------------------------------------------------------------- hierarchy */
 

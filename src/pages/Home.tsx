@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 
+import { Skeleton } from '../components/State'
 import Title from '../components/Title'
-import { countWords, formatCompact } from '../lib/format'
+import { countWords, formatCompact, formatDate } from '../lib/format'
 import { SECTION_KEY, sections, type SectionId } from '../lib/sections'
 import { useContent } from '../lib/useContent'
 
@@ -25,7 +26,7 @@ import { useContent } from '../lib/useContent'
  * once you were already inside a section - which is exactly too late.
  */
 export default function Home() {
-  const { content } = useContent()
+  const { content, ready } = useContent()
 
   const rows = sections
     .filter((s) => s.id !== 'home')
@@ -43,6 +44,25 @@ export default function Home() {
 
   const total = rows.reduce((n, r) => n + r.count, 0)
 
+  // The five most recently dated documents, whatever section they sit in. The
+  // index below says what each section is FOR; this says what has changed,
+  // which is the question a returning reader actually arrives with.
+  const latest = sections
+    .filter((s) => s.id !== 'home')
+    .flatMap((s) =>
+      (
+        content[SECTION_KEY[s.id as Exclude<SectionId, 'home'>]] as {
+          id: string
+          path?: string
+          title: string
+          date?: string
+        }[]
+      ).map((d) => ({ ...d, section: s })),
+    )
+    .filter((d) => d.date)
+    .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
+    .slice(0, 5)
+
   return (
     <div className="page tw-scope">
       {/* Home is the brand alone - "Agentix · Agentix" helps nobody. */}
@@ -54,37 +74,74 @@ export default function Home() {
         be found again.
       </p>
 
-      {/* One figure, in a sentence, rather than four tiles of which three were
-          never acted on. */}
-      <p className="mt-7 text-[13px] text-text-muted">
-        {total} document{total === 1 ? '' : 's'} across {rows.length} sections.
-      </p>
+      {!ready ? (
+        <Skeleton rows={4} title={false} />
+      ) : (
+        <>
+          {latest.length > 0 && (
+            <section className="mt-2 mb-10">
+              <h2 className="mb-3 text-[11px] font-semibold tracking-[0.09em] text-text-muted uppercase">
+                Latest
+              </h2>
+              <ul className="list-none space-y-px p-0">
+                {latest.map((d) => (
+                  <li key={`${d.section.id}/${d.id}`}>
+                    <Link
+                      to={`${d.section.path}/${d.path ?? d.id}`}
+                      className="group flex items-baseline gap-4 rounded-s border-l-2 border-transparent px-3 py-3 no-underline hover:border-hue hover:bg-surface"
+                    >
+                      <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-text group-hover:text-hue-lit">
+                        {d.title}
+                      </span>
+                      <span className="hidden flex-none text-[12px] text-text-muted sm:inline">
+                        {d.section.label}
+                      </span>
+                      <time
+                        dateTime={d.date}
+                        className="flex-none font-mono text-[12px] text-text-muted tabular-nums"
+                      >
+                        {formatDate(d.date ?? '')}
+                      </time>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-      <ul className="mt-6 list-none space-y-px p-0">
-        {rows.map((r) => (
-          <li key={r.id}>
-            <Link
-              to={r.path}
-              className="group flex items-baseline gap-4 rounded-s px-3 py-4 no-underline hover:bg-surface"
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block text-[15px] font-semibold tracking-[-0.01em] text-text">
-                  {r.label}
-                </span>
-                <span className="mt-1 block text-[13px] leading-relaxed text-text-2">
-                  {r.blurb}
-                </span>
-              </span>
-              {/* Tabular so the counts line up down the column; the word total
+          {/* One figure, in a sentence, rather than four tiles of which three
+              were never acted on. */}
+          <p className="text-[13px] text-text-muted">
+            {total} document{total === 1 ? '' : 's'} across {rows.length} sections.
+          </p>
+
+          <ul className="mt-6 list-none space-y-px p-0">
+            {rows.map((r) => (
+              <li key={r.id}>
+                <Link
+                  to={r.path}
+                  className="group flex items-baseline gap-4 rounded-s px-3 py-4 no-underline hover:bg-surface"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[15px] font-semibold tracking-[-0.01em] text-text">
+                      {r.label}
+                    </span>
+                    <span className="mt-1 block text-[13px] leading-relaxed text-text-2">
+                      {r.blurb}
+                    </span>
+                  </span>
+                  {/* Tabular so the counts line up down the column; the word total
                   is the quieter of the two because it is the less useful. */}
-              <span className="flex-none text-right font-mono text-[12px] text-text-muted tabular-nums">
-                {r.count}
-                <span className="ml-2 opacity-60">{formatCompact(r.words)}w</span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+                  <span className="flex-none text-right font-mono text-[12px] text-text-muted tabular-nums">
+                    {r.count}
+                    <span className="ml-2 opacity-60">{formatCompact(r.words)}w</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   )
 }

@@ -29,6 +29,11 @@ export const keys = {
   sessions: ['sessions'] as const,
   context: ['context'] as const,
   daily: ['daily'] as const,
-  docs: ['docs'] as const,
+  /** Two reads of the same collection with two different shapes, so two keys.
+   *  They once shared `['docs']`: the public `Sections` object and the admin's
+   *  `DocRow[]` overwrote each other, and a visit to /content followed by a
+   *  public page read `content.brainstorms` off an array and blanked the site. */
+  publicDocs: ['docs', 'published'] as const,
+  allDocs: ['docs', 'all'] as const,
   published: (slug: string) => ['published', slug] as const,
 }

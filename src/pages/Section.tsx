@@ -4,8 +4,9 @@ import { SECTION_KEY, sections, type SectionId } from '../lib/sections'
 import { useAppDispatch, useAppSelector } from '../store'
 import { useContent } from '../lib/useContent'
 import { toggleTag } from '../store/uiSlice'
-import Markdown from '../components/Markdown'
-import { readingMinutes } from '../lib/format'
+import Markdown, { slug as slugify } from '../components/Markdown'
+import { Skeleton } from '../components/State'
+import { formatDate, readingMinutes } from '../lib/format'
 import Title from '../components/Title'
 import Tree from '../components/Tree'
 import { matches, TagRow, Empty } from '../components/shared'
@@ -28,11 +29,17 @@ export default function Section({ id }: { id: Key }) {
   const params = useParams()
   const location = useLocation()
   const meta = sections.find((s) => s.id === id)!
-  const items = useContent().content[SECTION_KEY[id]] as any[]
+  const { content, ready, error } = useContent()
+  const items = content[SECTION_KEY[id]] as any[]
 
   // react-router gives the wildcard tail in `*`; older single-segment routes
   // still pass docId, so both are accepted.
   const rest = (params['*'] ?? params.docId ?? '').replace(/^\/+|\/+$/g, '')
+
+  // Nothing can be resolved until the read settles. Before it does, `items` is
+  // empty - and an empty list used to fall through to the redirect below, so
+  // reloading a document URL bounced the reader to the section root every time.
+  if (!ready) return <Skeleton rows={rest ? 1 : 4} />
 
   if (!rest) return <Browse id={id} meta={meta} items={items} at="" />
 
@@ -41,6 +48,10 @@ export default function Section({ id }: { id: Key }) {
 
   const inFolder = items.filter((i) => (i.path ?? '').startsWith(rest + '/'))
   if (inFolder.length) return <Browse id={id} meta={meta} items={items} at={rest} />
+
+  // A failed read is not a missing document. The shell already says the read
+  // failed; redirecting as well would throw away the URL the reader came with.
+  if (error) return null
 
   return <Navigate to={meta.path} replace state={{ from: location.pathname }} />
 }
@@ -120,8 +131,13 @@ function Browse({ id, meta, items, at }: { id: Key; meta: any; items: any[]; at:
                       <span className="d">{i.description || firstLine(i.body)}</span>
                     )}
                     <span className="foot">
-                      {i.date && <time dateTime={i.date}>{i.date}</time>}
+                      {i.date && <time dateTime={i.date}>{formatDate(i.date)}</time>}
                       <span className="mins">{readingTime(i)}</span>
+                      {(i.tags ?? []).slice(0, 3).map((t: string) => (
+                        <span key={t} className="ftag">
+                          #{t}
+                        </span>
+                      ))}
                     </span>
                   </Link>
                 </li>
@@ -148,7 +164,7 @@ function Detail({ item, section, meta }: { item: any; section: Key; meta: any })
       {item.description && <p className="standfirst">{item.description}</p>}
 
       <div className="meta">
-        {item.date && <time dateTime={item.date}>{item.date}</time>}
+        {item.date && <time dateTime={item.date}>{formatDate(item.date)}</time>}
         {item.status && <span className="status">{item.status}</span>}
         <span className="mins">{readingTime(item)}</span>
       </div>
@@ -209,12 +225,6 @@ function Crumbs({ meta, at }: { meta: any; at: string }) {
 }
 
 // ---------------------------------------------------------------------------
-
-const slugify = (s: string) =>
-  s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
 
 function firstLine(body?: string): string {
   if (!body) return ''

@@ -96,3 +96,29 @@ export function Chip({
     </span>
   )
 }
+
+/** Placeholder rows shaped like the list that is about to arrive.
+ *
+ *  A bare "Loading…" line followed by a list reflows the whole page when the
+ *  read lands; rows of the right height hold the layout still. The pulse is an
+ *  animation, so the global reduced-motion rule stills it with no extra code. */
+export function Skeleton({ rows = 4, title = true }: { rows?: number; title?: boolean }) {
+  return (
+    <div role="status" aria-busy="true" aria-label="Loading" className="animate-pulse">
+      {title && (
+        <>
+          <div className="mb-3 h-9 w-2/3 rounded-s bg-surface" />
+          <div className="mb-9 h-4 w-1/2 rounded-s bg-surface" />
+        </>
+      )}
+      <div className="grid gap-0.5">
+        {Array.from({ length: rows }, (_, i) => (
+          <div key={i} className="grid gap-2.5 rounded-s bg-surface px-[19px] py-[17px]">
+            <div className="h-4 w-1/2 rounded-s bg-raised" />
+            <div className="h-3 w-5/6 rounded-s bg-raised" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

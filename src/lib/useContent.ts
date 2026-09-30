@@ -94,7 +94,7 @@ function undate(raw: Record<string, unknown>): Record<string, unknown> {
 
 export function useContent() {
   const q = useQuery({
-    queryKey: keys.docs,
+    queryKey: keys.publicDocs,
     queryFn: async (): Promise<Sections> => {
       const snap = await getDocs(
         query(collection(db, 'docs'), where('visibility', '==', 'published')),
@@ -138,7 +138,15 @@ export function useContent() {
       return out
     },
   })
-  return { content: q.data ?? EMPTY, isLoading: q.isLoading, error: q.error }
+  // `ready` is the one a page must check before concluding a document does not
+  // exist. Before the read settles `content` is EMPTY, and treating that as the
+  // answer is what bounced a reloaded document URL back to its section root.
+  return {
+    content: q.data ?? EMPTY,
+    ready: q.isSuccess || q.isError,
+    isLoading: q.isPending,
+    error: q.error,
+  }
 }
 
 /** Tag counts across every published document. */
