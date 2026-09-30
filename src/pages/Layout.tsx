@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import Shell from '../components/Shell'
 import { FIRESTORE_HINT, Failure } from '../components/State'
 import { describeError } from '../lib/queries'
-import { SECTION_KEY, sections } from '../lib/sections'
+import { sections, type KindId } from '../lib/sections'
 import { useAppDispatch, useAppSelector } from '../store'
 import { useContent } from '../lib/useContent'
 import { setQuery } from '../store/uiSlice'
@@ -61,7 +61,7 @@ export default function PublicLayout() {
                   {s.id !== 'home' && (
                     // A dash until the read lands: "0" before it does claims every
                     // section is empty, which is exactly what a failed read looks like.
-                    <span className="n">{ready ? content[SECTION_KEY[s.id]].length : '–'}</span>
+                    <span className="n">{ready ? content[s.id as KindId].length : '–'}</span>
                   )}
                 </>
               )}

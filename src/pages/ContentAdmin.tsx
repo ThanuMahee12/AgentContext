@@ -15,7 +15,7 @@ import { iconButton } from '../lib/ui'
  * turn a rename into a disclosure.
  *
  * Reading every document, drafts included, requires being signed in: the rule
- * on /docs allows an unpublished document only to `canView()`.
+ * on each content collection allows an unpublished document only to `canView()`.
  */
 export default function ContentAdmin({ user }: { user: User | null }) {
   const { data: docs = [], isPending, error } = useDocs()

@@ -657,3 +657,18 @@
    .tw-scope wrapper - nothing here styles it. */
 
 /* Daily Catchup ---------------------------------------------------------- */
+
+/* ------------------------------------------------ links and backlinks */
+
+.connections { margin: 34px 0 0; padding-top: 18px; border-top: 1px solid var(--line); display: grid; gap: 22px; }
+.connections h2 { margin: 0 0 10px; font: 600 11px/1 var(--plex-sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); }
+.connections ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.connections li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.connections .src { font: 400 11px/1.8 var(--plex-mono); padding: 0 8px; color: var(--hue); background: color-mix(in srgb, var(--hue) 14%, transparent); border-radius: 999px; }
+.connections a { color: var(--text); text-decoration: none; border-bottom: 1px solid var(--line-lit); overflow-wrap: anywhere; }
+.connections a:hover { color: var(--hue); border-bottom-color: var(--hue); }
+.connections p { flex-basis: 100%; margin: 0; font-size: 13px; color: var(--text-2); }
+
+.mermaid { margin: 0 0 1.25em; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-s); overflow-x: auto; }
+.mermaid svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.mermaid.pending { min-height: 120px; }

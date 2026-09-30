@@ -1,77 +1,82 @@
 /** Document shapes and the section map.
  *
- * Content itself is no longer bundled: the app reads documents from Firestore
- * at runtime. What stays here is the part that is configuration rather than
- * data - which sections exist, what they are called and where they live - and
- * the record shapes those documents arrive in.
+ * Content is not bundled: the app reads documents from Firestore at runtime.
+ * What stays here is the part that is configuration rather than data - which
+ * sections exist, what they are called, which collection each one reads - and
+ * the record shape those documents arrive in.
+ *
+ * The kinds mirror `agentprobe/content/kinds.py` in AgentProbe, which is what
+ * publishes them. A kind added there needs an entry here and in
+ * firestore.rules before the site can show it.
  */
-
-export interface Comment {
-  date: string
-  topic: string
-  content: string
-}
 
 export interface Heading {
   depth: number
   text: string
 }
 
-export interface Discussion {
-  id: string
-  title: string
-  description?: string
-  date: string
-  summary: string
+/** An external link, extracted by the publisher with the sentence it sat in. */
+export interface Link {
   url: string
-  tags: string[]
-  comments: Comment[]
-  body?: string
-  headings?: Heading[]
+  /** clickup, slack, google-sheets, google-docs, google-drive, github, gitlab, jira, … or web */
+  source: string
+  type: string
+  external_id: string
+  label: string
+  sentence: string
+  origin: string
 }
 
-export interface Brainstorm {
-  id: string
-  title: string
-  description?: string
-  date: string
-  status: string
-  summary: string
-  gist: string
-  notion: string
-  tags: string[]
-  comments: Comment[]
+export interface Diagram {
+  index: number
+  type: string
+  source: string
 }
 
 export interface Doc {
   id: string
-  /** Folder path within the section, e.g. "data-alchemy/bbocax/mapping".
-   *  Stored as a string, not modelled as nested collections - see the note in
-   *  scripts/build-content.mjs for why. */
+  kind: KindId
+  /** Path within the section, with the UTC date folders already stripped -
+   *  see `undate` in useContent. */
   path: string
   segments: string[]
   /** The folder this document sits in; '' at the section root. */
   parent: string
   depth: number
   title: string
-  /** One line under the heading. Optional; the list falls back to headings. */
   description?: string
+  date: string
+  status?: string
   body: string
   headings: Heading[]
+  tags: string[]
+  project?: string
+  topics?: string[]
+  /** Firestore paths this document points at, e.g. `topics/splc-onboarding`. */
+  refs: string[]
+  /** Firestore paths of documents that point at this one. */
+  backlinks: string[]
+  links: Link[]
+  diagrams: Diagram[]
   source: string
   bytes: number
-  project?: string
+  url?: string
+  gist?: string
+  notion?: string
 }
 
-export interface Content {
-  generated_at: string
-  discussions: Discussion[]
-  brainstorms: Brainstorm[]
-  notes: Doc[]
-  kt: Doc[]
-}
+export type KindId =
+  | 'plans'
+  | 'discussions'
+  | 'decisions'
+  | 'ideas'
+  | 'brainstorms'
+  | 'workflows'
+  | 'catchups'
+  | 'topics'
+  | 'projects'
 
-export type SectionId = 'home' | 'brainstorms' | 'kt' | 'discussions' | 'notes'
+export type SectionId = 'home' | KindId
 
 export interface Section {
   id: SectionId
@@ -81,47 +86,91 @@ export interface Section {
   blurb: string
 }
 
-/** Which slice of content a section lists. `home` lists none. */
-export const SECTION_KEY: Record<
-  Exclude<SectionId, 'home'>,
-  'brainstorms' | 'discussions' | 'kt' | 'notes'
-> = {
-  brainstorms: 'brainstorms',
-  kt: 'kt',
-  discussions: 'discussions',
-  notes: 'notes',
+export interface Kind extends Section {
+  id: KindId
+  /** The Firestore collection. Equal to the id except for projects, because
+   *  `projects` is the session archive. */
+  collection: string
 }
 
-export const sections: Section[] = [
-  { id: 'home', label: 'Home', path: '/', blurb: 'Everything collected in one place.' },
+export const kinds: Kind[] = [
   {
-    id: 'brainstorms',
-    label: 'Brainstorm',
-    path: '/brainstorm',
-    blurb: 'Half-formed ideas, with the thinking left in.',
-  },
-  {
-    id: 'kt',
-    label: 'KT',
-    path: '/kt',
-    blurb: 'Handover material: how a project is set up and run.',
+    id: 'plans',
+    collection: 'plans',
+    label: 'Plans',
+    path: '/plans',
+    blurb: 'What we intend to do, and in what order.',
   },
   {
     id: 'discussions',
-    label: 'Discussion',
-    path: '/ideas',
-    blurb: 'Proposals worked through with other people.',
+    collection: 'discussions',
+    label: 'Discussions',
+    path: '/discussions',
+    blurb: 'Conversations worth keeping.',
   },
   {
-    id: 'notes',
-    label: 'Tech Commands',
-    path: '/tech-commands',
-    blurb: 'Commands, patterns and reference worth not re-deriving.',
+    id: 'decisions',
+    collection: 'decisions',
+    label: 'Decisions',
+    path: '/decisions',
+    blurb: 'What was chosen, why, and what was rejected.',
+  },
+  {
+    id: 'ideas',
+    collection: 'ideas',
+    label: 'Ideas',
+    path: '/ideas',
+    blurb: 'Things that might be worth doing, and open questions.',
+  },
+  {
+    id: 'brainstorms',
+    collection: 'brainstorms',
+    label: 'Brainstorms',
+    path: '/brainstorms',
+    blurb: 'Half-formed ideas, with the thinking left in.',
+  },
+  {
+    id: 'workflows',
+    collection: 'workflows',
+    label: 'Workflows',
+    path: '/workflows',
+    blurb: 'How a thing is done, step by step.',
+  },
+  {
+    id: 'catchups',
+    collection: 'catchups',
+    label: 'Catchup notes',
+    path: '/catchups',
+    blurb: 'One a day: what happened, and what is next.',
+  },
+  {
+    id: 'topics',
+    collection: 'topics',
+    label: 'Topics',
+    path: '/topics',
+    blurb: 'A subject described once, with everything that points at it.',
+  },
+  {
+    id: 'projects',
+    collection: 'project_docs',
+    label: 'Projects',
+    path: '/projects',
+    blurb: 'What each project is and where it lives.',
   },
 ]
 
-export function findDoc(list: Doc[], id: string): Doc | undefined {
-  return list.find((d) => d.id === id)
-}
+export const sections: Section[] = [
+  { id: 'home', label: 'Home', path: '/', blurb: 'Everything collected in one place.' },
+  ...kinds,
+]
 
-/** Every distinct tag across discussions and brainstorms, most used first. */
+const BY_COLLECTION = new Map(kinds.map((k) => [k.collection, k]))
+
+/** A Firestore path from `refs` or `backlinks` - `topics/splc` - as the kind
+ *  it lives in and the document id, or undefined for a collection this app
+ *  does not show. */
+export function resolveRef(ref: string): { kind: Kind; id: string } | undefined {
+  const [collection, id] = ref.split('/')
+  const kind = BY_COLLECTION.get(collection)
+  return kind && id ? { kind, id } : undefined
+}

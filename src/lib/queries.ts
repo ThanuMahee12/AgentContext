@@ -18,6 +18,7 @@ import { collection, doc, getDocs, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getPublished } from './published'
 import { keys } from './queryClient'
+import { kinds } from './sections'
 import { getSource } from './source'
 import type { ContextItem, PublishedPage, Session } from '../types'
 
@@ -113,7 +114,10 @@ export const PUBLISHED = 'published'
 export const DRAFT = 'draft'
 
 export interface DocRow {
+  /** `collection/docId` - document ids are only unique within a kind. */
   id: string
+  collection: string
+  docId: string
   title: string
   section: string
   date: string
@@ -123,28 +127,33 @@ export interface DocRow {
   description: string
 }
 
-/** Every document, drafts included. Requires being signed in: the rule on
- *  `docs` allows an unpublished document only to `canView()`. */
+/** Every document in every content collection, drafts included. Requires
+ *  being signed in: the rule allows an unpublished document only to
+ *  `canView()`. */
 export function useDocs() {
   return useQuery({
     queryKey: keys.allDocs,
     queryFn: async (): Promise<DocRow[]> => {
-      const snap = await getDocs(collection(db, 'docs'))
-      const rows = snap.docs.map((d) => {
-        const v = d.data() as Partial<DocRow>
-        return {
-          id: d.id,
-          title: v.title || d.id,
-          section: v.section || '',
-          date: v.date || '',
-          status: v.status || '',
-          // Absent means draft. The publisher and the security rule both treat
-          // it that way; showing it as anything else here would mislead.
-          visibility: v.visibility || DRAFT,
-          agent: v.agent || '',
-          description: v.description || '',
-        }
-      })
+      const snaps = await Promise.all(kinds.map((k) => getDocs(collection(db, k.collection))))
+      const rows = snaps.flatMap((snap, n) =>
+        snap.docs.map((d) => {
+          const v = d.data() as Partial<DocRow>
+          return {
+            id: `${kinds[n].collection}/${d.id}`,
+            collection: kinds[n].collection,
+            docId: d.id,
+            title: v.title || d.id,
+            section: kinds[n].label,
+            date: v.date || '',
+            status: v.status || '',
+            // Absent means draft. The publisher and the security rule both treat
+            // it that way; showing it as anything else here would mislead.
+            visibility: v.visibility || DRAFT,
+            agent: v.agent || '',
+            description: v.description || '',
+          }
+        }),
+      )
       rows.sort(
         (a, b) => (b.date || '').localeCompare(a.date || '') || a.title.localeCompare(b.title),
       )
@@ -163,7 +172,8 @@ export function useSetVisibility() {
   const client = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, visibility }: { id: string; visibility: string }) => {
-      await updateDoc(doc(db, 'docs', id), { visibility })
+      const [coll, docId] = id.split('/')
+      await updateDoc(doc(db, coll, docId), { visibility })
       return { id, visibility }
     },
     onSuccess: ({ id, visibility }) => {

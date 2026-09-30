@@ -28,7 +28,7 @@ rather than by which component the router mounts:
 
 | | |
 |---|---|
-| **Public** | Home, Brainstorm, KT, Ideas, Tech Commands, Daily Catchup |
+| **Public** | Home, one section per content kind (`src/lib/sections.ts`: Plans, Discussions, Decisions, Ideas, Brainstorms, Workflows, Catchup notes, Topics, Projects), Daily Catchup |
 | **Private** | `/admin` (session archive), `/content` (promote a draft), and the per-day conversations inside Catchup |
 
 `firestore.rules` denies every private collection to anonymous readers, so a

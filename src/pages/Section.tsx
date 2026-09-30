@@ -1,8 +1,8 @@
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 
-import { SECTION_KEY, sections, type SectionId } from '../lib/sections'
+import { resolveRef, sections, type Doc, type KindId } from '../lib/sections'
 import { useAppDispatch, useAppSelector } from '../store'
-import { useContent } from '../lib/useContent'
+import { useContent, type Sections } from '../lib/useContent'
 import { toggleTag } from '../store/uiSlice'
 import Markdown, { slug as slugify } from '../components/Markdown'
 import { Skeleton } from '../components/State'
@@ -11,7 +11,7 @@ import Title from '../components/Title'
 import Tree from '../components/Tree'
 import { matches, TagRow, Empty } from '../components/shared'
 
-type Key = Exclude<SectionId, 'home'>
+type Key = KindId
 
 /** One component for every section, resolving a path of any depth.
  *
@@ -30,7 +30,7 @@ export default function Section({ id }: { id: Key }) {
   const location = useLocation()
   const meta = sections.find((s) => s.id === id)!
   const { content, ready, error } = useContent()
-  const items = content[SECTION_KEY[id]] as any[]
+  const items = content[id] as any[]
 
   // react-router gives the wildcard tail in `*`; older single-segment routes
   // still pass docId, so both are accepted.
@@ -44,7 +44,7 @@ export default function Section({ id }: { id: Key }) {
   if (!rest) return <Browse id={id} meta={meta} items={items} at="" />
 
   const doc = items.find((i) => (i.path ?? i.id) === rest)
-  if (doc) return <Detail item={doc} section={id} meta={meta} />
+  if (doc) return <Detail item={doc} section={id} meta={meta} content={content} />
 
   const inFolder = items.filter((i) => (i.path ?? '').startsWith(rest + '/'))
   if (inFolder.length) return <Browse id={id} meta={meta} items={items} at={rest} />
@@ -150,10 +150,20 @@ function Browse({ id, meta, items, at }: { id: Key; meta: any; items: any[]; at:
   )
 }
 
-function Detail({ item, section, meta }: { item: any; section: Key; meta: any }) {
+function Detail({
+  item,
+  section,
+  meta,
+  content,
+}: {
+  item: Doc
+  section: Key
+  meta: any
+  content: Sections
+}) {
   const dispatch = useAppDispatch()
   const { tag } = useAppSelector((s) => s.ui)
-  const toc = (item.headings ?? []).filter((h: any) => h.depth === 2)
+  const toc = (item.headings ?? []).filter((h) => h.depth === 2)
 
   return (
     <article className="page reading" data-section={section}>
@@ -169,26 +179,6 @@ function Detail({ item, section, meta }: { item: any; section: Key; meta: any })
         <span className="mins">{readingTime(item)}</span>
       </div>
 
-      {(item.url || item.gist || item.notion) && (
-        <p className="out">
-          {item.url && (
-            <a href={item.url} target="_blank" rel="noreferrer noopener">
-              Original thread
-            </a>
-          )}
-          {item.gist && (
-            <a href={item.gist} target="_blank" rel="noreferrer noopener">
-              Gist
-            </a>
-          )}
-          {item.notion && (
-            <a href={item.notion} target="_blank" rel="noreferrer noopener">
-              Notion
-            </a>
-          )}
-        </p>
-      )}
-
       {toc.length > 2 && (
         <nav className="toc" aria-label="On this page">
           {toc.map((h: any) => (
@@ -201,8 +191,73 @@ function Detail({ item, section, meta }: { item: any; section: Key; meta: any })
 
       {item.body && <Markdown source={item.body} />}
 
+      <Connections item={item} content={content} />
+
       <TagRow tags={item.tags ?? []} active={tag} onPick={(t) => dispatch(toggleTag(t))} />
     </article>
+  )
+}
+
+/**
+ * What this document points at, and what points at it.
+ *
+ * External links come with the sentence they were written in, which is the
+ * whole reason they are extracted rather than listed: "ClickUp 868kavmc1" says
+ * nothing, "this ticket blocks the staging merge" says why to open it.
+ * Backlinks are computed by the publisher, so a topic lists its plans and
+ * ideas without anyone maintaining that list.
+ */
+function Connections({ item, content }: { item: Doc; content: Sections }) {
+  const doc = (ref: string) => {
+    const r = resolveRef(ref)
+    if (!r) return undefined
+    const found = content[r.kind.id].find((d) => d.id === r.id)
+    // A reference to a draft is not an error - it is simply not public yet.
+    return found ? { kind: r.kind, doc: found } : undefined
+  }
+  const related = item.refs.map(doc).filter(Boolean) as { kind: any; doc: Doc }[]
+  const backlinks = item.backlinks.map(doc).filter(Boolean) as { kind: any; doc: Doc }[]
+  if (!item.links.length && !related.length && !backlinks.length) return null
+
+  return (
+    <aside className="connections" aria-label="Links">
+      {item.links.length > 0 && (
+        <section>
+          <h2>Links</h2>
+          <ul>
+            {item.links.map((l) => (
+              <li key={l.url}>
+                <span className="src" data-source={l.source}>
+                  {l.source}
+                </span>
+                <a href={l.url} target="_blank" rel="noreferrer noopener">
+                  {l.label || l.external_id || l.url}
+                </a>
+                {l.sentence && <p>{l.sentence}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {[
+        ['Related', related],
+        ['Referenced by', backlinks],
+      ].map(([title, list]) =>
+        (list as { kind: any; doc: Doc }[]).length ? (
+          <section key={title as string}>
+            <h2>{title as string}</h2>
+            <ul>
+              {(list as { kind: any; doc: Doc }[]).map(({ kind, doc: d }) => (
+                <li key={`${kind.id}/${d.id}`}>
+                  <span className="src">{kind.label}</span>
+                  <Link to={`${kind.path}/${d.path}`}>{d.title}</Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null,
+      )}
+    </aside>
   )
 }
 

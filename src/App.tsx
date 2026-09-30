@@ -11,6 +11,7 @@ import Home from './pages/Home'
 import Section from './pages/Section'
 import { auth } from './firebase'
 import { getSource } from './lib/source'
+import { kinds } from './lib/sections'
 
 /** The signed-in screens are split out of the entry chunk.
  *
@@ -58,8 +59,8 @@ const NEEDS_AUTH = getSource().name === 'firestore'
 /**
  * Two sites behind one app.
  *
- *   /            public  - the knowledge base: home, brainstorms, KT,
- *                          discussions, notes. Content is read from Firestore.
+ *   /            public  - the knowledge base: home, then one section per
+ *                          content kind (lib/sections.ts). Read from Firestore.
  *   /s/:slug     public  - a published page from Firestore
  *   /admin       private - the session archive, sign-in required
  *   /catchup     public  - a calendar of activity; counts for anyone, the
@@ -80,21 +81,19 @@ export default function App() {
         <Routes>
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Home />} />
-            <Route path="/brainstorm" element={<Section id="brainstorms" />} />
-            <Route path="/brainstorm/*" element={<Section id="brainstorms" />} />
-            <Route path="/kt" element={<Section id="kt" />} />
-            <Route path="/kt/*" element={<Section id="kt" />} />
-            <Route path="/ideas" element={<Section id="discussions" />} />
-            <Route path="/ideas/*" element={<Section id="discussions" />} />
+            {kinds.flatMap((k) => [
+              <Route key={k.id} path={k.path} element={<Section id={k.id} />} />,
+              <Route key={k.id + '/*'} path={`${k.path}/*`} element={<Section id={k.id} />} />,
+            ])}
             <Route path="/catchup" element={<Catchup />} />
-            <Route path="/tech-commands" element={<Section id="notes" />} />
-            <Route path="/tech-commands/*" element={<Section id="notes" />} />
 
-            {/* Older paths stay working; they are linked from the repository. */}
-            <Route path="/brainstorms" element={<Navigate to="/brainstorm" replace />} />
-            <Route path="/discussions" element={<Navigate to="/ideas" replace />} />
-            <Route path="/notes" element={<Navigate to="/tech-commands" replace />} />
-            <Route path="/notes/*" element={<Navigate to="/tech-commands" replace />} />
+            {/* Older paths stay working; they are linked from the repository.
+                KT and Tech Commands are gone as sections - commands are
+                searchable from the session archive - so they land on Home. */}
+            <Route path="/brainstorm/*" element={<Navigate to="/brainstorms" replace />} />
+            <Route path="/kt/*" element={<Navigate to="/" replace />} />
+            <Route path="/tech-commands/*" element={<Navigate to="/" replace />} />
+            <Route path="/notes/*" element={<Navigate to="/" replace />} />
           </Route>
 
           <Route path="/s/:slug" element={<Published />} />

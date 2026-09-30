@@ -3,138 +3,104 @@ import { collection, getDocs, query, where } from 'firebase/firestore'
 
 import { db } from '../firebase'
 import { keys } from './queryClient'
-import type { Brainstorm, Discussion, Doc } from './sections'
+import { kinds, type Doc, type KindId } from './sections'
 
-export type Sections = {
-  brainstorms: Brainstorm[]
-  discussions: Discussion[]
-  kt: Doc[]
-  notes: Doc[]
+export type Sections = Record<KindId, Doc[]>
+
+function empty(): Sections {
+  return Object.fromEntries(kinds.map((k) => [k.id, []])) as unknown as Sections
 }
 
-const EMPTY: Sections = { brainstorms: [], discussions: [], kt: [], notes: [] }
+const EMPTY = empty()
 
 /**
- * What a document's `section` may say.
+ * Drop the dated prefix from a document's path.
  *
- * Three names exist for the same thing and only one of them is the key this app
- * stores documents under:
+ * Dated kinds are filed under a UTC date - `ideas/2026/09/28/slug.md` - so a
+ * document arrives with the path `2026/09/28/slug`. The section page builds its
+ * folder tree from the segments, which rendered as a folder `2026` holding `09`
+ * holding `28` holding the one document: three navigations to reach a page
+ * that should sit at the section root. The date is already in `date`, where it
+ * can be sorted and displayed; in the path it is filing, not structure.
  *
- *   key           authoring folder        URL
- *   brainstorms   content/brainstorm/     /brainstorm
- *   discussions   content/ideas/          /ideas
- *   notes         content/tech-commands/  /tech-commands
- *   kt            content/kt/             /kt
- *
- * A publisher naming the section after the folder or the URL gets it right
- * once out of four. Accepting all three spellings costs nothing and removes a
- * class of "the document published but never appeared" that has no visible
- * symptom - the old code dropped an unrecognised section with a bare `return`.
+ * Only a LEADING run of all-numeric segments goes, so a document genuinely
+ * filed under a folder - `agentprobe/parallelism` - still nests where its
+ * author put it. A catchup's path is nothing but a date, so it falls back to
+ * its id, which is that date written as one segment.
  */
-const SECTION_OF: Record<string, keyof Sections> = {
-  brainstorms: 'brainstorms',
-  brainstorm: 'brainstorms',
-  discussions: 'discussions',
-  ideas: 'discussions',
-  idea: 'discussions',
-  notes: 'notes',
-  'tech-commands': 'notes',
-  kt: 'kt',
+const DATEISH = /^\d{2,4}$/
+
+export function normalize(raw: Record<string, unknown>, kind: KindId, id: string): Doc {
+  const path = String(raw.path ?? id)
+  let segments = path.split('/').filter(Boolean)
+  let i = 0
+  while (i < segments.length && DATEISH.test(segments[i])) i++
+  segments = segments.slice(i)
+  if (!segments.length) segments = [id]
+
+  const list = (v: unknown) => (Array.isArray(v) ? v : [])
+  return {
+    ...(raw as object),
+    id,
+    kind,
+    title: String(raw.title || id),
+    date: String(raw.date ?? ''),
+    body: String(raw.body ?? ''),
+    path: segments.join('/'),
+    segments,
+    parent: segments.slice(0, -1).join('/'),
+    depth: segments.length - 1,
+    tags: list(raw.tags),
+    headings: list(raw.headings),
+    refs: list(raw.refs),
+    backlinks: list(raw.backlinks),
+    links: list(raw.links),
+    diagrams: list(raw.diagrams),
+  } as Doc
 }
 
 /**
- * Documents, from Firestore.
- *
- * There is no bundled copy any more. Content is authored outside this
- * repository and published by AgentProbe, so shipping a snapshot in the
- * JavaScript meant a second source of truth that went stale the moment anything
- * was published - and shipped every document to every visitor whether or not it
- * was meant to be public.
+ * Published documents, one query per kind.
  *
  * The filter is not an optimisation. `firestore.rules` allows an unpublished
  * document only to a signed-in admin, and a list query that does not constrain
  * on visibility is rejected outright rather than filtered - so a missing
  * `where` here fails loudly instead of leaking.
- */
-/**
- * Drop the dated prefix from a document's path.
  *
- * Documents are stored under a UTC-dated path - `content/ideas/2026/09/28/slug.md`
- * - so a document arrives with `segments: ["2026","09","28","slug"]`. The
- * section page builds its folder tree from those segments, which rendered as a
- * folder `2026` holding a folder `09` holding a folder `28` holding the one
- * document: three navigations to reach a page that should be sitting at the
- * section root. The date is already in `date`, where it can be sorted and
- * displayed; in the path it is filing, not structure.
- *
- * Only a LEADING run of all-numeric segments goes, and never the filename
- * itself, so a document genuinely filed under a folder - `agentprobe/parallelism`
- * - still nests where its author put it.
+ * A kind whose read fails is reported and left empty rather than failing the
+ * site: one collection missing its rule must not blank eight others.
  */
-const DATEISH = /^\d{2,4}$/
-
-function undate(raw: Record<string, unknown>): Record<string, unknown> {
-  const segments = (Array.isArray(raw.segments) ? raw.segments : []).map(String)
-  let i = 0
-  while (i < segments.length - 1 && DATEISH.test(segments[i])) i++
-  if (i === 0) return raw
-
-  const rest = segments.slice(i)
-  return {
-    ...raw,
-    segments: rest,
-    path: rest.join('/'),
-    parent: rest.slice(0, -1).join('/'),
-    depth: rest.length - 1,
-    // `project` is derived by the publisher from the first segment, which for a
-    // dated path is the year. A year is not a project.
-    project: DATEISH.test(String(raw.project ?? '')) ? '' : raw.project,
-  }
-}
-
 export function useContent() {
   const q = useQuery({
     queryKey: keys.publicDocs,
     queryFn: async (): Promise<Sections> => {
-      const snap = await getDocs(
-        query(collection(db, 'docs'), where('visibility', '==', 'published')),
+      const results = await Promise.allSettled(
+        kinds.map((k) =>
+          getDocs(query(collection(db, k.collection), where('visibility', '==', 'published'))),
+        ),
       )
-      const out: Sections = { brainstorms: [], discussions: [], kt: [], notes: [] }
-      const unplaced: string[] = []
+      const out = empty()
+      const failed: string[] = []
 
-      snap.docs.forEach((d) => {
-        const raw = d.data() as Record<string, unknown>
-        const section =
-          SECTION_OF[
-            String(raw.section ?? '')
-              .trim()
-              .toLowerCase()
-          ]
-        if (!section) {
-          // A published document with a section nobody recognises used to
-          // vanish here. Collect it instead, so the reason is findable.
-          unplaced.push(`${d.id} (section: ${JSON.stringify(raw.section) ?? 'missing'})`)
+      results.forEach((r, n) => {
+        const kind = kinds[n]
+        if (r.status === 'rejected') {
+          failed.push(`${kind.collection}: ${String(r.reason?.message ?? r.reason)}`)
           return
         }
-        // `comments` is optional in Firestore but the discussion views index it
-        const v = { ...undate(raw), comments: (raw.comments as unknown[]) ?? [] }
-        ;(out[section] as unknown[]).push(v)
+        out[kind.id] = r.value.docs.map((d) => normalize(d.data(), kind.id, d.id))
       })
-      out.brainstorms.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-      out.discussions.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-      out.kt.sort((a, b) => a.title.localeCompare(b.title))
-      out.notes.sort((a, b) => a.title.localeCompare(b.title))
+      if (failed.length === kinds.length) throw new Error(failed.join('\n'))
+      if (failed.length) console.warn(`useContent: could not read\n  ${failed.join('\n  ')}`)
 
-      if (unplaced.length) {
-        // Not thrown: one mislabelled document must not blank the whole site.
-        console.warn(
-          `useContent: ${unplaced.length} published document(s) have a section this app does ` +
-            `not recognise, so they are not shown. Expected one of ` +
-            `${Object.keys(SECTION_OF).join(', ')}.\n  ` +
-            unplaced.join('\n  '),
-        )
+      for (const kind of kinds) {
+        // Long-lived kinds are looked up by name; dated ones by recency.
+        if (kind.id === 'topics' || kind.id === 'projects') {
+          out[kind.id].sort((a, b) => a.title.localeCompare(b.title))
+        } else {
+          out[kind.id].sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+        }
       }
-
       return out
     },
   })
@@ -153,7 +119,7 @@ export function useContent() {
 export function tagCounts(content: Sections): Array<{ tag: string; count: number }> {
   const n = new Map<string, number>()
   for (const list of Object.values(content)) {
-    for (const d of list as Array<{ tags?: string[] }>) {
+    for (const d of list) {
       for (const t of d.tags ?? []) n.set(t, (n.get(t) ?? 0) + 1)
     }
   }

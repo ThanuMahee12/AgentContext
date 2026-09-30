@@ -115,6 +115,27 @@ service cloud.firestore {
       allow write: if isOwner();
     }
 
+    // ---- public: the content collections ----------------------------------
+    // One collection per kind, published by AgentProbe from the markdown tree
+    // on S3 (agentprobe/content/kinds.py is the list). Same rule as /docs: a
+    // draft is admin-only, and a public list query must filter on visibility
+    // or it is refused.
+    //
+    // A wildcard collection is safe only because contentKind() pins it to this
+    // list - without it the match would also cover sessions, memory and
+    // credentials. `projects` is deliberately absent: it is the session
+    // archive, which is why project pages publish to project_docs.
+    function contentKind(kind) {
+      return kind in ['plans', 'discussions', 'decisions', 'ideas', 'brainstorms',
+                      'workflows', 'catchups', 'topics', 'project_docs'];
+    }
+
+    match /{kind}/{docId} {
+      allow read: if contentKind(kind)
+                  && (canView() || resource.data.visibility == 'published');
+      allow write: if contentKind(kind) && isOwner();
+    }
+
     // ---- public: curated copies only --------------------------------------
     // Written by the publish flow after redaction review. Nothing here is a
     // reference to a private document - it is a copy of reviewed content.

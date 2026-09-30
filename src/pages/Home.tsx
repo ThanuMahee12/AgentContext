@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Skeleton } from '../components/State'
 import Title from '../components/Title'
 import { countWords, formatCompact, formatDate } from '../lib/format'
-import { SECTION_KEY, sections, type SectionId } from '../lib/sections'
+import { sections, type KindId } from '../lib/sections'
 import { useContent } from '../lib/useContent'
 
 /**
@@ -31,7 +31,7 @@ export default function Home() {
   const rows = sections
     .filter((s) => s.id !== 'home')
     .map((s) => {
-      const items = content[SECTION_KEY[s.id as Exclude<SectionId, 'home'>]] as {
+      const items = content[s.id as KindId] as {
         body?: string
         summary?: string
       }[]
@@ -51,7 +51,7 @@ export default function Home() {
     .filter((s) => s.id !== 'home')
     .flatMap((s) =>
       (
-        content[SECTION_KEY[s.id as Exclude<SectionId, 'home'>]] as {
+        content[s.id as KindId] as {
           id: string
           path?: string
           title: string

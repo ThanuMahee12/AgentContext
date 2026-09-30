@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from 'react'
 
 import CodeBlock from './CodeBlock'
+import Mermaid from './Mermaid'
 import { Figure, classify } from './Media'
 
 /** Render markdown as React elements.
@@ -48,7 +49,13 @@ function renderBlocks(src: string): ReactNode[] {
       i++
       while (i < lines.length && !lines[i].trimStart().startsWith('```')) body.push(lines[i++])
       i++ // closing fence
-      out.push(<CodeBlock key={key++} code={body.join('\n')} lang={lang} />)
+      out.push(
+        lang === 'mermaid' ? (
+          <Mermaid key={key++} code={body.join('\n')} />
+        ) : (
+          <CodeBlock key={key++} code={body.join('\n')} lang={lang} />
+        ),
+      )
       continue
     }
 
